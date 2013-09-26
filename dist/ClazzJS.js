@@ -6,7 +6,7 @@ var Clazz = function(name, parent, meta) {
     // If called as constructor - creates new clazz object.
     if (this instanceof Clazz) {
         var clazz = Manager.get(name);
-        return clazz.create.apply(clazz, Array.prototype.slice.call(arguments));
+        return clazz.create.apply(clazz, Array.prototype.slice.call(arguments, 1));
     }
     else {
         if (arguments.length == 1) {
