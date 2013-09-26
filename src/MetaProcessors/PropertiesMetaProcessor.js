@@ -82,7 +82,7 @@ var PropertiesMetaProcessor = {
             },
 
             createMethod: function(name, property) {
-                if (!Helper.inObject(name, this.METHODS)) {
+                if (!(name in this.METHODS)) {
                     throw new Error('Unsupported method "' + name + '"!');
                 }
                 return this.METHODS[name](property);
