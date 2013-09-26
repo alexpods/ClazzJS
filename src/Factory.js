@@ -29,6 +29,16 @@ var Factory = {
             parent.apply(this, Array.prototype.slice.call(arguments));
         }
 
+        // Copy all parent methods and initialize properties
+        for (var property in parent) {
+            if (typeof property === 'function') {
+                clazz[property] = parent[property];
+            }
+            else if (property[0] === '_') {
+                clazz[property] = undefined;
+            }
+        }
+
         clazz.NAME   = name || this.generateName();
         clazz.parent = parent;
 

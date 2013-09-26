@@ -72,6 +72,16 @@ var Factory = {
             parent.apply(this, Array.prototype.slice.call(arguments));
         }
 
+        // Copy all parent methods and initialize properties
+        for (var property in parent) {
+            if (typeof property === 'function') {
+                clazz[property] = parent[property];
+            }
+            else if (property[0] === '_') {
+                clazz[property] = undefined;
+            }
+        }
+
         clazz.NAME   = name || this.generateName();
         clazz.parent = parent;
 
@@ -243,18 +253,10 @@ var PropertiesDefaultsProcessor = function(object) {
 }
 var PropertiesInitProcessor = function(object, properties) {
 
-    if (typeof object === 'function' && object.parent) {
-        for (var property in object.parent) {
-            if (property[0] === '_' && typeof object.parent[property] !== 'function') {
-                continue;
-            }
-            object[property] = undefined;
-        }
-    }
-
     for (var property in properties) {
         object['_' + property] = undefined;
     }
+    
 }
 var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
 
