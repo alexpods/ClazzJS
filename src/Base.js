@@ -7,6 +7,10 @@ var Base = function() {
 Base.NAME   = '__BASE_CLAZZ__';
 Base.parent = null;
 
+Base.create = function() {
+    return new this.apply(this, Array.prototype.slice(arguments));
+}
+
 Base.prototype = {
     parent: null,
     clazz:  Base
