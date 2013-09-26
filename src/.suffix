@@ -1,4 +1,20 @@
 
+    Clazz.Base    = Base;
+    Clazz.Factory = Factory;
+    Clazz.Manager = Manager;
+
+    Clazz.Meta = {
+        Clazz: new Meta({
+            constants:        ConstantsProcessor,
+            clazz_properties: PropertiesProcessor,
+            clazz_methods:    MethodsProcessor
+        }),
+        Object: new Meta({
+            properties:       PropertiesProcessor,
+            methods:          MethodsProcessor
+        })
+    }
+
     global.Clazz = Clazz;
 
 })(this, Meta);
