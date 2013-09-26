@@ -87,6 +87,8 @@ var Factory = {
         clazz.NAME   = name || this.generateName();
         clazz.parent = parent;
 
+        clazz.prototype = Object.create(parent.prototype);
+
         clazz.prototype.clazz  = clazz;
         clazz.prototype.parent = parent.prototype;
 
