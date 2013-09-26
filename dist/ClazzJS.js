@@ -130,8 +130,8 @@ var Manager = {
     },
 
     setClazz: function(name, clazz) {
-        if (!(clazz instanceof Base)) {
-            throw new Error('Clazz must be instance of "Base" clazz!');
+        if (typeof clazz !== 'function') {
+            throw new Error('Clazz must be a function!');
         }
         this._clazz[name] = clazz;
         return this;
