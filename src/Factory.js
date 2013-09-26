@@ -48,7 +48,7 @@ var Factory = {
         }
 
         if (meta) {
-            Clazz.Meta.Class.process(clazz, meta);
+            Clazz.Meta.Clazz.process(clazz, meta);
             Clazz.Meta.Object.process(clazz.prototype, meta);
         }
         return clazz;
