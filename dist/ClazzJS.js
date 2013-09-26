@@ -122,7 +122,7 @@ var Manager = {
         if (!(name in this._clazz)) {
             throw new Error('Clazz does not exists for "' + name + '"!');
         }
-        return this._apis[name];
+        return this._clazz[name];
     },
 
     hasClazz: function(name) {
