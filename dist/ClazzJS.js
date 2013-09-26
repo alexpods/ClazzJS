@@ -407,7 +407,7 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
 
         if (typeof property !== 'undefined') {
             setters = [];
-            if (allSetters[property].length) {
+            if (property in allSetters && allSetters[property].length) {
 
                 allSetters[property].sort(function(s1, s2) {
                     return s2[0] - s1[0];
@@ -458,7 +458,7 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
 
         if (typeof property !== 'undefined') {
             getters = [];
-            if (allGetters[property].length) {
+            if (property in allGetters && allGetters[property].length) {
 
                 allGetters[property].sort(function(s1, s2) {
                     return s2[0] - s1[0];
