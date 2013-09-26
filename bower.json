@@ -1,0 +1,13 @@
+{
+    "name": "ClazzJS",
+    "version": "0.0.0",
+    "ignore": [
+        "node_modules",
+        "Gruntfile.js",
+        "package.json",
+        "bower.json"
+    ],
+    "dependencies": {
+        "MetaJS":    "~0.1.1"
+    }
+}

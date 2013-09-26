@@ -1,0 +1,29 @@
+{
+  "name": "clazz-js",
+  "title": "ClazzJS",
+  "version": "0.0.0",
+  "description": "Portable JavaScript library for class-style OOP programming",
+  "author": {
+    "name":  "Aleksey Podskrebyshev (Alex Pods)",
+    "email": "aleksey.podskrebyshev@gmail.com",
+    "url":   "http://alexpods.com"
+  },
+  "keywords": [
+      "oop",
+      "class",
+      "inheritance",
+      "encapsulation",
+      "polymorphism"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url":  "http://github.com/alexpods/ClazzJS.git"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-uglify": "~0.2.4"
+  },
+  "readmeFilename": "README.md"
+}
