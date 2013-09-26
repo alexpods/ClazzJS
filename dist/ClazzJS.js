@@ -74,7 +74,7 @@ var Factory = {
 
         // Copy all parent methods and initialize properties
         for (var property in parent) {
-            if (typeof property === 'function') {
+            if (typeof parent[property] === 'function') {
                 clazz[property] = parent[property];
             }
             else if (property[0] === '_') {
@@ -256,7 +256,7 @@ var PropertiesInitProcessor = function(object, properties) {
     for (var property in properties) {
         object['_' + property] = undefined;
     }
-    
+
 }
 var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
 
