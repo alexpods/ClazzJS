@@ -140,7 +140,7 @@ var Manager = {
     get: function(name) {
         if (!this.hasClazz(name)) {
             var meta = this.getMeta(name);
-            this.setClazz(Factory.create(name, meta[0], meta[1]));
+            this.setClazz(name, Factory.create(name, meta[0], meta[1]));
         }
         return this.getClazz(name);
     },
