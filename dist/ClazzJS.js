@@ -391,7 +391,7 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
     },
 
     __getSetters: function(property) {
-        var setters, prop, allSetters = {}, parent = this;
+        var setters, prop, allSetters = {}, parent = this.clazz.prototype;
 
         while (parent) {
             if (parent.hasOwnProperty('__setters')) {
@@ -442,7 +442,7 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
     },
 
     __getGetters: function(property) {
-        var getters, allGetters = {}, parent = this;
+        var getters, allGetters = {}, parent = this.clazz.prototype;
 
         while (parent) {
             if (parent.hasOwnProperty('__getters')) {
