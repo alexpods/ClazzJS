@@ -1,6 +1,6 @@
 var Base = function() {
     if (typeof this.init === 'function') {
-        this.init.apply(this, Array.prototype.toString.apply(arguments));
+        this.init.apply(this, Array.prototype.slice.call(arguments));
     }
 }
 
