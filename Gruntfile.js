@@ -14,12 +14,14 @@ module.exports = function(grunt) {
                     "src/.prefix",
 
                     "src/Clazz.js",
+                    "src/NameSpace.js",
                     "src/Base.js",
                     "src/Factory.js",
                     "src/Manager.js",
 
                     "src/MetaProcessors/*.js",
 
+                    "src/.build",
                     "src/.suffix"
                 ]
             }

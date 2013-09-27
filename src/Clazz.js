@@ -1,8 +1,9 @@
 var Clazz = function(name, parent, meta) {
+    var clazz;
 
     // If called as constructor - creates new clazz object.
     if (this instanceof Clazz) {
-        var clazz = Manager.get(name);
+        clazz = Manager.get(name);
         return clazz.create.apply(clazz, Array.prototype.slice.call(arguments, 1));
     }
     else {
@@ -11,8 +12,14 @@ var Clazz = function(name, parent, meta) {
                 meta = name;
                 name = null;
             }
-            // If only name is specified - returns entity clazz.
-            return name ? Manager.get(name) : Factory.create(meta);
+
+            if (!name) {
+                clazz = Factory.create(meta);
+                name  = clazz.NAME;
+                Manager.setClazz(name, clazz);
+            }
+
+            return Manager.get(name);
         }
         // If name and some meta data are specified - save meta.
         // Class will be created on demand (lazy load).

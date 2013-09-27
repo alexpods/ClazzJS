@@ -2,10 +2,11 @@
 
 
 var Clazz = function(name, parent, meta) {
+    var clazz;
 
     // If called as constructor - creates new clazz object.
     if (this instanceof Clazz) {
-        var clazz = Manager.get(name);
+        clazz = Manager.get(name);
         return clazz.create.apply(clazz, Array.prototype.slice.call(arguments, 1));
     }
     else {
@@ -14,8 +15,14 @@ var Clazz = function(name, parent, meta) {
                 meta = name;
                 name = null;
             }
-            // If only name is specified - returns entity clazz.
-            return name ? Manager.get(name) : Factory.create(meta);
+
+            if (!name) {
+                clazz = Factory.create(meta);
+                name  = clazz.NAME;
+                Manager.setClazz(name, clazz);
+            }
+
+            return Manager.get(name);
         }
         // If name and some meta data are specified - save meta.
         // Class will be created on demand (lazy load).
@@ -23,6 +30,35 @@ var Clazz = function(name, parent, meta) {
             Manager.setMeta(name, parent, meta);
         }
     }
+}
+var NameSpace = function(namespace) {
+    if (NameSpace.current() === namespace) {
+        return;
+    }
+    NameSpace._stack.push(namespace);
+}
+
+NameSpace.GLOBAL     = 'GLOBAL';
+NameSpace.DELIMITERS = /(\\|\/|\||\.|_|\-)/;
+
+NameSpace._stack = [];
+
+NameSpace.end = function() {
+    NameSpace._stack.pop();
+}
+
+NameSpace.current = function() {
+    return NameSpace._stack[NameSpace._stack.length - 1] || NameSpace.GLOBAL;
+}
+
+NameSpace.whereLookFor = function() {
+    var current = NameSpace.current(), lookfor = [current];
+
+    if (current !== NameSpace.GLOBAL) {
+        lookfor.push(NameSpace.GLOBAL);
+    }
+
+    return lookfor;
 }
 var Base = function() {
     if (typeof this.init === 'function') {
@@ -130,28 +166,66 @@ var Manager = {
     },
 
     getMeta: function(name) {
-        if (!(name in this._meta)) {
+        if (!(this.hasMeta(name))) {
             throw new Error('Meta does not exists for "' + name + '"!');
         }
         return this._meta[name];
     },
 
     getClazz: function(name) {
-        if (!(name in this._clazz)) {
-            throw new Error('Clazz does not exists for "' + name + '"!');
+        var clazz, part, parts, namespaces = NameSpace.whereLookFor();
+
+        for (var i = 0, ii = namespaces.length; i < ii; ++i) {
+            clazz = this._clazz;
+            parts = (namespaces[i] + '.' + name).split(NameSpace.DELIMITERS)
+
+            for (part in parts) {
+                if (!(part in clazz)) {
+                    break;
+                }
+                clazz = clazz[part];
+            }
+
         }
-        return this._clazz[name];
+        if (typeof clazz !== 'function') {
+            throw new Error('Clazz "' + name + '" does not exists!');
+        }
+
+        return clazz;
     },
 
     hasClazz: function(name) {
-        return name in this._clazz;
+        var clazz, part, parts, namespaces = NameSpace.whereLookFor();
+
+        for (var i = 0, ii = namespaces.length; i < ii; ++i) {
+            clazz = this._clazz;
+            parts = (namespaces[i] + '.' + name).split(NameSpace.DELIMITERS)
+
+            for (part in parts) {
+                if (!(part in clazz)) {
+                    break;
+                }
+                clazz = clazz[part];
+            }
+
+        }
+        return typeof clazz === 'function';
     },
 
     setClazz: function(name, clazz) {
         if (typeof clazz !== 'function') {
             throw new Error('Clazz must be a function!');
         }
-        this._clazz[name] = clazz;
+        var part, parts = (NameSpace.current() + '.' + name).split(NameSpace.DELIMITERS), name = parts.pop(), container = this._clazz;
+
+        for (part in parts) {
+            if (typeof container[part] === 'undefined') {
+                container[part] = {};
+            }
+            container = container[part];
+        }
+        container[name] = clazz;
+
         return this;
     },
 
@@ -634,22 +708,23 @@ var PropertiesProcessor = new Meta.Processor.Chain({
 
 })
 
-    Clazz.Base    = Base;
-    Clazz.Factory = Factory;
-    Clazz.Manager = Manager;
+Clazz.Base    = Base;
+Clazz.Factory = Factory;
+Clazz.Manager = Manager;
 
-    Clazz.Meta = {
-        Clazz: new Meta({
-            constants:        ConstantsProcessor,
-            clazz_properties: PropertiesProcessor,
-            clazz_methods:    MethodsProcessor
-        }),
-        Object: new Meta({
-            properties:       PropertiesProcessor,
-            methods:          MethodsProcessor
-        })
-    }
+Clazz.Meta = {
+    Clazz: new Meta({
+        constants:        ConstantsProcessor,
+        clazz_properties: PropertiesProcessor,
+        clazz_methods:    MethodsProcessor
+    }),
+    Object: new Meta({
+        properties:       PropertiesProcessor,
+        methods:          MethodsProcessor
+    })
+}
 
-    global.Clazz = Clazz;
+global.NameSpace = NameSpace;
+global.Clazz     = Clazz;
 
 })(this, Meta);

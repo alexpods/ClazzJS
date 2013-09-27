@@ -17,28 +17,66 @@ var Manager = {
     },
 
     getMeta: function(name) {
-        if (!(name in this._meta)) {
+        if (!(this.hasMeta(name))) {
             throw new Error('Meta does not exists for "' + name + '"!');
         }
         return this._meta[name];
     },
 
     getClazz: function(name) {
-        if (!(name in this._clazz)) {
-            throw new Error('Clazz does not exists for "' + name + '"!');
+        var clazz, part, parts, namespaces = NameSpace.whereLookFor();
+
+        for (var i = 0, ii = namespaces.length; i < ii; ++i) {
+            clazz = this._clazz;
+            parts = (namespaces[i] + '.' + name).split(NameSpace.DELIMITERS)
+
+            for (part in parts) {
+                if (!(part in clazz)) {
+                    break;
+                }
+                clazz = clazz[part];
+            }
+
         }
-        return this._clazz[name];
+        if (typeof clazz !== 'function') {
+            throw new Error('Clazz "' + name + '" does not exists!');
+        }
+
+        return clazz;
     },
 
     hasClazz: function(name) {
-        return name in this._clazz;
+        var clazz, part, parts, namespaces = NameSpace.whereLookFor();
+
+        for (var i = 0, ii = namespaces.length; i < ii; ++i) {
+            clazz = this._clazz;
+            parts = (namespaces[i] + '.' + name).split(NameSpace.DELIMITERS)
+
+            for (part in parts) {
+                if (!(part in clazz)) {
+                    break;
+                }
+                clazz = clazz[part];
+            }
+
+        }
+        return typeof clazz === 'function';
     },
 
     setClazz: function(name, clazz) {
         if (typeof clazz !== 'function') {
             throw new Error('Clazz must be a function!');
         }
-        this._clazz[name] = clazz;
+        var part, parts = (NameSpace.current() + '.' + name).split(NameSpace.DELIMITERS), name = parts.pop(), container = this._clazz;
+
+        for (part in parts) {
+            if (typeof container[part] === 'undefined') {
+                container[part] = {};
+            }
+            container = container[part];
+        }
+        container[name] = clazz;
+
         return this;
     },
 
