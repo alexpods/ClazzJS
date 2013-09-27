@@ -26,7 +26,11 @@ var Factory = {
         }
 
         var clazz = function () {
-            parent.apply(this, Array.prototype.slice.call(arguments));
+            var response = parent.apply(this, Array.prototype.slice.call(arguments));
+
+            if (typeof response !== 'undefined') {
+                return response;
+            }
         }
 
         // Copy all parent methods and initialize properties

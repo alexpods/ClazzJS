@@ -62,7 +62,11 @@ NameSpace.whereLookFor = function() {
 }
 var Base = function() {
     if (typeof this.init === 'function') {
-        this.init.apply(this, Array.prototype.slice.call(arguments));
+        var response = this.init.apply(this, Array.prototype.slice.call(arguments));
+
+        if (typeof response !== 'undefined') {
+            return response;
+        }
     }
 }
 
@@ -107,7 +111,11 @@ var Factory = {
         }
 
         var clazz = function () {
-            parent.apply(this, Array.prototype.slice.call(arguments));
+            var response = parent.apply(this, Array.prototype.slice.call(arguments));
+
+            if (typeof response !== 'undefined') {
+                return response;
+            }
         }
 
         // Copy all parent methods and initialize properties

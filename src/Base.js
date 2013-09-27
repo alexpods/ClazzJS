@@ -1,6 +1,10 @@
 var Base = function() {
     if (typeof this.init === 'function') {
-        this.init.apply(this, Array.prototype.slice.call(arguments));
+        var response = this.init.apply(this, Array.prototype.slice.call(arguments));
+
+        if (typeof response !== 'undefined') {
+            return response;
+        }
     }
 }
 
