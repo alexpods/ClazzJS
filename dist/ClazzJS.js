@@ -214,8 +214,8 @@ var Manager = {
             for (i = 0, ii = clazz.length; i < ii; ++i) {
 
                 isFound = true;
-                for (j = 0, jj = clazz.DEPENDENCIES.length; j < jj; ++j) {
-                    if (clazz.DEPENDENCIES[j] !== dependencies[j]) {
+                for (j = 0, jj = clazz[i].DEPENDENCIES.length; j < jj; ++j) {
+                    if (clazz[i].DEPENDENCIES[j] !== dependencies[j]) {
                         isFound = false;
                         break;
                     }
@@ -252,8 +252,8 @@ var Manager = {
             for (i = 0, ii = clazz.length; i < ii; ++i) {
 
                 isFound = true;
-                for (j = 0, jj = clazz.DEPENDENCIES.length; j < jj; ++j) {
-                    if (clazz.DEPENDENCIES[j] !== dependencies[j]) {
+                for (j = 0, jj = clazz[i].DEPENDENCIES.length; j < jj; ++j) {
+                    if (clazz[i].DEPENDENCIES[j] !== dependencies[j]) {
                         isFound = false;
                         break;
                     }
