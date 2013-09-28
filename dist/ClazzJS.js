@@ -22,12 +22,12 @@ var Clazz = function() {
 
     if (meta) {
         if (!name) {
-            return Factory.create(name, parent, meta, Array.prototype.slice.apply(arguments, arguments.length - 1));
+            return Factory.create(name, parent, meta, Array.prototype.slice.call(arguments, arguments.length - 1));
         }
         Manager.setMeta(name, parent, meta);
     }
     else {
-        return Manager.get(name, Array.prototype.slice.apply(arguments, 1));
+        return Manager.get(name, Array.prototype.slice.call(arguments, 1));
     }
 }
 var NameSpace = function(namespace) {
