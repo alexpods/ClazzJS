@@ -12,7 +12,7 @@ var Clazz = function() {
         name = first;
     }
 
-    if (typeof second === 'object' && second.prototype instanceof Base) {
+    if ((typeof second === 'string') || (typeof second === 'object' && second.prototype instanceof Base)) {
         parent = second;
     }
 
