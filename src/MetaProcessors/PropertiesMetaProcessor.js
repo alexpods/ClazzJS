@@ -10,18 +10,24 @@ var PropertiesMetaProcessor = {
 
         type: {
             process: function(object, type, option, property) {
-                if (Object.prototype.toString.apply(type) !== '[object Array]') {
-                    type = [type, {}];
+                var self = this, params = {};
+                if (Object.prototype.toString.apply(type) === '[object Array]') {
+                    params = type[1];
+                    type   = type[0];
                 }
-                if (!(type[0] in this.TYPES)) {
-                    throw new Error('Unsupported property type "' + type[0] + '"!');
+                if (!(type in this.TYPES)) {
+                    throw new Error('Unsupported property type "' + type + '"!');
                 }
 
-                var typer = this.TYPES[type[0]];
+                object.__setProperty(property, 'type',  type);
 
                 object.__addSetter(property, function(value) {
-                    return typer.call(object, value, type[1]);
+                    return self.checkValue(value, type, params);
                 });
+            },
+
+            checkValue: function(value, type, params) {
+                return this.TYPES[type].call(this, value, params);
             },
 
             TYPES: {
@@ -53,16 +59,45 @@ var PropertiesMetaProcessor = {
                 },
                 array: function(value, params) {
                     return typeof value === 'string' ? value.split(params['delimiter'] || ',') : [].concat(value);
+                },
+                hash: function(value, params) {
+                    if ({}.constructor !== value.constructor) {
+                        throw new Error('Incorrect value: not hash type!');
+                    }
+                    if ('keys' in params) {
+                        for (var prop in value) {
+                            if (!(prop in params.keys)) {
+                                throw new Error('Unsupported hash key "' + prop + '"!');
+                            }
+                        }
+                    }
+                    if ('element' in params) {
+                        this.checkValue.apply(this, [].concat(params.element));
+                    }
+                    return value;
                 }
             }
         },
 
-        default: function(object, defaultValue, option, property) {
-            if (typeof defaultValue === 'function') {
-                defaultValue = defaultValue();
-            }
+        default: {
+            process: function(object, defaultValue, option, property) {
+                var type;
 
-            this.__setDefault(property, defaultValue);
+                if (typeof defaultValue === 'function') {
+                    defaultValue = defaultValue();
+                }
+
+                if (typeof defaultValue === 'undefined' && (type = object.__getProperty(property, 'type'))) {
+                    defaultValue = this.DEFAULTS[type]
+                }
+
+                this.__setProperty(property, 'default', defaultValue);
+            },
+
+            DEFAULTS: {
+                hash:  {},
+                array: []
+            }
         },
 
         methods: {
@@ -85,41 +120,40 @@ var PropertiesMetaProcessor = {
                 if (!(name in this.METHODS)) {
                     throw new Error('Unsupported method "' + name + '"!');
                 }
-                return this.METHODS[name](property);
+                var method = this.METHODS[name](property);
+
+                if (typeof method === 'function') {
+                    method = {
+                        name: name + property[0].toUpperCase() + property.slice(1),
+                        body: method
+                    }
+                }
+                return method;
             },
 
             METHODS: {
                 get: function(property) {
-                    return {
-                        name:   'get' + property[0].toUpperCase() + property.slice(1),
-                        body: function() {
-                            return this.__getProperty(property);
-                        }
+                    return function() {
+                        return this.__getPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
                     }
                 },
                 set: function(property) {
-                    return {
-                        name:   'set' + property[0].toUpperCase() + property.slice(1),
-                        body: function(value) {
-                            return this.__setProperty(property, value);
-                        }
+                    return function(value) {
+                        return this.__setPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
                     }
                 },
                 is: function(property) {
                     return {
                         name: (0 !== property.indexOf('is') ? 'is' : '') + property[0].toUpperCase() + property.slice(1),
-                        body: function(value) {
-                            return this.__isProperty(property, value);
+                        body: function() {
+                            return this.__isPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
                         }
                     }
                 },
-                isEmpty: function(property) {
-                    return {
-                        name: (0 !== property.indexOf('isEmpty') ? 'isEmpty' : '') + property[0].toUpperCase() + property.slice(1),
-                        body: function() {
-                            return this.__isEmptyProperty(property);
-                        }
-                    }
+                has: function(property) {
+                      return function() {
+                          return this.__hasPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
+                      }
                 }
             }
         },

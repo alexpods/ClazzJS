@@ -1,9 +1,9 @@
 var PropertiesDefaultsProcessor = function(object) {
 
-    var property, defaults = object.getDefaults();
+    var property, datas = object.__getProperties();
 
-    for (property in defaults) {
-        object['_' + property] = defaults[property];
+    for (property in datas) {
+        object['_' + property] = datas[property].default;
     }
 
 }

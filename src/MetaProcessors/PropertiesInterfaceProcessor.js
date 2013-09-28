@@ -2,88 +2,46 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
 
     __setters: {},
     __getters: {},
-    __defaults: {},
+
+    __properties: {},
 
     init: function(data) {
         this.__setData(data);
     },
 
-    __adjustPropertyName: function(name) {
-        return name.replace(/(?:_)\w/, function (match) { return match[1].toUpperCase(); });
-    },
-
-    __getDefaults: function() {
-        var defaults = {}, parent = this;
-
-        while (parent) {
-            if (parent.hasOwnProperty('__defaults')) {
-                for (var prop in parent.__defaults) {
-                    if (!(prop in defaults)) {
-                        defaults[prop] = parent.__defaults[prop];
-                    }
-                }
-            }
-
-            parent = parent.parent;
-        }
-        return defaults
-    },
-
-    __getDefault: function(property) {
-        var defaults = this.__getDefaults();
-        return property in defaults ? defaults[property] : undefined;
-    },
-
-    __setDefault: function(property, value) {
-        this.__defaults[property] = value;
-    },
-
-    __hasDefault: function(property) {
-        return property in this.__getDefaults();
-    },
-
-    __setData: function(data) {
-        for (var property in data) {
-            if (!this.__hasProperty(property)) {
-                continue;
-            }
-            this.__setProperty(property, data[property]);
+    __setProperties: function(properties) {
+        for (var property in properties) {
+            this.__setProperty(property, properties[property]);
         }
         return this;
     },
 
-    __getProperty: function(property) {
-        property = this.__adjustPropertyName(property);
-
-        if (!this.__hasProperty(property)) {
-            throw new Error('Can\'t get! Property "' + property + '" does not exists!');
-        }
-
-        var value = this['_' + property], getters = this.__getGetters(property);
-
-        for (var name in getters) {
-            value = getters[name].call(this, value);
-        }
-
-        return value;
+    __getProperties: function() {
+        return this.__properties;
     },
 
-    __setProperty: function(property, value) {
+    __setProperty: function(property, key, value) {
         property = this.__adjustPropertyName(property);
 
-        if (!this.__hasProperty(property)) {
-            throw new Error('Can\'t set! Property "' + property + '" does not exists!');
+        if (typeof this.__properties[property] === 'undefined') {
+            this.__properties[property] = {};
         }
-
-        var setters = this.__getSetters(property);
-
-        for (var name in setters) {
-            value = setters[name].call(this, value);
+        if ({}.constructor === key.constructor) {
+            for (var prop in key) {
+                this.__properties[property][prop] = key[prop];
+            }
         }
-
-        this['_' + property] = value;
+        else {
+            this.__properties[property][key] = value;
+        }
 
         return this;
+    },
+
+    __getProperty: function(property, key) {
+        return typeof key === 'undefined'
+            ? this.__properties[property]
+            : this.__properties[property] && this.__properties[property][key];
     },
 
     __hasProperty: function(property) {
@@ -92,15 +50,103 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
         return ('_' + property) in this && typeof this['_' + property] !== 'function';
     },
 
-    __isProperty: function(property, value) {
-        return typeof value !== 'undefined' ? value == this.__getProperty(property) : Boolean(this.__getProperty(property));
+    __adjustPropertyName: function(name) {
+        return name.replace(/(?:_)\w/, function (match) { return match[1].toUpperCase(); });
     },
 
-    __isEmptyProperty: function(property) {
-        var value = this.__getProperty(property);
+    __setData: function(data) {
+        for (var property in data) {
+            if (!this.__hasProperty(property)) {
+                continue;
+            }
+            this.__setPropertyValue(property, data[property]);
+        }
+        return this;
+    },
+
+    __getPropertyValue: function(property /*, fields... */) {
+        var getters, i, ii, name, value;
+
+        property = this.__adjustPropertyName(property);
+
+        if (!this.__hasProperty(property)) {
+            throw new Error('Can\'t get! Property "' + property + '" does not exists!');
+        }
+
+        value = this['_' + property];
+
+        getters = this.__getGetters(property);
+
+        for (name in getters) {
+            value = getters[name].call(this, value);
+        }
+
+        var fields = Object.prototype.toString.apply(arguments[2]) === '[object Array]'
+            ? arguments[2]
+            : Array.prototype.slice.call(arguments, 1, -1);
+
+        for (i = 0, ii = fields.length; i < ii; ++i) {
+            value = value[fields[i]];
+        }
+
+        return value;
+    },
+
+    __setPropertyValue: function(property /* fields... , value */) {
+        var setters, i, ii, name, fields, value, setValue = arguments[arguments.length - 1];
+
+        property = this.__adjustPropertyName(property);
+
+        if (!this.__hasProperty(property)) {
+            throw new Error('Can\'t set! Property "' + property + '" does not exists!');
+        }
+
+        fields  = Object.prototype.toString.apply(arguments[2]) === '[object Array]'
+            ? arguments[2]
+            : Array.prototype.slice.call(arguments, 1, -1);
+
+        if (fields && fields.length) {
+            value = this['_' + property];
+            for (i = 0, ii = fields.length - 1; i < ii; ++i) {
+                value = value[fields[i]];
+            }
+            value[fields[i]] = setValue;
+        }
+        else {
+            value = setValue;
+        }
+
+        setters = this.__getSetters(property);
+
+        for (name in setters) {
+            value = setters[name].call(this, value);
+        }
+
+        this['_' + property] = value;
+
+        return this;
+    },
+
+    __isPropertyValue: function(property /* fields... , value */) {
+        var fields = Object.prototype.toString.apply(arguments[2]) === '[object Array]'
+                ? arguments[2]
+                : Array.prototype.slice.call(arguments, 1, -1);
+
+        var value   = this.__getPropertyValue(property, fields);
+        var compare = arguments[arguments.length - 1];
+
+        return typeof value !== 'undefined' ? value == compare : !!value;
+    },
+
+    __hasPropertyValue: function(property /*, fields... */) {
+        var fields = Object.prototype.toString.apply(arguments[2]) === '[object Array]'
+            ? arguments[2]
+            : Array.prototype.slice.call(arguments, 1, -1);
+
+        var value = this.__getPropertyValue(property, fields);
 
         if (Object.prototype.toString.apply(value) === '[object Object]') {
-            for (var prop in value) {
+            for (var p in value) {
                 return true;
             }
             return false;
@@ -129,18 +175,17 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
     },
 
     __getSetters: function(property) {
-        var setters, prop, allSetters = {}, parent = this.clazz.prototype;
+        var i, ii, setters, prop, allSetters = {}, parent = this.clazz.prototype;
 
         while (parent) {
             if (parent.hasOwnProperty('__setters')) {
-                for (var prop in parent.__setters) {
+                for (prop in parent.__setters) {
                     if (!(prop in allSetters)) {
                         allSetters[prop] = parent.__setters[prop];
                     }
                 }
             }
-
-                parent = parent.parent;
+            parent = parent.parent;
         }
 
         if (typeof property !== 'undefined') {
@@ -151,7 +196,7 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
                     return s2[0] - s1[0];
                 });
 
-                for (var i = 0, ii = allSetters[property].length; i < ii; ++i) {
+                for (i = 0, ii = allSetters[property].length; i < ii; ++i) {
                     setters.push(allSetters[property][i][1]);
                 }
             }
@@ -180,11 +225,11 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
     },
 
     __getGetters: function(property) {
-        var getters, allGetters = {}, parent = this.clazz.prototype;
+        var i, ii, prop, getters, allGetters = {}, parent = this.clazz.prototype;
 
         while (parent) {
             if (parent.hasOwnProperty('__getters')) {
-                for (var prop in parent.__getters) {
+                for (prop in parent.__getters) {
                     if (!(prop in allGetters)) {
                         allGetters[prop] = parent.__getters[prop];
                     }
@@ -202,7 +247,7 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
                     return s2[0] - s1[0];
                 });
 
-                for (var i = 0, ii = allGetters[property].length; i < ii; ++i) {
+                for (i = 0, ii = allGetters[property].length; i < ii; ++i) {
                     getters.push(allGetters[property][i][1]);
                 }
             }
