@@ -1,33 +1,33 @@
 ;(function(global, Meta, undefined) {
 
-var Clazz = function(name, parent, meta) {
-    var clazz;
 
-    // If called as constructor - creates new clazz object.
-    if (this instanceof Clazz) {
-        clazz = Manager.get(name);
-        return clazz.create.apply(clazz, Array.prototype.slice.call(arguments, 1));
+var Clazz = function() {
+    var name, parent, meta;
+
+    var first  = arguments[0];
+    var second = arguments[1];
+    var last   = arguments[arguments.length - 1];
+
+    if (typeof first === 'string') {
+        name = first;
+    }
+
+    if (typeof second === 'object' && second.prototype instanceof Base) {
+        parent = second;
+    }
+
+    if (last.constructor === {}.constructor || typeof last === 'function') {
+        meta = last;
+    }
+
+    if (meta) {
+        if (!name) {
+            return Factory.create(name, parent, meta, Array.prototype.slice.apply(arguments, arguments.length - 1));
+        }
+        Manager.setMeta(name, parent, meta);
     }
     else {
-        if (arguments.length == 1) {
-            if (typeof name === 'object') {
-                meta = name;
-                name = null;
-            }
-
-            if (!name) {
-                clazz = Factory.create(meta);
-                name  = clazz.NAME;
-                Manager.setClazz(name, clazz);
-            }
-
-            return Manager.get(name);
-        }
-        // If name and some meta data are specified - save meta.
-        // Class will be created on demand (lazy load).
-        else {
-            Manager.setMeta(name, parent, meta);
-        }
+        return Manager.get(name, Array.prototype.slice.apply(arguments, 1));
     }
 }
 var NameSpace = function(namespace) {
@@ -69,7 +69,9 @@ var Base = function() {
     }
 }
 
-Base.NAME   = '__BASE_CLAZZ__';
+Base.NAME         = '__BASE_CLAZZ__';
+Base.DEPENDENCIES = [];
+
 Base.parent = null;
 
 Base.create = function() {
@@ -88,20 +90,27 @@ var Factory = {
 
     _clazzUID: 0,
 
-    create: function(name, parent, meta) {
-        if (typeof meta === 'undefined') {
-            meta   = parent;
-            parent = null;
-        }
-        if (typeof meta === 'undefined') {
-            meta = name;
-            name = null;
-        }
+    create: function(name, parent, meta, dependencies) {
         if (typeof parent === 'string') {
             parent = Manager.get(parent);
         }
+        if (typeof dependencies === 'undefined') {
+            dependencies = [];
+        }
 
-        return this.processMeta(this.createClazz(name, parent), meta);
+        var clazz = this.createClazz(name, parent)
+
+        clazz.DEPENDENCIES = dependencies;
+
+        if (typeof meta === 'function') {
+            meta = meta.apply(clazz, dependencies);
+        }
+
+        if (meta) {
+            this.processMeta(clazz, meta);
+        }
+
+        return clazz;
     },
 
     createClazz: function(name, parent) {
@@ -179,8 +188,8 @@ var Manager = {
         return this._meta[name];
     },
 
-    getClazz: function(name) {
-        var clazz, part, parts, namespaces = NameSpace.whereLookFor();
+    getClazz: function(name, dependencies) {
+        var i, ii, j, jj, isFound, clazz, part, parts, namespaces = NameSpace.whereLookFor();
 
         for (var i = 0, ii = namespaces.length; i < ii; ++i) {
             clazz = this._clazz;
@@ -192,19 +201,35 @@ var Manager = {
                 }
                 clazz = clazz[part];
             }
-
-        }
-        if (typeof clazz !== 'function') {
-            throw new Error('Clazz "' + name + '" does not exists!');
         }
 
-        return clazz;
+        if (Object.prototype.toString.apply(clazz) === '[object Array]') {
+            if (!dependencies) {
+                dependencies = [];
+            }
+            for (i = 0, ii = clazz.length; i < ii; ++i) {
+
+                isFound = true;
+                for (j = 0, jj = clazz.DEPENDENCIES.length; j < jj; ++j) {
+                    if (clazz.DEPENDENCIES[j] !== dependencies[j]) {
+                        isFound = false;
+                        break;
+                    }
+                }
+
+                if (isFound) {
+                    return clazz[i];
+                }
+            }
+        }
+
+        throw new Error('Clazz "' + name + '" does not exists!');
     },
 
-    hasClazz: function(name) {
-        var clazz, part, parts, namespaces = NameSpace.whereLookFor();
+    hasClazz: function(name, dependencies) {
+        var i, ii, j, jj, isFound, clazz, part, parts, namespaces = NameSpace.whereLookFor();
 
-        for (var i = 0, ii = namespaces.length; i < ii; ++i) {
+        for (i = 0, ii = namespaces.length; i < ii; ++i) {
             clazz = this._clazz;
             parts = (namespaces[i] + '.' + name).split(NameSpace.DELIMITERS)
 
@@ -214,12 +239,35 @@ var Manager = {
                 }
                 clazz = clazz[part];
             }
-
         }
-        return typeof clazz === 'function';
+
+        if (Object.prototype.toString.apply(clazz) === '[object Array]') {
+            if (!dependencies) {
+                return true;
+            }
+            for (i = 0, ii = clazz.length; i < ii; ++i) {
+
+                isFound = true;
+                for (j = 0, jj = clazz.DEPENDENCIES.length; j < jj; ++j) {
+                    if (clazz.DEPENDENCIES[j] !== dependencies[j]) {
+                        isFound = false;
+                        break;
+                    }
+                }
+
+                if (isFound) {
+                    return true;
+                }
+            }
+        }
+        return false;
     },
 
     setClazz: function(name, clazz) {
+        if (typeof name === 'function') {
+            clazz = name;
+            name  = clazz.NAME;
+        }
         if (typeof clazz !== 'function') {
             throw new Error('Clazz must be a function!');
         }
@@ -231,17 +279,21 @@ var Manager = {
             }
             container = container[part];
         }
-        container[name] = clazz;
+        if (!(name in container)) {
+            container[name] = [];
+        }
+        container[name].push(clazz);
 
         return this;
     },
 
-    get: function(name) {
-        if (!this.hasClazz(name)) {
+    get: function(name , dependencies) {
+
+        if (!this.hasClazz(name, dependencies)) {
             var meta = this.getMeta(name);
-            this.setClazz(name, Factory.create(name, meta[0], meta[1]));
+            this.setClazz(name, Factory.create(name, meta[0], meta[1], dependencies));
         }
-        return this.getClazz(name);
+        return this.getClazz(name, dependencies);
     },
 
     has: function(name) {
