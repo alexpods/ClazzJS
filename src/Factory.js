@@ -4,20 +4,27 @@ var Factory = {
 
     _clazzUID: 0,
 
-    create: function(name, parent, meta) {
-        if (typeof meta === 'undefined') {
-            meta   = parent;
-            parent = null;
-        }
-        if (typeof meta === 'undefined') {
-            meta = name;
-            name = null;
-        }
+    create: function(name, parent, meta, dependencies) {
         if (typeof parent === 'string') {
             parent = Manager.get(parent);
         }
+        if (typeof dependencies === 'undefined') {
+            dependencies = [];
+        }
 
-        return this.processMeta(this.createClazz(name, parent), meta);
+        var clazz = this.createClazz(name, parent)
+
+        clazz.DEPENDENCIES = dependencies;
+
+        if (typeof meta === 'function') {
+            meta = meta.apply(clazz, dependencies);
+        }
+
+        if (meta) {
+            this.processMeta(clazz, meta);
+        }
+
+        return clazz;
     },
 
     createClazz: function(name, parent) {

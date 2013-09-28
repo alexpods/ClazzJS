@@ -8,7 +8,9 @@ var Base = function() {
     }
 }
 
-Base.NAME   = '__BASE_CLAZZ__';
+Base.NAME         = '__BASE_CLAZZ__';
+Base.DEPENDENCIES = [];
+
 Base.parent = null;
 
 Base.create = function() {

@@ -1,30 +1,29 @@
-var Clazz = function(name, parent, meta) {
-    var clazz;
+var Clazz = function() {
+    var name, parent, meta;
 
-    // If called as constructor - creates new clazz object.
-    if (this instanceof Clazz) {
-        clazz = Manager.get(name);
-        return clazz.create.apply(clazz, Array.prototype.slice.call(arguments, 1));
+    var first  = arguments[0];
+    var second = arguments[1];
+    var last   = arguments[arguments.length - 1];
+
+    if (typeof first === 'string') {
+        name = first;
+    }
+
+    if (typeof second === 'object' && second.prototype instanceof Base) {
+        parent = second;
+    }
+
+    if (last.constructor === {}.constructor || typeof last === 'function') {
+        meta = last;
+    }
+
+    if (meta) {
+        if (!name) {
+            return Factory.create(name, parent, meta, Array.prototype.slice.apply(arguments, arguments.length - 1));
+        }
+        Manager.setMeta(name, parent, meta);
     }
     else {
-        if (arguments.length == 1) {
-            if (typeof name === 'object') {
-                meta = name;
-                name = null;
-            }
-
-            if (!name) {
-                clazz = Factory.create(meta);
-                name  = clazz.NAME;
-                Manager.setClazz(name, clazz);
-            }
-
-            return Manager.get(name);
-        }
-        // If name and some meta data are specified - save meta.
-        // Class will be created on demand (lazy load).
-        else {
-            Manager.setMeta(name, parent, meta);
-        }
+        return Manager.get(name, Array.prototype.slice.apply(arguments, 1));
     }
 }

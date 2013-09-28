@@ -1,6 +1,5 @@
 ;(function(global, Meta, undefined) {
 
-
 var Clazz = function(name, parent, meta) {
     var clazz;
 
