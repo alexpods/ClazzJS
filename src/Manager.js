@@ -28,13 +28,13 @@ var Manager = {
 
         for (var i = 0, ii = namespaces.length; i < ii; ++i) {
             clazz = this._clazz;
-            parts = (namespaces[i] + '.' + name).split(NameSpace.DELIMITERS)
+            parts = (namespaces[i] + '.' + name).split(NameSpace.getDelimitersRegexp())
 
-            for (part in parts) {
-                if (!(part in clazz)) {
+            for (i = 0, ii = parts.length; i < ii; ++i) {
+                if (!(parts[i] in clazz)) {
                     break;
                 }
-                clazz = clazz[part];
+                clazz = clazz[parts[i]];
             }
         }
 
@@ -66,13 +66,13 @@ var Manager = {
 
         for (i = 0, ii = namespaces.length; i < ii; ++i) {
             clazz = this._clazz;
-            parts = (namespaces[i] + '.' + name).split(NameSpace.DELIMITERS)
+            parts = (namespaces[i] + '.' + name).split(NameSpace.getDelimitersRegexp())
 
-            for (part in parts) {
-                if (!(part in clazz)) {
+            for (j = 0, jj = parts.length; j < jj; ++j) {
+                if (!(parts[j] in clazz)) {
                     break;
                 }
-                clazz = clazz[part];
+                clazz = clazz[parts[j]];
             }
         }
 
@@ -106,13 +106,13 @@ var Manager = {
         if (typeof clazz !== 'function') {
             throw new Error('Clazz must be a function!');
         }
-        var part, parts = (NameSpace.current() + '.' + name).split(NameSpace.DELIMITERS), name = parts.pop(), container = this._clazz;
+        var i, ii, parts = (NameSpace.current() + '.' + name).split(NameSpace.getDelimitersRegexp()), name = parts.pop(), container = this._clazz;
 
-        for (part in parts) {
-            if (typeof container[part] === 'undefined') {
-                container[part] = {};
+        for (i = 0, ii = parts.length; i < ii; ++i) {
+            if (typeof container[parts[i]] === 'undefined') {
+                container[parts[i]] = {};
             }
-            container = container[part];
+            container = container[parts[i]];
         }
         if (!(name in container)) {
             container[name] = [];

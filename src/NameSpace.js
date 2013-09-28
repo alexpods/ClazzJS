@@ -6,24 +6,28 @@ var NameSpace = function(namespace) {
 }
 
 NameSpace.GLOBAL     = 'GLOBAL';
-NameSpace.DELIMITERS = /(\\|\/|\||\.|_|\-)/;
+NameSpace.DELIMITERS = ['\\', '/', '_', '-', '.']
 
 NameSpace._stack = [];
 
 NameSpace.end = function() {
-    NameSpace._stack.pop();
+    this._stack.pop();
 }
 
 NameSpace.current = function() {
-    return NameSpace._stack[NameSpace._stack.length - 1] || NameSpace.GLOBAL;
+    return this._stack[this._stack.length - 1] || this.GLOBAL;
 }
 
 NameSpace.whereLookFor = function() {
-    var current = NameSpace.current(), lookfor = [current];
+    var current = this.current(), lookfor = [current];
 
-    if (current !== NameSpace.GLOBAL) {
-        lookfor.push(NameSpace.GLOBAL);
+    if (current !== this.GLOBAL) {
+        lookfor.push(this.GLOBAL);
     }
 
     return lookfor;
+}
+
+NameSpace.getDelimitersRegexp = function() {
+    return new RegExp('[\\' + this.DELIMITERS.join('\\') + ']');
 }
