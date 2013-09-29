@@ -3,38 +3,53 @@ var Manager = {
     _clazz: {},
     _meta: {},
 
+    adjustName: function(name, namespace) {
+        if (typeof namespace === 'undefined') {
+            namespace = NameSpace.current();
+        }
+        return (namespace+'.'+name).replace(NameSpace.getDelimitersRegexp(), '.');
+    },
+
     setMeta: function(name, parent, meta) {
         if (typeof meta === 'undefined') {
             meta   = parent;
             parent = undefined;
         }
-        this._meta[name] = [parent, meta];
+        this._meta[this.adjustName(name)] = [parent, meta];
+
         return this;
     },
 
     hasMeta: function(name) {
-        return name in this._meta;
+        var i, ii, namespaces = NameSpace.whereLookFor();
+
+        for (i = 0, ii = namespaces.length; i < ii; ++i) {
+            if (this.adjustName(name, namespaces[i]) in this._meta) {
+                return true;
+            }
+        }
+        return false;
     },
 
     getMeta: function(name) {
-        if (!(this.hasMeta(name))) {
-            throw new Error('Meta does not exists for "' + name + '"!');
+        var i, ii, aname, namespaces = NameSpace.whereLookFor();
+
+        for (i = 0, ii = namespaces.length; i < ii; ++i) {
+            aname = this.adjustName(name, namespaces[i]);
+            if (aname in this._meta) {
+                return this._meta[aname];
+            }
         }
-        return this._meta[name];
+        throw new Error('Meta does not exists for "' + name + '"!');
     },
 
     getClazz: function(name, dependencies) {
-        var i, ii, j, jj, isFound, clazz, part, parts, namespaces = NameSpace.whereLookFor();
+        var i, ii, j, jj, clazz, aname, namespaces = NameSpace.whereLookFor(), isFound;
 
-        for (var i = 0, ii = namespaces.length; i < ii; ++i) {
-            clazz = this._clazz;
-            parts = (namespaces[i] + '.' + name).split(NameSpace.getDelimitersRegexp())
-
-            for (i = 0, ii = parts.length; i < ii; ++i) {
-                if (!(parts[i] in clazz)) {
-                    break;
-                }
-                clazz = clazz[parts[i]];
+        for (i = 0, ii = namespaces.length; i < ii; ++i) {
+            aname = this.adjustName(name, namespaces[i]);
+            if (aname in this._clazz) {
+                clazz = this._clazz[name];
             }
         }
 
@@ -57,22 +72,16 @@ var Manager = {
                 }
             }
         }
-
         throw new Error('Clazz "' + name + '" does not exists!');
     },
 
     hasClazz: function(name, dependencies) {
-        var i, ii, j, jj, isFound, clazz, part, parts, namespaces = NameSpace.whereLookFor();
+        var i, ii, j, jj, clazz, aname, namespaces = NameSpace.whereLookFor(), isFound;
 
         for (i = 0, ii = namespaces.length; i < ii; ++i) {
-            clazz = this._clazz;
-            parts = (namespaces[i] + '.' + name).split(NameSpace.getDelimitersRegexp())
-
-            for (j = 0, jj = parts.length; j < jj; ++j) {
-                if (!(parts[j] in clazz)) {
-                    break;
-                }
-                clazz = clazz[parts[j]];
+            aname = this.adjustName(name, namespaces[i]);
+            if (aname in this._clazz) {
+                clazz = this._clazz[name];
             }
         }
 
@@ -106,18 +115,7 @@ var Manager = {
         if (typeof clazz !== 'function') {
             throw new Error('Clazz must be a function!');
         }
-        var i, ii, parts = (NameSpace.current() + '.' + name).split(NameSpace.getDelimitersRegexp()), name = parts.pop(), container = this._clazz;
-
-        for (i = 0, ii = parts.length; i < ii; ++i) {
-            if (typeof container[parts[i]] === 'undefined') {
-                container[parts[i]] = {};
-            }
-            container = container[parts[i]];
-        }
-        if (!(name in container)) {
-            container[name] = [];
-        }
-        container[name].push(clazz);
+        this._clazz[this.adjustName(name)] = clazz;
 
         return this;
     },
@@ -126,7 +124,7 @@ var Manager = {
 
         if (!this.hasClazz(name, dependencies)) {
             var meta = this.getMeta(name);
-            this.setClazz(name, Factory.create(name, meta[0], meta[1], dependencies));
+            this.setClazz(Factory.create(name, meta[0], meta[1], dependencies));
         }
         return this.getClazz(name, dependencies);
     },
