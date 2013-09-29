@@ -483,9 +483,9 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
             value = getters[name].call(this, value);
         }
 
-        var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
+        var fields = Object.prototype.toString.call(arguments[1]) === '[object Array]'
             ? arguments[1]
-            : Array.prototype.slice.call(arguments, 1, -1);
+            : Array.prototype.slice.call(arguments, 1);
 
         for (i = 0, ii = fields.length; i < ii; ++i) {
             value = value[fields[i]];
@@ -503,9 +503,9 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
             throw new Error('Can\'t set! Property "' + property + '" does not exists!');
         }
 
-        fields  = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
+        fields  = Object.prototype.toString.call(arguments[1]) === '[object Array]'
             ? arguments[1]
-            : Array.prototype.slice.call(arguments, 1, -1);
+            : Array.prototype.slice.call(arguments, 1);
 
         if (fields && fields.length) {
             value = this['_' + property];
@@ -532,7 +532,7 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
     __isPropertyValue: function(property /* fields... , value */) {
         var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
                 ? arguments[1]
-                : Array.prototype.slice.call(arguments, 1, -1);
+                : Array.prototype.slice.call(arguments, 1);
 
         var value   = this.__getPropertyValue(property, fields);
         var compare = arguments[arguments.length - 1];
@@ -543,7 +543,7 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
     __hasPropertyValue: function(property /*, fields... */) {
         var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
             ? arguments[1]
-            : Array.prototype.slice.call(arguments, 1, -1);
+            : Array.prototype.slice.call(arguments, 1);
 
         var value = this.__getPropertyValue(property, fields);
 
