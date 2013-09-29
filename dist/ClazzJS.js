@@ -92,6 +92,9 @@ var Factory = {
         if (typeof meta === 'function') {
             meta = meta.apply(clazz, dependencies);
         }
+        if (typeof meta === 'function') {
+            meta = { methods: { init: meta }}
+        }
 
         if (meta) {
             this.processMeta(clazz, meta);
@@ -139,17 +142,10 @@ var Factory = {
     },
 
     processMeta: function(clazz, meta) {
-        if (typeof meta === 'function') {
-            meta = meta.apply(clazz)
-        }
-        if (typeof meta === 'function') {
-            meta = { methods: { init: meta }}
-        }
 
-        if (meta) {
-            Clazz.Meta.Clazz.process(clazz, meta);
-            Clazz.Meta.Object.process(clazz.prototype, meta);
-        }
+        Clazz.Meta.Clazz.process(clazz, meta);
+        Clazz.Meta.Object.process(clazz.prototype, meta);
+
         return clazz;
     }
 }
