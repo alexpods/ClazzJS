@@ -103,7 +103,7 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
 
         fields  = Object.prototype.toString.call(arguments[1]) === '[object Array]'
             ? arguments[1]
-            : Array.prototype.slice.call(arguments, 1);
+            : Array.prototype.slice.call(arguments, 1, -1);
 
         if (fields && fields.length) {
             value = this['_' + property];
