@@ -87,16 +87,7 @@ var PropertiesMetaProcessor = {
                     defaultValue = defaultValue();
                 }
 
-                if (typeof defaultValue === 'undefined' && (type = object.__getProperty(property, 'type'))) {
-                    defaultValue = this.DEFAULTS[type]
-                }
-
                 object.__setProperty(property, 'default', defaultValue);
-            },
-
-            DEFAULTS: {
-                hash:  {},
-                array: []
             }
         },
 

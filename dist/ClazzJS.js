@@ -369,14 +369,29 @@ var MethodsProcessor = function(object, methods) {
         object[method] = methods[method]
     }
 }
-var PropertiesDefaultsProcessor = function(object) {
+var PropertiesDefaultsProcessor = {
+    
+    process: function(object) {
 
-    var property, properties = object.__properties
+        var type, defaultValue, property, properties = object.__properties
 
-    for (property in properties) {
-        object['_' + property] = properties[property]['default'];
+        for (property in properties) {
+            defaultValue = properties[property]['default'];
+
+            if (typeof defaultValue === 'undefined') {
+                type = properties[property]['type'];
+                if (typeof type !== 'undefined' && type in this.DEFAULT) {
+                    defaultValue = this.DEFAULT[type];
+                }
+            }
+            object['_' + property] = defaultValue;
+        }
+    },
+
+    DEFAULT: {
+        hash:  {},
+        array: []
     }
-
 }
 var PropertiesInitProcessor = function(object, properties) {
 
@@ -734,16 +749,7 @@ var PropertiesMetaProcessor = {
                     defaultValue = defaultValue();
                 }
 
-                if (typeof defaultValue === 'undefined' && (type = object.__getProperty(property, 'type'))) {
-                    defaultValue = this.DEFAULTS[type]
-                }
-
                 object.__setProperty(property, 'default', defaultValue);
-            },
-
-            DEFAULTS: {
-                hash:  {},
-                array: []
             }
         },
 
