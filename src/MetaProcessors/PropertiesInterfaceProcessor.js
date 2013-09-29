@@ -108,6 +108,9 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
         if (fields && fields.length) {
             value = this['_' + property];
             for (i = 0, ii = fields.length - 1; i < ii; ++i) {
+                if (!(fields[i] in value)) {
+                    value[fields[i]] = {};
+                }
                 value = value[fields[i]];
             }
             value[fields[i]] = setValue;
