@@ -117,7 +117,11 @@ var Manager = {
         if (typeof clazz !== 'function') {
             throw new Error('Clazz must be a function!');
         }
-        this._clazz[this.adjustName(name)] = clazz;
+        var aname = this.adjustName(name);
+        if (!(aname in this._clazz)) {
+            this._clazz[aname] = [];
+        }
+        this._clazz[aname].push(clazz);
 
         return this;
     },
