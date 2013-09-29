@@ -7,7 +7,7 @@ var Clazz = function(name, parent, meta) {
         parent = null;
     }
 
-    if (Object.prototype.toString.call(arguments) === '[object Array]') {
+    if (Object.prototype.toString.call(meta) === '[object Array]') {
         return Manager.get(name, /* dependencies */ meta);
     }
 
