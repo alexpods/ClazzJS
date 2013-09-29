@@ -738,7 +738,7 @@ var PropertiesMetaProcessor = {
                     defaultValue = this.DEFAULTS[type]
                 }
 
-                this.__setProperty(property, 'default', defaultValue);
+                object.__setProperty(property, 'default', defaultValue);
             },
 
             DEFAULTS: {
