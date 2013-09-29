@@ -29,7 +29,7 @@ var PropertiesDefaultsProcessor = {
         else if ('[object Array]' === toString) {
             copy = [];
             for (var i = 0, ii = object.length; i < ii; ++i) {
-                copy[i] = this._copy(object[i]);
+                copy[i] = this.copy(object[i]);
             }
         }
         else if ('[object RegExp]' === toString) {
@@ -38,7 +38,7 @@ var PropertiesDefaultsProcessor = {
         else {
             copy = {}
             for (var property in object) {
-                copy[property] = this._copy(object[property]);
+                copy[property] = this.copy(object[property]);
             }
         }
 
