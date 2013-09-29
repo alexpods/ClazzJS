@@ -69,6 +69,9 @@ var Factory = {
         if (typeof meta === 'function') {
             meta = meta.apply(clazz)
         }
+        if (typeof meta === 'function') {
+            meta = { methods: { init: meta }}
+        }
 
         if (meta) {
             Clazz.Meta.Clazz.process(clazz, meta);
