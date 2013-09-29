@@ -201,7 +201,8 @@ var Manager = {
         for (i = 0, ii = namespaces.length; i < ii; ++i) {
             aname = this.adjustName(name, namespaces[i]);
             if (aname in this._clazz) {
-                clazz = this._clazz[name];
+                clazz = this._clazz[aname];
+                break;
             }
         }
 
@@ -233,7 +234,8 @@ var Manager = {
         for (i = 0, ii = namespaces.length; i < ii; ++i) {
             aname = this.adjustName(name, namespaces[i]);
             if (aname in this._clazz) {
-                clazz = this._clazz[name];
+                clazz = this._clazz[aname];
+                break;
             }
         }
 
