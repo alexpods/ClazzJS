@@ -370,7 +370,7 @@ var MethodsProcessor = function(object, methods) {
     }
 }
 var PropertiesDefaultsProcessor = {
-    
+
     process: function(object) {
 
         var type, defaultValue, property, properties = object.__properties
@@ -483,8 +483,8 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
             value = getters[name].call(this, value);
         }
 
-        var fields = Object.prototype.toString.apply(arguments[2]) === '[object Array]'
-            ? arguments[2]
+        var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
+            ? arguments[1]
             : Array.prototype.slice.call(arguments, 1, -1);
 
         for (i = 0, ii = fields.length; i < ii; ++i) {
@@ -503,8 +503,8 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
             throw new Error('Can\'t set! Property "' + property + '" does not exists!');
         }
 
-        fields  = Object.prototype.toString.apply(arguments[2]) === '[object Array]'
-            ? arguments[2]
+        fields  = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
+            ? arguments[1]
             : Array.prototype.slice.call(arguments, 1, -1);
 
         if (fields && fields.length) {
@@ -530,8 +530,8 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
     },
 
     __isPropertyValue: function(property /* fields... , value */) {
-        var fields = Object.prototype.toString.apply(arguments[2]) === '[object Array]'
-                ? arguments[2]
+        var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
+                ? arguments[1]
                 : Array.prototype.slice.call(arguments, 1, -1);
 
         var value   = this.__getPropertyValue(property, fields);
@@ -541,8 +541,8 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
     },
 
     __hasPropertyValue: function(property /*, fields... */) {
-        var fields = Object.prototype.toString.apply(arguments[2]) === '[object Array]'
-            ? arguments[2]
+        var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
+            ? arguments[1]
             : Array.prototype.slice.call(arguments, 1, -1);
 
         var value = this.__getPropertyValue(property, fields);

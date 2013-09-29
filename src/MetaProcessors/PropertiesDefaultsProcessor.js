@@ -1,5 +1,5 @@
 var PropertiesDefaultsProcessor = {
-    
+
     process: function(object) {
 
         var type, defaultValue, property, properties = object.__properties
