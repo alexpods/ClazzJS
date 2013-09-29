@@ -371,10 +371,10 @@ var MethodsProcessor = function(object, methods) {
 }
 var PropertiesDefaultsProcessor = function(object) {
 
-    var property, datas = object.__getProperties();
+    var property, properties = object.__properties
 
-    for (property in datas) {
-        object['_' + property] = datas[property].default;
+    for (property in properties) {
+        object['_' + property] = properties[property]['default'];
     }
 
 }
