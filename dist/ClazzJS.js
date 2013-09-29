@@ -585,10 +585,10 @@ var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
             return false;
         }
 
-        return (typeof this[value] === 'undefined')
+        return !((typeof this[value] === 'undefined')
             || (value === null)
             || (typeof value === 'string' && value === '')
-            || (Object.prototype.toString.apply(value) === '[object Array]' && value.length === 0);
+            || (Object.prototype.toString.apply(value) === '[object Array]' && value.length === 0));
     },
 
     __addSetter: function(property, weight, callback) {
