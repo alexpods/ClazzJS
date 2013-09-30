@@ -1,19 +1,50 @@
+Meta.Processors.sets({
+
+    clazz_constants_init:      ConstantsInitProcessor,
+    clazz_constants_interface: ConstantsInterfaceProcessor,
+
+    clazz_constants: [
+        'clazz_constants_init',
+        'clazz_constants_interface'
+    ],
+
+    clazz_properties_init:      PropertiesInitProcessor,
+    clazz_properties_interface: PropertiesInterfaceProcessor,
+    clazz_properties_meta:      PropertiesMetaProcessor,
+    clazz_properties_defaults:  PropertiesDefaultsProcessor,
+
+    clazz_properties: [
+        'clazz_properties_init',
+        'clazz_properties_interface',
+        'clazz_properties_meta',
+        'clazz_properties_defaults'
+    ],
+
+    clazz_methods:    MethodsProcessor
+});
+
+Meta.Manager.setType(Factory.META_TYPE, {
+    clazz: {
+        options: {
+            constants:        'clazz_constants',
+            clazz_properties: 'clazz_properties',
+            clazz_methods:    'clazz_methods'
+        }
+    },
+    object: {
+        objectHandler: function(object) {
+            return object.prototype;
+        },
+        options: {
+            properties: 'clazz_properties',
+            methods:    'clazz_methods'
+        }
+    }
+});
 
 Clazz.Base    = Base;
 Clazz.Factory = Factory;
 Clazz.Manager = Manager;
-
-Clazz.Meta = {
-    Clazz: new Meta({
-        constants:        ConstantsProcessor,
-        clazz_properties: PropertiesProcessor,
-        clazz_methods:    MethodsProcessor
-    }),
-    Object: new Meta({
-        properties:       PropertiesProcessor,
-        methods:          MethodsProcessor
-    })
-}
 
 global.NameSpace = NameSpace;
 global.Clazz     = Clazz;

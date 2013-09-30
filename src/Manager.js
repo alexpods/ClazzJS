@@ -10,12 +10,17 @@ var Manager = {
         return (namespace+'.'+name).replace(NameSpace.getDelimitersRegexp(), '.');
     },
 
-    setMeta: function(name, parent, meta) {
-        if (typeof meta === 'undefined') {
-            meta   = parent;
-            parent = undefined;
+    setMeta: function(name, meta) {
+
+        if ('metaTypes' in meta) {
+            for (var i = 0, ii = meta.metaTypes.length; i < ii; ++i) {
+                if (typeof meta.metaTypes[i] === 'string') {
+                    meta.metaTypes[i] = Meta.Manager.getType(meta.metaTypes[i]);
+                }
+            }
         }
-        this._meta[this.adjustName(name)] = [parent, meta];
+
+        this._meta[this.adjustName(name)] = meta;
 
         return this;
     },
@@ -130,7 +135,10 @@ var Manager = {
 
         if (!this.hasClazz(name, dependencies)) {
             var meta = this.getMeta(name);
-            this.setClazz(Factory.create(name, meta[0], meta[1], dependencies));
+            meta.name         = name;
+            meta.dependencies = dependencies;
+
+            this.setClazz(Factory.create(meta));
         }
         return this.getClazz(name, dependencies);
     },

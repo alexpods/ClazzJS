@@ -1,4 +1,4 @@
-var ConstantsInterfaceProcessor = new Meta.Processor.Interface({
+var ConstantsInterfaceProcessor = new Meta.Processors.Interface({
 
     const: function(name) {
         return this.__getConstant(name);

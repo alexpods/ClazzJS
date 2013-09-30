@@ -1,4 +1,4 @@
-var PropertiesInterfaceProcessor = new Meta.Processor.Interface({
+var PropertiesInterfaceProcessor = new Meta.Processors.Interface({
 
     __setters: {},
     __getters: {},

@@ -1,30 +1,33 @@
 var Factory = {
 
+    META_TYPE:  'ClazzJS.Clazz',
     CLASS_NAME: 'Clazz{uid}',
 
     _clazzUID: 0,
 
-    create: function(name, parent, meta, dependencies) {
-        if (typeof parent === 'string') {
-            parent = Manager.get(parent);
-        }
-        if (typeof dependencies === 'undefined') {
-            dependencies = [];
-        }
+    create: function(params) {
+        var clazz, i, ii;
 
-        var clazz = this.createClazz(name, parent)
+        var name           = params.name || this.generateName();
+        var parent         = params.parent;
+        var metaTypes      = params.metaTypes || [this.META_TYPE];
+        var meta           = params.meta;
+        var dependencies   = params.dependencies || [];
 
-        clazz.DEPENDENCIES = dependencies;
-
-        if (typeof meta === 'function') {
-            meta = meta.apply(clazz, dependencies);
-        }
-        if (typeof meta === 'function') {
-            meta = { methods: { init: meta }}
-        }
+        clazz = this.createClazz(name, parent);
 
         if (meta) {
-            this.processMeta(clazz, meta);
+            if (typeof meta === 'function') {
+                meta = meta.apply(clazz, dependencies);
+                clazz.DEPENDENCIES = dependencies;
+            }
+
+            for (i = 0, ii = metaTypes.length; i < ii; ++i) {
+                if (typeof metaTypes[i] === 'string') {
+                    metaTypes[i] = Meta.Manager.getType(metaTypes[i]);
+                }
+                metaTypes[i].process(clazz, meta);
+            }
         }
 
         return clazz;
@@ -66,13 +69,5 @@ var Factory = {
 
     generateName: function() {
         return this.CLASS_NAME.replace('{uid}', ++this._clazzUID);
-    },
-
-    processMeta: function(clazz, meta) {
-
-        Clazz.Meta.Clazz.process(clazz, meta);
-        Clazz.Meta.Object.process(clazz.prototype, meta);
-
-        return clazz;
     }
 }
