@@ -1,6 +1,6 @@
 {
     "name": "ClazzJS",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "ignore": [
         "node_modules",
         "Gruntfile.js",
@@ -8,6 +8,6 @@
         "bower.json"
     ],
     "dependencies": {
-        "MetaJS":    "~0.1.1"
+        "MetaJS":    "~0.2.0"
     }
 }

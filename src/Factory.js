@@ -20,7 +20,7 @@ var Factory = {
         if (Object.prototype.toString.call(parent) === '[object Array]') {
             parent = Manager.get(parent[0], parent[1] || [])
         }
-        
+
         clazz = this.createClazz(name, parent);
         clazz.DEPENDENCIES = dependencies;
 
