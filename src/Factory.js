@@ -14,6 +14,13 @@ var Factory = {
         var meta           = params.meta;
         var dependencies   = params.dependencies || [];
 
+        if (typeof parent === 'string') {
+            parent = [parent];
+        }
+        if (Object.prototype.toString.call(parent) === '[object Array]') {
+            parent = Manager.get(parent[0], parent[1] || [])
+        }
+        
         clazz = this.createClazz(name, parent);
         clazz.DEPENDENCIES = dependencies;
 
