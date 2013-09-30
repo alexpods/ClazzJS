@@ -707,11 +707,11 @@ var PropertiesMetaProcessor = {
 
     process: function(object, properties) {
         for (var property in properties) {
-            this.Meta.process(object, properties[property], property)
+            this.MetaHandler.process(object, properties[property], property)
         }
     },
 
-    Meta: new Meta({
+    MetaHandler: new Meta.Handler({
 
         type: {
             process: function(object, type, option, property) {
