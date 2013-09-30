@@ -1,5 +1,7 @@
 var Manager = {
 
+    _objectUID: 0,
+
     _clazz: {},
     _meta: {},
 
@@ -145,5 +147,9 @@ var Manager = {
 
     has: function(name) {
         return this.hasClazz(name) || this.hasMeta(name);
+    },
+
+    getNextObjectUID: function() {
+        return ++this._objectUID;
     }
 }

@@ -73,6 +73,8 @@ NameSpace.getDelimitersRegexp = function() {
     return new RegExp('[\\' + this.DELIMITERS.join('\\') + ']');
 }
 var Base = function() {
+    this.uid = Manager.getNextObjectUID();
+
     if (typeof this.init === 'function') {
         var response = this.init.apply(this, Array.prototype.slice.call(arguments));
 
@@ -178,6 +180,8 @@ var Factory = {
     }
 }
 var Manager = {
+
+    _objectUID: 0,
 
     _clazz: {},
     _meta: {},
@@ -324,6 +328,10 @@ var Manager = {
 
     has: function(name) {
         return this.hasClazz(name) || this.hasMeta(name);
+    },
+
+    getNextObjectUID: function() {
+        return ++this._objectUID;
     }
 }
 var ConstantsInitProcessor = function(object, constants) {

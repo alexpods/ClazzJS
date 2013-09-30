@@ -1,4 +1,6 @@
 var Base = function() {
+    this.uid = Manager.getNextObjectUID();
+
     if (typeof this.init === 'function') {
         var response = this.init.apply(this, Array.prototype.slice.call(arguments));
 
