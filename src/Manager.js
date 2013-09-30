@@ -12,7 +12,7 @@ var Manager = {
 
     setMeta: function(name, meta) {
 
-        if ('metaTypes' in meta) {
+        if (meta.metaTypes) {
             for (var i = 0, ii = meta.metaTypes.length; i < ii; ++i) {
                 if (typeof meta.metaTypes[i] === 'string') {
                     meta.metaTypes[i] = Meta.Manager.getType(meta.metaTypes[i]);
