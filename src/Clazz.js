@@ -15,8 +15,11 @@ var Clazz = function(name /* [dependencies] || ( [parent], [metaTypes], meta) */
         metaTypes  = parent;
         parent = null;
     }
-    else if (metaTypes === meta) {
+    if (metaTypes === meta) {
         metaTypes = null;
+    }
+    if (parent === meta) {
+        parent = null;
     }
 
     Manager.setMeta(name, {
