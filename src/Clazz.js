@@ -7,19 +7,27 @@ var Clazz = function(name /* [dependencies] || ( [parent], [metaTypes], meta) */
         return Manager.get(name, /* actually dependencies */parent || [])
     }
 
-    meta = last;
-    parent = arguments[1];
-    metaTypes  = arguments[2];
+    if (typeof name === 'object') {
+        parent    = name.paren;
+        metaTypes = name.metaTypes;
+        meta      = name.meta;
+        name      = name.name;
+    }
+    else {
+        meta = last;
+        parent = arguments[1];
+        metaTypes  = arguments[2];
 
-    if (Object.prototype.toString.call(parent) === '[objectArray]') {
-        metaTypes  = parent;
-        parent = null;
-    }
-    if (metaTypes === meta) {
-        metaTypes = null;
-    }
-    if (parent === meta) {
-        parent = null;
+        if (Object.prototype.toString.call(parent) === '[objectArray]') {
+            metaTypes  = parent;
+            parent = null;
+        }
+        if (metaTypes === meta) {
+            metaTypes = null;
+        }
+        if (parent === meta) {
+            parent = null;
+        }
     }
 
     Manager.setMeta(name, {
