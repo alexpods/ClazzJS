@@ -46,8 +46,11 @@ var PropertiesMetaProcessor = {
                     },
                     string: function(value, params) {
                         value = String(value);
-                        if ('pattern' in params && !params['pattern'].test(value)) {
-                            throw new Error('Value "' + value + '" does not match pattern "' + params['pattern'] + '"!');
+                        if ('pattern' in params && !params.pattern.test(value)) {
+                            throw new Error('Value "' + value + '" does not match pattern "' + params.pattern + '"!');
+                        }
+                        if ('variants' in params && -1 === params.variants.indexOf(value)) {
+                            throw new Error('Value "' + value + '" must be one of "' + params.variants.join(', ') + '"!');
                         }
                         return value;
                     },
