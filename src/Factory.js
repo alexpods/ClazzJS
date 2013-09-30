@@ -15,11 +15,11 @@ var Factory = {
         var dependencies   = params.dependencies || [];
 
         clazz = this.createClazz(name, parent);
+        clazz.DEPENDENCIES = dependencies;
 
         if (meta) {
             if (typeof meta === 'function') {
                 meta = meta.apply(clazz, dependencies);
-                clazz.DEPENDENCIES = dependencies;
             }
 
             for (i = 0, ii = metaTypes.length; i < ii; ++i) {
