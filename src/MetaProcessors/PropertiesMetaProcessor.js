@@ -2,6 +2,20 @@ var PropertiesMetaProcessor = {
 
     process: function(object, properties) {
         for (var property in properties) {
+
+            var meta = properties[property];
+
+            if (Object.prototype.toString.call(properties[property]) === '[object Array]') {
+                properties[property] = meta = { type: meta }
+            }
+            else if (typeof meta !== 'object' || meta === null) {
+                properties[property] = meta = { default: meta }
+            }
+
+            if (!('methods' in meta)) {
+                meta.methods = ['get', 'set', 'has', 'is']
+            }
+
             this.MetaHandler.process(object, properties[property], property)
         }
     },
@@ -11,8 +25,9 @@ var PropertiesMetaProcessor = {
             type: {
                 process: function(object, type, option, property) {
                     var self = this, params = {};
+                    
                     if (Object.prototype.toString.apply(type) === '[object Array]') {
-                        params = type[1];
+                        params = type[1] || [];
                         type   = type[0];
                     }
                     if (!(type in this.TYPES)) {
