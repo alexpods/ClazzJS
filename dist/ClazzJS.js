@@ -465,15 +465,16 @@ var PropertiesInitProcessor = function(object, properties) {
     for (property in properties) {
         object['_' + property] = undefined;
 
-        if (Object.prototype.toString.call(properties[property]) === '[object Array]') {
-            properties[property] = { type: properties[property] }
-        }
-        else if (typeof meta !== 'object' || meta === null) {
-            properties[property] = { default: properties[property] }
+        var meta = properties[property];
+
+        if (typeof meta !== 'object' || meta === null) {
+            properties[property] = meta = Object.prototyp.toString.call(properties[property]) === '[object Array]'
+                ? { type: meta }
+                : { default: meta }
         }
 
-        if (!('methods' in properties[property])) {
-            properties[property].methods = ['get', 'set', 'has', 'is']
+        if (!('methods' in meta)) {
+            meta.methods = ['get', 'set', 'has', 'is']
         }
     }
 }
