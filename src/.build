@@ -1,8 +1,8 @@
 ;(function(global, meta) {
 
-    var factory     = new Factory(Base);
+    var factory     = new Factory(Base, meta);
     var manager     = new Manager();
-    var namespace   = new Namespace(manager, factory, meta, null, '', global, Clazz);
+    var namespace   = new Namespace(manager, factory, null, '', global, Clazz);
     var clazz       = namespace();
 
     global.namespace = namespace;

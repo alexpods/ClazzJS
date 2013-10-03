@@ -1,6 +1,7 @@
-var Factory = function(BaseClazz) {
+var Factory = function(BaseClazz, meta) {
     this._clazzUID = 0;
     this.BaseClazz = BaseClazz;
+    this.meta      = meta;
 }
 
 Factory.prototype = {
@@ -69,14 +70,21 @@ Factory.prototype = {
             meta = meta.apply(clazz, dependencies);
         }
 
-        if ('clazz' in processors) {
-            for (var i = 0, ii = processors.clazz.length; i < ii; ++i) {
-                processors.clazz[i].process(clazz, meta);
-            }
-        }
-        if ('proto' in processors) {
-            for (var i = 0, ii = processors.proto.length; i < ii; ++i) {
-                processors.proto[i].process(clazz.prototype, meta);
+        var types = { clazz: clazz, proto: clazz.prototype }, typeProcessors, processor, i, ii;
+
+        for (var type in types) {
+            if (type in processors) {
+                typeProcessors = processors[type]
+                if (Object.prototype.toString.call(typeProcessors) !== '[object Array]') {
+                    typeProcessors = [typeProcessors];
+                }
+                for (i = 0, ii = typeProcessors.length; i < ii; ++i) {
+                    processor = typeProcessors[i];
+                    if (typeof processor === 'string') {
+                        processor = this.meta.processor(processor);
+                    }
+                    processor.clazz[i].process(clazz, meta);
+                }
             }
         }
     },

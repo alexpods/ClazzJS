@@ -1,4 +1,4 @@
-var Clazz = function(manager, factory, namespace, meta) {
+var Clazz = function(manager, factory, namespace) {
 
     var clazz = function(name, parent, process, meta) {
 
@@ -27,10 +27,6 @@ var Clazz = function(manager, factory, namespace, meta) {
         return namespace;
     }
 
-    clazz.getMeta = function() {
-        return meta;
-    }
-
     return clazz;
 }
 
@@ -53,7 +49,7 @@ Clazz.prototype = {
             manager.setClazz(factory.create({
                 name:         name,
                 dependencies: dependencies,
-                process:      this.adjustMetaProcessors(meta.process),
+                process:      meta.process,
                 parent:       this.adjustParent(meta.parent),
                 meta:         meta.meta
             }));
@@ -128,35 +124,5 @@ Clazz.prototype = {
             parent = this.get(parent[0], parent[1] || [])
         }
         return parent;
-    },
-
-    adjustMetaProcessors: function(metaProcessors) {
-        var i, ii, processors = {}, type, typeProcessors, processor;
-
-        for (type in metaProcessors) {
-            if (-1 === ['clazz', 'proto'].indexOf(type)) {
-                throw new Error('Incorrect meta processor type "' + type + '"!');
-            }
-
-            processors[type] = [];
-            typeProcessors = metaProcessors[type];
-
-
-            if (Object.prototype.toString.call(typeProcessors) !== '[object Array]') {
-                typeProcessors = [typeProcessors];
-            }
-            for (i = 0, ii = typeProcessors.length; i < ii; ++i) {
-                processor = typeProcessors[i];
-                if (typeof processor === 'string') {
-                    processor = this.getMeta().processor(processor);
-                }
-                processors[type][i].push(processor);
-            }
-        }
-
-        for (var p in processors) {
-            return processors;
-        }
-        return null;
     }
 }

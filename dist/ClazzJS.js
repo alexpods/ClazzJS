@@ -1,7 +1,7 @@
 ;(function(global, meta, undefined) {
 
 
-var Clazz = function(manager, factory, namespace, meta) {
+var Clazz = function(manager, factory, namespace) {
 
     var clazz = function(name, parent, process, meta) {
 
@@ -30,10 +30,6 @@ var Clazz = function(manager, factory, namespace, meta) {
         return namespace;
     }
 
-    clazz.getMeta = function() {
-        return meta;
-    }
-
     return clazz;
 }
 
@@ -56,7 +52,7 @@ Clazz.prototype = {
             manager.setClazz(factory.create({
                 name:         name,
                 dependencies: dependencies,
-                process:      this.adjustMetaProcessors(meta.process),
+                process:      meta.process,
                 parent:       this.adjustParent(meta.parent),
                 meta:         meta.meta
             }));
@@ -131,44 +127,14 @@ Clazz.prototype = {
             parent = this.get(parent[0], parent[1] || [])
         }
         return parent;
-    },
-
-    adjustMetaProcessors: function(metaProcessors) {
-        var i, ii, processors = {}, type, typeProcessors, processor;
-
-        for (type in metaProcessors) {
-            if (-1 === ['clazz', 'proto'].indexOf(type)) {
-                throw new Error('Incorrect meta processor type "' + type + '"!');
-            }
-
-            processors[type] = [];
-            typeProcessors = metaProcessors[type];
-
-
-            if (Object.prototype.toString.call(typeProcessors) !== '[object Array]') {
-                typeProcessors = [typeProcessors];
-            }
-            for (i = 0, ii = typeProcessors.length; i < ii; ++i) {
-                processor = typeProcessors[i];
-                if (typeof processor === 'string') {
-                    processor = this.getMeta().processor(processor);
-                }
-                processors[type][i].push(processor);
-            }
-        }
-
-        for (var p in processors) {
-            return processors;
-        }
-        return null;
     }
 }
-var Namespace = function(manager, factory, meta, baseNamespace, space, global, Class) {
+var Namespace = function(manager, factory, baseNamespace, space, global, Class) {
     Class = Class || Clazz;
 
     var namespace = function(space, callback) {
         var newNamespace = new Namespace(manager, factory, namespace, space, global);
-        var newClazz     = new Class(manager, factory, namespace, meta);
+        var newClazz     = new Class(manager, factory, namespace);
 
         if (callback) {
             callback(newNamespace, newClazz);
@@ -183,10 +149,6 @@ var Namespace = function(manager, factory, meta, baseNamespace, space, global, C
 
     namespace.getFactory = function() {
         return factory;
-    }
-
-    namespace.getMeta = function() {
-        return meta;
     }
 
     namespace.getBaseNamespace = function() {
@@ -268,9 +230,10 @@ Base.prototype = {
     parent: null,
     clazz:  Base
 }
-var Factory = function(BaseClazz) {
+var Factory = function(BaseClazz, meta) {
     this._clazzUID = 0;
     this.BaseClazz = BaseClazz;
+    this.meta      = meta;
 }
 
 Factory.prototype = {
@@ -339,14 +302,21 @@ Factory.prototype = {
             meta = meta.apply(clazz, dependencies);
         }
 
-        if ('clazz' in processors) {
-            for (var i = 0, ii = processors.clazz.length; i < ii; ++i) {
-                processors.clazz[i].process(clazz, meta);
-            }
-        }
-        if ('proto' in processors) {
-            for (var i = 0, ii = processors.proto.length; i < ii; ++i) {
-                processors.proto[i].process(clazz.prototype, meta);
+        var types = { clazz: clazz, proto: clazz.prototype }, typeProcessors, processor, i, ii;
+
+        for (var type in types) {
+            if (type in processors) {
+                typeProcessors = processors[type]
+                if (Object.prototype.toString.call(typeProcessors) !== '[object Array]') {
+                    typeProcessors = [typeProcessors];
+                }
+                for (i = 0, ii = typeProcessors.length; i < ii; ++i) {
+                    processor = typeProcessors[i];
+                    if (typeof processor === 'string') {
+                        processor = this.meta.processor(processor);
+                    }
+                    processor.clazz[i].process(clazz, meta);
+                }
             }
         }
     },
@@ -1064,9 +1034,9 @@ meta.processor('Clazz.Proto', 'Meta.Options', {
 })
 ;(function(global, meta) {
 
-    var factory     = new Factory(Base);
+    var factory     = new Factory(Base, meta);
     var manager     = new Manager();
-    var namespace   = new Namespace(manager, factory, meta, null, '', global, Clazz);
+    var namespace   = new Namespace(manager, factory, null, '', global, Clazz);
     var clazz       = namespace();
 
     global.namespace = namespace;

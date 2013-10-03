@@ -1,9 +1,9 @@
-var Namespace = function(manager, factory, meta, baseNamespace, space, global, Class) {
+var Namespace = function(manager, factory, baseNamespace, space, global, Class) {
     Class = Class || Clazz;
 
     var namespace = function(space, callback) {
         var newNamespace = new Namespace(manager, factory, namespace, space, global);
-        var newClazz     = new Class(manager, factory, namespace, meta);
+        var newClazz     = new Class(manager, factory, namespace);
 
         if (callback) {
             callback(newNamespace, newClazz);
@@ -18,10 +18,6 @@ var Namespace = function(manager, factory, meta, baseNamespace, space, global, C
 
     namespace.getFactory = function() {
         return factory;
-    }
-
-    namespace.getMeta = function() {
-        return meta;
     }
 
     namespace.getBaseNamespace = function() {
