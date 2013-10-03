@@ -1,5 +1,5 @@
 Meta.Manager.setProcessor('ClazzJS.Property.Type', {
-    process: function(object, type, option, property) {
+    process: function(object, type, property) {
         var self = this, params = {};
 
         if (Object.prototype.toString.apply(type) === '[object Array]') {

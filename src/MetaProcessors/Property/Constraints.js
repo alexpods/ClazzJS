@@ -1,4 +1,4 @@
-Meta.Manager.setProcessor('ClazzJS.Property.Constraints', function(object, constraints, option, property) {
+meta.processor('Clazz.Property.Constraints', function(object, constraints, property) {
 
     object.__addSetter(property, function(value) {
         for (var name in constraints) {

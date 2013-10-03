@@ -1,4 +1,4 @@
-Meta.Manager.setProcessor('ClazzJS.PropertiesDefaults', {
+meta.processor('ClazzJS.Properties.Defaults', {
 
     process: function(object) {
 

@@ -1,11 +1,11 @@
-;(function(global) {
+(function(global, meta) {
 
     var factory     = new Factory(Base);
     var manager     = new Manager();
-    var namespace   = new Namespace(manager, factory, null, '', global, Clazz);
+    var namespace   = new Namespace(manager, factory, meta, null, '', global, Clazz);
     var clazz       = namespace();
 
     global.namespace = namespace;
     global.clazz     = clazz;
 
-})(global)
+})(global, meta)

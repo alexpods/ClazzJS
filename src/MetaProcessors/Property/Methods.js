@@ -1,6 +1,6 @@
 Meta.Manager.setProcessor('ClazzJS.Property.Methods', {
 
-    process: function(object, methods, option, property) {
+    process: function(object, methods, property) {
         if (Object.prototype.toString.apply(methods) !== '[object Array]') {
             methods = [methods];
         }

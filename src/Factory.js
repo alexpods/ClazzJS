@@ -1,13 +1,13 @@
 var Factory = function(BaseClazz) {
-    this.__clazzUID = 0;
+    this._clazzUID = 0;
     this.BaseClazz = BaseClazz;
 }
 
 Factory.prototype = {
 
-    DEFAULT_HANDLER: {
-        clazz: ['ClazzJS.Clazz'],
-        proto: ['ClazzJS.Prototype']
+    DEFAULT_PROCESSORS: {
+        clazz: ['Clazz.Clazz'],
+        proto: ['Clazz.Proto']
     },
     CLASS_NAME: 'Clazz{uid}',
 
@@ -15,7 +15,7 @@ Factory.prototype = {
 
         var name           = params.name || this.generateName();
         var parent         = params.parent;
-        var handlers       = params.handlers || [this.DEFAULT_HANDLER];
+        var processors     = params.process || [this.DEFAULT_PROCESSORS];
         var meta           = params.meta;
         var dependencies   = params.dependencies || [];
 
@@ -24,7 +24,7 @@ Factory.prototype = {
         clazz.DEPENDENCIES = dependencies;
 
         if (meta) {
-            this.applyMeta(clazz, meta, handlers);
+            this.applyMeta(clazz, meta, processors);
         }
 
         return clazz;
@@ -64,19 +64,19 @@ Factory.prototype = {
         return clazz;
     },
 
-    applyMeta: function(clazz, meta, handlers) {
+    applyMeta: function(clazz, meta, processors) {
         if (typeof meta === 'function') {
             meta = meta.apply(clazz, dependencies);
         }
 
-        if ('clazz' in handlers) {
-            for (var i = 0, ii = handlers.clazz.length; i < ii; ++i) {
-                handlers.clazz[i].process(clazz, meta);
+        if ('clazz' in processors) {
+            for (var i = 0, ii = processors.clazz.length; i < ii; ++i) {
+                processors.clazz[i].process(clazz, meta);
             }
         }
-        if ('proto' in handlers) {
-            for (var i = 0, ii = handlers.proto.length; i < ii; ++i) {
-                handlers.proto[i].process(clazz.prototype, meta);
+        if ('proto' in processors) {
+            for (var i = 0, ii = processors.proto.length; i < ii; ++i) {
+                processors.proto[i].process(clazz.prototype, meta);
             }
         }
     },

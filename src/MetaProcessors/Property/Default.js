@@ -1,4 +1,4 @@
-Meta.Manager.setProcessor('ClazzJS.Property.Default', function(object, defaultValue, option, property) {
+Meta.Manager.setProcessor('ClazzJS.Property.Default', function(object, defaultValue, property) {
     if (typeof defaultValue === 'function') {
         defaultValue = defaultValue();
     }

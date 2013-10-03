@@ -1,4 +1,4 @@
-Meta.Manager.setDefaults('ClazzJS.PropertiesInterface', 'interface', {
+meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
 
     __setters: {},
     __getters: {},

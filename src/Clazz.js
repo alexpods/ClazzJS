@@ -1,6 +1,6 @@
-var Clazz = function(manager, factory, namespace) {
+var Clazz = function(manager, factory, namespace, meta) {
 
-    var clazz = function(name, parent, handlers, meta) {
+    var clazz = function(name, parent, process, meta) {
 
         var last = arguments[arguments.length-1];
 
@@ -8,7 +8,7 @@ var Clazz = function(manager, factory, namespace) {
         if (typeof last !== 'function' && Object.prototype.toString.call(last) !== '[object Object]') {
             return clazz.get(name, last);
         }
-        clazz.set(name, parent, handlers, meta);
+        clazz.set(name, parent, process, meta);
     }
 
     for (var property in Clazz.prototype) {
@@ -25,6 +25,10 @@ var Clazz = function(manager, factory, namespace) {
 
     clazz.getNamespace = function() {
         return namespace;
+    }
+
+    clazz.getMeta = function() {
+        return meta;
     }
 
     return clazz;
@@ -49,7 +53,7 @@ Clazz.prototype = {
             manager.setClazz(factory.create({
                 name:         name,
                 dependencies: dependencies,
-                handlers:     this.adjustHandlers(meta.handlers),
+                process:      this.adjustMetaProcessors(meta.process),
                 parent:       this.adjustParent(meta.parent),
                 meta:         meta.meta
             }));
@@ -61,22 +65,22 @@ Clazz.prototype = {
         return !!this.resolveName(name);
     },
 
-    set: function(name, parent, handlers, meta) {
+    set: function(name, parent, process, meta) {
 
         var namespace = this.getNamespace();
         var manager   = this.getManager();
 
         // Creation of new clazz
         if (typeof name === 'object') {
-            parent    = name.parent;
-            handlers  = name.handlers;
-            meta      = name.meta;
-            name      = name.name;
+            parent   = name.parent;
+            process  = name.process;
+            meta     = name.meta;
+            name     = name.name;
         }
         else {
             if (typeof meta === 'undefined') {
-                meta     = handlers;
-                handlers = null;
+                meta     = process;
+                process  = null;
             }
             if (typeof meta === 'undefined') {
                 meta = parent;
@@ -84,7 +88,7 @@ Clazz.prototype = {
             }
 
             if (Object.prototype.toString.call(parent) === '[object Array]') {
-                handlers = parent;
+                process  = parent;
                 parent   = null;
             }
         }
@@ -92,7 +96,7 @@ Clazz.prototype = {
 
         manager.setMeta(name, {
             parent:     parent ,
-            handlers:   handlers,
+            process:    process,
             meta:       meta
         });
 
@@ -126,29 +130,29 @@ Clazz.prototype = {
         return parent;
     },
 
-    adjustHandlers: function(handlers) {
-        var newHandlers = {}, type, typeHandlers, handler;
+    adjustMetaProcessors: function(metaProcessors) {
+        var i, ii, processors = {}, type, typeProcessors, processor;
 
-        for (type in handlers) {
+        for (type in metaProcessors) {
             if (-1 === ['clazz', 'proto'].indexOf(type)) {
-                throw new Error('Incorrect clazz meta handler type "' + type + '"!');
+                throw new Error('Incorrect meta processor type "' + type + '"!');
             }
 
-            newHandlers[type] = [];
-            typeHandlers = handlers[type];
+            processors[type] = [];
+            typeProcessors = metaProcessors[type];
 
 
-            if (Object.prototype.toString.call(typeHandlers) !== '[object Array]') {
-                typeHandlers = [typeHandlers];
+            if (Object.prototype.toString.call(typeProcessors) !== '[object Array]') {
+                typeProcessors = [typeProcessors];
             }
-            for (var i = 0, ii = typeHandlers.length; i < ii; ++i) {
-                handler = typeHandlers[i];
-                if (typeof handler === 'string') {
-                    handler = Meta.Manager.getHandler(handler);
+            for (i = 0, ii = typeProcessors.length; i < ii; ++i) {
+                processor = typeProcessors[i];
+                if (typeof processor === 'string') {
+                    processor = this.getMeta().processor(processor);
                 }
-                newHandlers[type][i].push(handler);
+                processors[type][i].push(processor);
             }
         }
-        return newHandlers;
+        return processors;
     }
 }

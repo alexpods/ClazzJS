@@ -20,7 +20,6 @@ module.exports = function(grunt) {
                     "src/Manager.js",
 
                     "src/MetaProcessors/**/*.js",
-                    "src/MetaHandlers/**/*.js",
 
                     "src/.build",
                     "src/.suffix"

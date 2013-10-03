@@ -1,4 +1,4 @@
-Meta.Manager.setProcessor('ClazzJS.ConstantsInterface', 'interface', {
+meta.processor('ClazzJS.Constants.Interface', 'Meta.Interface', {
 
     const: function(name) {
         return this.__getConstant(name);

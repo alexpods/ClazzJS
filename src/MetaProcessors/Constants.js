@@ -1,4 +1,4 @@
-Meta.Manager.setProcessor('ClazzJS.Constants', 'chain', {
-    init:      'ClazzJS.ConstantsInit',
-    interface: 'ClazzJS.ConstantsInterface'
+meta.processor('Clazz.Constants', 'Meta.Chain', {
+    init:      'Clazz.Constants.Init',
+    interface: 'Clazz.Constants.Interface'
 })

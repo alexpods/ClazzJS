@@ -1,6 +1,6 @@
-Meta.Manager.setProcessor('ClazzJS.Properties', 'chain', {
-    init:      'ClazzJS.PropertiesInit',
-    interface: 'ClazzJS.PropertiesInterface',
-    meta:      'ClazzJS.PropertiesMeta',
-    defaults:  'ClazzJS.PropertiesDefaults'
+meta.processor('Clazz.Properties', 'Meta.Chain', {
+    init:      'ClazzJS.Properties.Init',
+    interface: 'ClazzJS.Properties.Interface',
+    meta:      'ClazzJS.Properties.Meta',
+    defaults:  'ClazzJS.Properties.Defaults'
 });
