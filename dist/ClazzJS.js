@@ -207,7 +207,7 @@ var Namespace = function(manager, factory, meta, baseNamespace, space, global, C
     }
 
     namespace.apply = function(space, path) {
-        return Namespace.adjust(path || this.getPath()+Namespace.getDelimiter()+space);
+        return Namespace.adjust((path || this.getPath())+Namespace.getDelimiter()+space);
     }
 
     return namespace;
