@@ -153,6 +153,10 @@ Clazz.prototype = {
                 processors[type][i].push(processor);
             }
         }
-        return processors;
+
+        for (var p in processors) {
+            return processors;
+        }
+        return null;
     }
 }
