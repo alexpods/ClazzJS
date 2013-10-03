@@ -83,7 +83,7 @@ Factory.prototype = {
                     if (typeof processor === 'string') {
                         processor = this.meta.processor(processor);
                     }
-                    processor.clazz[i].process(clazz, meta);
+                    processor.process(types[type], meta);
                 }
             }
         }
