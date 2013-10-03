@@ -893,7 +893,7 @@ meta.processor('Clazz.Property.Constraints', function(object, constraints, prope
         return value;
     })
 })
-Meta.Manager.setProcessor('ClazzJS.Property.Converters', function(object, converters, property) {
+meta.processor('Clazz.Property.Converters', function(object, converters, property) {
 
     object.__addSetter(property, 1000, function(value) {
         for (var name in converters) {
@@ -902,14 +902,14 @@ Meta.Manager.setProcessor('ClazzJS.Property.Converters', function(object, conver
         return value;
     })
 })
-Meta.Manager.setProcessor('ClazzJS.Property.Default', function(object, defaultValue, property) {
+meta.processor('Clazz.Property.Default', function(object, defaultValue, property) {
     if (typeof defaultValue === 'function') {
         defaultValue = defaultValue();
     }
 
     object.__setProperty(property, 'default', defaultValue);
 })
-Meta.Manager.setProcessor('ClazzJS.Property.Methods', {
+meta.processor('Clazz.Property.Methods', {
 
     process: function(object, methods, property) {
         if (Object.prototype.toString.apply(methods) !== '[object Array]') {
@@ -966,7 +966,8 @@ Meta.Manager.setProcessor('ClazzJS.Property.Methods', {
         }
     }
 })
-Meta.Manager.setProcessor('ClazzJS.Property.Type', {
+meta.processor('Clazz.Property.Type', {
+
     process: function(object, type, property) {
         var self = this, params = {};
 

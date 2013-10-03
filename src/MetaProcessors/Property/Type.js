@@ -1,4 +1,5 @@
-Meta.Manager.setProcessor('ClazzJS.Property.Type', {
+meta.processor('Clazz.Property.Type', {
+
     process: function(object, type, property) {
         var self = this, params = {};
 
