@@ -237,7 +237,7 @@ Namespace.adjust = function(space) {
         .replace(new RegExp('^' + regexp + '|' + regexp + '$'), '')
 }
 var Base = function() {
-    this.uid = Manager.getNextObjectUID();
+    this.uid = ++Base.uid;
 
     if (typeof this.init === 'function') {
         var response = this.init.apply(this, Array.prototype.slice.call(arguments));
@@ -250,6 +250,7 @@ var Base = function() {
 
 Base.NAME         = '__BASE_CLAZZ__';
 Base.DEPENDENCIES = [];
+Base.uid          = 0;
 
 Base.parent = null;
 
@@ -357,8 +358,6 @@ var Manager = function() {
 
 Manager.prototype = {
 
-    _objectUID: 0,
-
     setMeta: function(name, meta) {
         this._meta[name] = meta;
 
@@ -444,10 +443,6 @@ Manager.prototype = {
         this._clazz[name].push(clazz);
 
         return this;
-    },
-
-    getNextObjectUID: function() {
-        return ++this._objectUID;
     }
 }
 meta.processor('Clazz.Clazz', 'Meta.Options', {

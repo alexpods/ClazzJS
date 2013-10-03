@@ -1,5 +1,5 @@
 var Base = function() {
-    this.uid = Manager.getNextObjectUID();
+    this.uid = ++Base.uid;
 
     if (typeof this.init === 'function') {
         var response = this.init.apply(this, Array.prototype.slice.call(arguments));
@@ -12,6 +12,7 @@ var Base = function() {
 
 Base.NAME         = '__BASE_CLAZZ__';
 Base.DEPENDENCIES = [];
+Base.uid          = 0;
 
 Base.parent = null;
 

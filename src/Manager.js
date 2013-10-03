@@ -5,8 +5,6 @@ var Manager = function() {
 
 Manager.prototype = {
 
-    _objectUID: 0,
-
     setMeta: function(name, meta) {
         this._meta[name] = meta;
 
@@ -92,9 +90,5 @@ Manager.prototype = {
         this._clazz[name].push(clazz);
 
         return this;
-    },
-
-    getNextObjectUID: function() {
-        return ++this._objectUID;
     }
 }
