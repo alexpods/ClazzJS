@@ -435,7 +435,7 @@ meta.processor('Clazz.Constants.Init', function(object, constants) {
         object['__constants'][constant] = constants[constant];
     }
 })
-meta.processor('ClazzJS.Constants.Interface', 'Meta.Interface', {
+meta.processor('Clazz.Constants.Interface', 'Meta.Interface', {
 
     const: function(name) {
         return this.__getConstant(name);
