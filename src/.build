@@ -1,4 +1,4 @@
-(function(global, meta) {
+;(function(global, meta) {
 
     var factory     = new Factory(Base);
     var manager     = new Manager();
@@ -8,4 +8,4 @@
     global.namespace = namespace;
     global.clazz     = clazz;
 
-})(global, meta)
+})(global, meta);

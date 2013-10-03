@@ -1061,7 +1061,7 @@ meta.processor('Clazz.Proto', 'Meta.Options', {
     properties: 'Clazz.Properties',
     methods:    'Clazz.Methods'
 })
-(function(global, meta) {
+;(function(global, meta) {
 
     var factory     = new Factory(Base);
     var manager     = new Manager();
@@ -1071,6 +1071,6 @@ meta.processor('Clazz.Proto', 'Meta.Options', {
     global.namespace = namespace;
     global.clazz     = clazz;
 
-})(global, meta)
+})(global, meta);
 
 })(this, meta);
