@@ -285,7 +285,7 @@ Factory.prototype = {
 
         var name           = params.name || this.generateName();
         var parent         = params.parent;
-        var processors     = params.process || [this.DEFAULT_PROCESSORS];
+        var processors     = params.process || this.DEFAULT_PROCESSORS;
         var meta           = params.meta;
         var dependencies   = params.dependencies || [];
 
