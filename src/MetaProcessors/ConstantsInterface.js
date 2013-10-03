@@ -1,4 +1,4 @@
-var ConstantsInterfaceProcessor = new Meta.Processors.Interface({
+Meta.Manager.setProcessor('ClazzJS.ConstantsInterface', 'interface', {
 
     const: function(name) {
         return this.__getConstant(name);
@@ -42,5 +42,4 @@ var ConstantsInterfaceProcessor = new Meta.Processors.Interface({
         }
         return constants;
     }
-
-});
+})

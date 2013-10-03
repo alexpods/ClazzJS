@@ -1,40 +1,30 @@
-var Factory = {
+var Factory = function(BaseClazz) {
+    this.__clazzUID = 0;
+    this.BaseClazz = BaseClazz;
+}
 
-    META_TYPE:  'ClazzJS.Clazz',
+Factory.prototype = {
+
+    DEFAULT_HANDLER: {
+        clazz: ['ClazzJS.Clazz'],
+        proto: ['ClazzJS.Prototype']
+    },
     CLASS_NAME: 'Clazz{uid}',
 
-    _clazzUID: 0,
-
     create: function(params) {
-        var clazz, i, ii;
 
         var name           = params.name || this.generateName();
         var parent         = params.parent;
-        var metaTypes      = params.metaTypes || [this.META_TYPE];
+        var handlers       = params.handlers || [this.DEFAULT_HANDLER];
         var meta           = params.meta;
         var dependencies   = params.dependencies || [];
 
-        if (typeof parent === 'string') {
-            parent = [parent];
-        }
-        if (Object.prototype.toString.call(parent) === '[object Array]') {
-            parent = Manager.get(parent[0], parent[1] || [])
-        }
+        var clazz = this.createClazz(name, parent);
 
-        clazz = this.createClazz(name, parent);
         clazz.DEPENDENCIES = dependencies;
 
         if (meta) {
-            if (typeof meta === 'function') {
-                meta = meta.apply(clazz, dependencies);
-            }
-
-            for (i = 0, ii = metaTypes.length; i < ii; ++i) {
-                if (typeof metaTypes[i] === 'string') {
-                    metaTypes[i] = Meta.Manager.getType(metaTypes[i]);
-                }
-                metaTypes[i].process(clazz, meta);
-            }
+            this.applyMeta(clazz, meta, handlers);
         }
 
         return clazz;
@@ -42,7 +32,7 @@ var Factory = {
 
     createClazz: function(name, parent) {
         if (!parent) {
-            parent = Base;
+            parent = this.BaseClazz;
         }
 
         var clazz = function () {
@@ -72,6 +62,23 @@ var Factory = {
         clazz.prototype.parent = parent.prototype;
 
         return clazz;
+    },
+
+    applyMeta: function(clazz, meta, handlers) {
+        if (typeof meta === 'function') {
+            meta = meta.apply(clazz, dependencies);
+        }
+
+        if ('clazz' in handlers) {
+            for (var i = 0, ii = handlers.clazz.length; i < ii; ++i) {
+                handlers.clazz[i].process(clazz, meta);
+            }
+        }
+        if ('proto' in handlers) {
+            for (var i = 0, ii = handlers.proto.length; i < ii; ++i) {
+                handlers.proto[i].process(clazz.prototype, meta);
+            }
+        }
     },
 
     generateName: function() {

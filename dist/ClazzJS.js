@@ -1,76 +1,230 @@
 ;(function(global, Meta, undefined) {
 
 
-var Clazz = function(name /* [dependencies] || ( [parent], [metaTypes], meta) */) {
-    var parent, metaTypes, meta;
+var Clazz = function(manager, factory, namespace) {
 
-    var last = arguments[arguments.length-1];
+    var clazz = function(name, parent, handlers, meta) {
 
-    if (typeof last !== 'function' && Object.prototype.toString.call(last) !== '[object Object]') {
-        return Manager.get(name, /* actually dependencies */parent || [])
-    }
+        var last = arguments[arguments.length-1];
 
-    if (typeof name === 'object') {
-        parent    = name.paren;
-        metaTypes = name.metaTypes;
-        meta      = name.meta;
-        name      = name.name;
-    }
-    else {
-        meta = last;
-        parent = arguments[1];
-        metaTypes  = arguments[2];
-
-        if (Object.prototype.toString.call(parent) === '[objectArray]') {
-            metaTypes  = parent;
-            parent = null;
+        // Getting of existed clazz
+        if (typeof last !== 'function' && Object.prototype.toString.call(last) !== '[object Object]') {
+            return clazz.get(name, last);
         }
-        if (metaTypes === meta) {
-            metaTypes = null;
+        clazz.set(name, parent, handlers, meta);
+    }
+
+    for (var property in Clazz.prototype) {
+        clazz[property] = Clazz.prototype[property];
+    }
+
+    clazz.getManager = function() {
+        return manager;
+    }
+
+    clazz.getFactory = function() {
+        return factory;
+    }
+
+    clazz.getNamespace = function() {
+        return namespace;
+    }
+
+    return clazz;
+}
+
+Clazz.prototype = {
+    get: function(name, dependencies) {
+
+        name = this.resolveName(name);
+        if (!name) {
+            throw new Error('Clazz with name "' + name + '" does not exits!');
         }
-        if (parent === meta) {
-            parent = null;
+
+        dependencies = dependencies || [];
+
+        var manager   = this.getManager();
+        var factory   = this.getFactory();
+
+        if (!manager.hasClazz(name, dependencies)) {
+            var meta = manager.getMeta(name);
+
+            manager.setClazz(factory.create({
+                name:         name,
+                dependencies: dependencies,
+                handlers:     this.adjustHandlers(meta.handlers),
+                parent:       this.adjustParent(meta.parent),
+                meta:         meta.meta
+            }));
         }
+        return manager.getClazz(name, dependencies)
+    },
+
+    has: function(name) {
+        return !!this.resolveName(name);
+    },
+
+    set: function(name, parent, handlers, meta) {
+
+        var namespace = this.getNamespace();
+        var manager   = this.getManager();
+
+        // Creation of new clazz
+        if (typeof name === 'object') {
+            parent    = name.parent;
+            handlers  = name.handlers;
+            meta      = name.meta;
+            name      = name.name;
+        }
+        else {
+            if (typeof meta === 'undefined') {
+                meta     = handlers;
+                handlers = null;
+            }
+            if (typeof meta === 'undefined') {
+                meta = parent;
+                parent = null;
+            }
+
+            if (Object.prototype.toString.call(parent) === '[object Array]') {
+                handlers = parent;
+                parent   = null;
+            }
+        }
+        name = namespace.apply(name);
+
+        manager.setMeta(name, {
+            parent:     parent ,
+            handlers:   handlers,
+            meta:       meta
+        });
+
+        return this;
+    },
+
+    resolveName: function(name) {
+        var paths, aname, i, ii;
+
+        var manager   = this.getManager();
+        var namespace = this.getNamespace();
+
+        paths = namespace.getPaths();
+        for (i = 0, ii = paths.length; i < ii; ++i) {
+            aname = namespace.apply(name, paths[i]);
+            if (manager.hasMeta(aname)) {
+                return aname;
+            }
+        }
+        return false;
+    },
+
+
+    adjustParent: function(parent) {
+        if (typeof parent === 'string') {
+            parent = [parent];
+        }
+        if (Object.prototype.toString.call(parent) === '[object Array]') {
+            parent = this.get(parent[0], parent[1] || [])
+        }
+        return parent;
+    },
+
+    adjustHandlers: function(handlers) {
+        var newHandlers = {}, type, typeHandlers, handler;
+
+        for (type in handlers) {
+            if (-1 === ['clazz', 'proto'].indexOf(type)) {
+                throw new Error('Incorrect clazz meta handler type "' + type + '"!');
+            }
+
+            newHandlers[type] = [];
+            typeHandlers = handlers[type];
+
+
+            if (Object.prototype.toString.call(typeHandlers) !== '[object Array]') {
+                typeHandlers = [typeHandlers];
+            }
+            for (var i = 0, ii = typeHandlers.length; i < ii; ++i) {
+                handler = typeHandlers[i];
+                if (typeof handler === 'string') {
+                    handler = Meta.Manager.getHandler(handler);
+                }
+                newHandlers[type][i].push(handler);
+            }
+        }
+        return newHandlers;
+    }
+}
+var Namespace = function(manager, factory, baseNamespace, space, global, Class) {
+    Class = Class || Clazz;
+
+    var namespace = function(space, callback) {
+        var newNamespace = new Namespace(manager, factory, namespace, space, global);
+        var newClazz     = new Class(manager, factory, namespace);
+
+        if (callback) {
+            callback(newNamespace, newClazz);
+        }
+
+        return newClazz;
     }
 
-    Manager.setMeta(name, {
-        parent:     parent,
-        metaTypes:  metaTypes,
-        meta:       meta
-    });
-}
-var NameSpace = function(namespace) {
-    if (NameSpace.current() === namespace) {
-        return;
-    }
-    NameSpace._stack.push(namespace);
-}
-
-NameSpace.GLOBAL     = 'GLOBAL';
-NameSpace.DELIMITERS = ['\\', '/', '_', '-', '.']
-
-NameSpace._stack = [];
-
-NameSpace.end = function() {
-    this._stack.pop();
-}
-
-NameSpace.current = function() {
-    return this._stack[this._stack.length - 1] || this.GLOBAL;
-}
-
-NameSpace.whereLookFor = function() {
-    var current = this.current(), lookfor = [current];
-
-    if (current !== this.GLOBAL) {
-        lookfor.push(this.GLOBAL);
+    namespace.getManager = function() {
+        return manager;
     }
 
-    return lookfor;
+    namespace.getFactory = function() {
+        return factory;
+    }
+
+    namespace.getBaseNamespace = function() {
+        return baseNamespace;
+    }
+
+    namespace.getGlobal = function() {
+        return global;
+    }
+
+    namespace.getPath = function() {
+        return Namespace.adjust((baseNamespace ? baseNamespace.getPath() : Namespace.GLOBAL)+Namespace.getDelimiter()+space);
+    }
+
+    namespace.getPaths = function() {
+        var paths = this.getPath();
+
+        if (-1 === paths.indexOf(Namespace.GLOBAL)) {
+            paths.push(Namespace.GLOBAL);
+        }
+        return [this.getPath()]
+    }
+
+    namespace.apply = function(space, path) {
+        return Namespace.adjust(path || this.getPath()+Namespace.getDelimiter()+space);
+    }
 }
 
-NameSpace.getDelimitersRegexp = function() {
-    return new RegExp('[\\' + this.DELIMITERS.join('\\') + ']');
+Namespace.GLOBAL            = 'GLOBAL';
+Namespace.DEFAULT_DELIMITER = '.';
+Namespace.DELIMITERS        = ['\\', '/', '_', '-', '.']
+
+Namespace._delimiter = null;
+
+Namespace.setDelimiter = function(delimiter) {
+    if (!(delimiter in this.DELIMITERS)) {
+        throw new Error('Unsupported delimiter');
+    }
+}
+
+Namespace.getDelimiter = function() {
+    return this._delimiter || this.DEFAULT_DELIMITER
+}
+
+Namespace.adjust = function(space) {
+    var regexp = '[\\' + this.DELIMITERS.join('\\') + ']';
+
+    return space
+        .replace(new RegExp(regexp + '+', 'g'), this.getDelimiter())
+        .replace(new RegExp('^' + regexp + '|' + regexp + '$'), '')
 }
 var Base = function() {
     this.uid = Manager.getNextObjectUID();
@@ -99,43 +253,33 @@ Base.prototype = {
     parent: null,
     clazz:  Base
 }
-var Factory = {
+var Factory = function(BaseClazz) {
+    this.__clazzUID = 0;
+    this.BaseClazz = BaseClazz;
+}
 
-    META_TYPE:  'ClazzJS.Clazz',
+Factory.prototype = {
+
+    DEFAULT_HANDLER: {
+        clazz: ['ClazzJS.Clazz'],
+        proto: ['ClazzJS.Prototype']
+    },
     CLASS_NAME: 'Clazz{uid}',
 
-    _clazzUID: 0,
-
     create: function(params) {
-        var clazz, i, ii;
 
         var name           = params.name || this.generateName();
         var parent         = params.parent;
-        var metaTypes      = params.metaTypes || [this.META_TYPE];
+        var handlers       = params.handlers || [this.DEFAULT_HANDLER];
         var meta           = params.meta;
         var dependencies   = params.dependencies || [];
 
-        if (typeof parent === 'string') {
-            parent = [parent];
-        }
-        if (Object.prototype.toString.call(parent) === '[object Array]') {
-            parent = Manager.get(parent[0], parent[1] || [])
-        }
+        var clazz = this.createClazz(name, parent);
 
-        clazz = this.createClazz(name, parent);
         clazz.DEPENDENCIES = dependencies;
 
         if (meta) {
-            if (typeof meta === 'function') {
-                meta = meta.apply(clazz, dependencies);
-            }
-
-            for (i = 0, ii = metaTypes.length; i < ii; ++i) {
-                if (typeof metaTypes[i] === 'string') {
-                    metaTypes[i] = Meta.Manager.getType(metaTypes[i]);
-                }
-                metaTypes[i].process(clazz, meta);
-            }
+            this.applyMeta(clazz, meta, handlers);
         }
 
         return clazz;
@@ -143,7 +287,7 @@ var Factory = {
 
     createClazz: function(name, parent) {
         if (!parent) {
-            parent = Base;
+            parent = this.BaseClazz;
         }
 
         var clazz = function () {
@@ -175,72 +319,57 @@ var Factory = {
         return clazz;
     },
 
+    applyMeta: function(clazz, meta, handlers) {
+        if (typeof meta === 'function') {
+            meta = meta.apply(clazz, dependencies);
+        }
+
+        if ('clazz' in handlers) {
+            for (var i = 0, ii = handlers.clazz.length; i < ii; ++i) {
+                handlers.clazz[i].process(clazz, meta);
+            }
+        }
+        if ('proto' in handlers) {
+            for (var i = 0, ii = handlers.proto.length; i < ii; ++i) {
+                handlers.proto[i].process(clazz.prototype, meta);
+            }
+        }
+    },
+
     generateName: function() {
         return this.CLASS_NAME.replace('{uid}', ++this._clazzUID);
     }
 }
-var Manager = {
+var Manager = function() {
+    this._clazz = {};
+    this._meta  = {};
+}
+
+Manager.prototype = {
 
     _objectUID: 0,
 
-    _clazz: {},
-    _meta: {},
-
-    adjustName: function(name, namespace) {
-        if (typeof namespace === 'undefined') {
-            namespace = NameSpace.current();
-        }
-        return (namespace+'.'+name).replace(NameSpace.getDelimitersRegexp(), '.');
-    },
-
     setMeta: function(name, meta) {
-
-        if (meta.metaTypes) {
-            for (var i = 0, ii = meta.metaTypes.length; i < ii; ++i) {
-                if (typeof meta.metaTypes[i] === 'string') {
-                    meta.metaTypes[i] = Meta.Manager.getType(meta.metaTypes[i]);
-                }
-            }
-        }
-
-        this._meta[this.adjustName(name)] = meta;
+        this._meta[name] = meta;
 
         return this;
     },
 
     hasMeta: function(name) {
-        var i, ii, namespaces = NameSpace.whereLookFor();
-
-        for (i = 0, ii = namespaces.length; i < ii; ++i) {
-            if (this.adjustName(name, namespaces[i]) in this._meta) {
-                return true;
-            }
-        }
-        return false;
+        return name in this._meta;
     },
 
     getMeta: function(name) {
-        var i, ii, aname, namespaces = NameSpace.whereLookFor();
-
-        for (i = 0, ii = namespaces.length; i < ii; ++i) {
-            aname = this.adjustName(name, namespaces[i]);
-            if (aname in this._meta) {
-                return this._meta[aname];
-            }
+        if (!this.hasMeta(name)) {
+            throw new Error('Meta does not exists for "' + name + '"!');
         }
-        throw new Error('Meta does not exists for "' + name + '"!');
+        return this._meta[name];
     },
 
     getClazz: function(name, dependencies) {
-        var i, ii, j, jj, clazz, aname, namespaces = NameSpace.whereLookFor(), isFound;
+        var i, ii, j, jj, clazz, isFound;
 
-        for (i = 0, ii = namespaces.length; i < ii; ++i) {
-            aname = this.adjustName(name, namespaces[i]);
-            if (aname in this._clazz) {
-                clazz = this._clazz[aname];
-                break;
-            }
-        }
+        clazz = this._clazz[name];
 
         if (Object.prototype.toString.apply(clazz) === '[object Array]') {
             if (!dependencies) {
@@ -265,15 +394,9 @@ var Manager = {
     },
 
     hasClazz: function(name, dependencies) {
-        var i, ii, j, jj, clazz, aname, namespaces = NameSpace.whereLookFor(), isFound;
+        var i, ii, j, jj, clazz, isFound;
 
-        for (i = 0, ii = namespaces.length; i < ii; ++i) {
-            aname = this.adjustName(name, namespaces[i]);
-            if (aname in this._clazz) {
-                clazz = this._clazz[aname];
-                break;
-            }
-        }
+        clazz = this._clazz[name];
 
         if (Object.prototype.toString.apply(clazz) === '[object Array]') {
             if (!dependencies) {
@@ -305,43 +428,30 @@ var Manager = {
         if (typeof clazz !== 'function') {
             throw new Error('Clazz must be a function!');
         }
-        var aname = this.adjustName(name);
-        if (!(aname in this._clazz)) {
-            this._clazz[aname] = [];
+        if (!(name in this._clazz)) {
+            this._clazz[name] = [];
         }
-        this._clazz[aname].push(clazz);
+        this._clazz[name].push(clazz);
 
         return this;
-    },
-
-    get: function(name , dependencies) {
-
-        if (!this.hasClazz(name, dependencies)) {
-            var meta = this.getMeta(name);
-            meta.name         = name;
-            meta.dependencies = dependencies;
-
-            this.setClazz(Factory.create(meta));
-        }
-        return this.getClazz(name, dependencies);
-    },
-
-    has: function(name) {
-        return this.hasClazz(name) || this.hasMeta(name);
     },
 
     getNextObjectUID: function() {
         return ++this._objectUID;
     }
 }
-var ConstantsInitProcessor = function(object, constants) {
+Meta.Manager.setProcessor('ClazzJS.Constants', 'chain', {
+    init:      'ClazzJS.ConstantsInit',
+    interface: 'ClazzJS.ConstantsInterface'
+})
+Meta.Manager.setProcessor('ClazzJS.ConstantsInit', function(object, constants) {
     object['__constants'] = {};
 
     for (var constant in constants) {
         object['__constants'][constant] = constants[constant];
     }
-}
-var ConstantsInterfaceProcessor = new Meta.Processors.Interface({
+})
+Meta.Manager.setProcessor('ClazzJS.ConstantsInterface', 'interface', {
 
     const: function(name) {
         return this.__getConstant(name);
@@ -385,9 +495,8 @@ var ConstantsInterfaceProcessor = new Meta.Processors.Interface({
         }
         return constants;
     }
-
-});
-var MethodsProcessor = function(object, methods) {
+})
+Meta.Manager.setProcessor('ClazzJS.Methods', function(object, methods) {
 
     // Copy parent clazz methods
     if (typeof object === 'function' && object.parent) {
@@ -406,8 +515,14 @@ var MethodsProcessor = function(object, methods) {
         }
         object[method] = methods[method]
     }
-}
-var PropertiesDefaultsProcessor = {
+})
+Meta.Manager.setProcessor('ClazzJS.Properties', 'chain', {
+    init:      'ClazzJS.PropertiesInit',
+    interface: 'ClazzJS.PropertiesInterface',
+    meta:      'ClazzJS.PropertiesMeta',
+    defaults:  'ClazzJS.PropertiesDefaults'
+});
+Meta.Manager.setProcessor('ClazzJS.PropertiesDefaults', {
 
     process: function(object) {
 
@@ -458,13 +573,14 @@ var PropertiesDefaultsProcessor = {
         hash:  {},
         array: []
     }
-}
+
+})
 var PropertiesInitProcessor = function(object, properties) {
     for (var property in properties) {
         object['_' + property] = undefined;
     }
 }
-var PropertiesInterfaceProcessor = new Meta.Processors.Interface({
+Meta.Manager.setDefaults('ClazzJS.PropertiesInterface', 'interface', {
 
     __setters: {},
     __getters: {},
@@ -727,248 +843,225 @@ var PropertiesInterfaceProcessor = new Meta.Processors.Interface({
         return getters;
     }
 })
-var PropertiesMetaProcessor = {
+Meta.Manager.setProcessor('ClazzJS.PropertiesMeta', function(object, properties) {
+    for (var property in properties) {
 
-    process: function(object, properties) {
-        for (var property in properties) {
+        var meta = properties[property];
 
-            var meta = properties[property];
-
-            if (Object.prototype.toString.call(properties[property]) === '[object Array]') {
-                properties[property] = meta = { type: meta }
-            }
-            else if (typeof meta !== 'object' || meta === null) {
-                properties[property] = meta = { default: meta }
-            }
-
-            if (!('methods' in meta)) {
-                meta.methods = ['get', 'set', 'has', 'is']
-            }
-
-            this.MetaHandler.process(object, properties[property], property)
+        if (Object.prototype.toString.call(meta) === '[object Array]') {
+            properties[property] = meta = 3 === meta.length ? { type: [meta[0], meta[2]], default: meta[1] }: { type: meta }
         }
-    },
+        else if (typeof meta !== 'object' || meta === null) {
+            properties[property] = meta = { default: meta }
+        }
 
-    MetaHandler: new Meta.Handler({
-        options: {
-            type: {
-                process: function(object, type, option, property) {
-                    var self = this, params = {};
-                    
-                    if (Object.prototype.toString.apply(type) === '[object Array]') {
-                        params = type[1] || [];
-                        type   = type[0];
-                    }
-                    if (!(type in this.TYPES)) {
-                        throw new Error('Unsupported property type "' + type + '"!');
-                    }
+        if (!('methods' in meta)) {
+            meta.methods = ['get', 'set', 'has', 'is']
+        }
 
-                    object.__setProperty(property, 'type',  type);
+        Meta.Manager.getHandler('ClazzJS.Property').process(object, properties[property], property);
+    }
+})
+Meta.Manager.setProcessor('ClazzJS.Property.Constraints', function(object, constraints, option, property) {
 
-                    object.__addSetter(property, function(value) {
-                        return self.checkValue(value, type, params);
-                    });
-                },
-
-                checkValue: function(value, type, params) {
-                    return this.TYPES[type].call(this, value, params);
-                },
-
-                TYPES: {
-                    boolean: function(value) {
-                        return Boolean(value);
-                    },
-                    number: function(value, params) {
-                        value = Number(value);
-                        if ('min' in params && value < params['min']) {
-                            throw new Error('Value "' + value + '" must not be less then "' + params['min'] + '"!');
-                        }
-                        if ('max' in params && value > params['max']) {
-                            throw new Error('Value "' + value + '" must not be greater then "' + params['max'] + '"!');
-                        }
-                        return value;
-                    },
-                    string: function(value, params) {
-                        value = String(value);
-                        if ('pattern' in params && !params.pattern.test(value)) {
-                            throw new Error('Value "' + value + '" does not match pattern "' + params.pattern + '"!');
-                        }
-                        if ('variants' in params && -1 === params.variants.indexOf(value)) {
-                            throw new Error('Value "' + value + '" must be one of "' + params.variants.join(', ') + '"!');
-                        }
-                        return value;
-                    },
-                    datetime: function(value) {
-                        if (!(value instanceof Date)) {
-                            value = new Date(Date.parse(value));
-                        }
-                        return value;
-                    },
-                    array: function(value, params) {
-                        return typeof value === 'string' ? value.split(params['delimiter'] || ',') : [].concat(value);
-                    },
-                    hash: function(value, params) {
-                        if ({}.constructor !== value.constructor) {
-                            throw new Error('Incorrect value: not hash type!');
-                        }
-                        if ('keys' in params) {
-                            for (var prop in value) {
-                                if (!(prop in params.keys)) {
-                                    throw new Error('Unsupported hash key "' + prop + '"!');
-                                }
-                            }
-                        }
-                        if ('element' in params) {
-                            this.checkValue.apply(this, [].concat(params.element));
-                        }
-                        return value;
-                    }
-                }
-            },
-
-            default: {
-                process: function(object, defaultValue, option, property) {
-                    var type;
-
-                    if (typeof defaultValue === 'function') {
-                        defaultValue = defaultValue();
-                    }
-
-                    object.__setProperty(property, 'default', defaultValue);
-                }
-            },
-
-            methods: {
-
-                process: function(object, methods, option, property) {
-                    if (Object.prototype.toString.apply(methods) !== '[object Array]') {
-                        methods = [methods];
-                    }
-
-                    for (var i = 0, ii = methods.length; i < ii; ++i) {
-                        this.addMethod(methods[i], object, property);
-                    }
-                },
-                addMethod:  function(name, object, property) {
-                    var method = this.createMethod(name, property);
-                    object[method.name] = method.body;
-                },
-
-                createMethod: function(name, property) {
-                    if (!(name in this.METHODS)) {
-                        throw new Error('Unsupported method "' + name + '"!');
-                    }
-                    var method = this.METHODS[name](property);
-
-                    if (typeof method === 'function') {
-                        method = {
-                            name: name + property[0].toUpperCase() + property.slice(1),
-                            body: method
-                        }
-                    }
-                    return method;
-                },
-
-                METHODS: {
-                    get: function(property) {
-                        return function() {
-                            return this.__getPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
-                        }
-                    },
-                    set: function(property) {
-                        return function(value) {
-                            return this.__setPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
-                        }
-                    },
-                    is: function(property) {
-                        return {
-                            name: (0 !== property.indexOf('is') ? 'is' : '') + property[0].toUpperCase() + property.slice(1),
-                            body: function() {
-                                return this.__isPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
-                            }
-                        }
-                    },
-                    has: function(property) {
-                          return function() {
-                              return this.__hasPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
-                          }
-                    }
-                }
-            },
-
-            converters: function(object, converters, option, property) {
-
-                object.__addSetter(property, 1000, function(value) {
-                    for (var name in converters) {
-                        value = converters[name].call(this, value);
-                    }
-                    return value;
-                })
-            },
-
-            constraints: function(object, constraints, option, property) {
-
-                object.__addSetter(property, function(value) {
-                    for (var name in constraints) {
-                        if (!constraints[name].call(this, value)) {
-                            throw new Error('Constraint "' + name + '" was failed!');
-                        }
-                    }
-                    return value;
-                })
+    object.__addSetter(property, function(value) {
+        for (var name in constraints) {
+            if (!constraints[name].call(this, value)) {
+                throw new Error('Constraint "' + name + '" was failed!');
             }
         }
+        return value;
     })
-}
-Meta.Processors.sets({
+})
+Meta.Manager.setProcessor('ClazzJS.Property.Converters', function(object, converters, option, property) {
 
-    clazz_constants_init:      ConstantsInitProcessor,
-    clazz_constants_interface: ConstantsInterfaceProcessor,
+    object.__addSetter(property, 1000, function(value) {
+        for (var name in converters) {
+            value = converters[name].call(this, value);
+        }
+        return value;
+    })
+})
+Meta.Manager.setProcessor('ClazzJS.Property.Default', function(object, defaultValue, option, property) {
+    if (typeof defaultValue === 'function') {
+        defaultValue = defaultValue();
+    }
 
-    clazz_constants: [
-        'clazz_constants_init',
-        'clazz_constants_interface'
-    ],
+    object.__setProperty(property, 'default', defaultValue);
+})
+Meta.Manager.setProcessor('ClazzJS.Property.Methods', {
 
-    clazz_properties_init:      PropertiesInitProcessor,
-    clazz_properties_interface: PropertiesInterfaceProcessor,
-    clazz_properties_meta:      PropertiesMetaProcessor,
-    clazz_properties_defaults:  PropertiesDefaultsProcessor,
+    process: function(object, methods, option, property) {
+        if (Object.prototype.toString.apply(methods) !== '[object Array]') {
+            methods = [methods];
+        }
 
-    clazz_properties: [
-        'clazz_properties_init',
-        'clazz_properties_interface',
-        'clazz_properties_meta',
-        'clazz_properties_defaults'
-    ],
-
-    clazz_methods:    MethodsProcessor
-});
-
-Meta.Manager.setType(Factory.META_TYPE, {
-    clazz: {
-        options: {
-            constants:        'clazz_constants',
-            clazz_properties: 'clazz_properties',
-            clazz_methods:    'clazz_methods'
+        for (var i = 0, ii = methods.length; i < ii; ++i) {
+            this.addMethod(methods[i], object, property);
         }
     },
-    object: {
-        objectHandler: function(object) {
-            return object.prototype;
+    addMethod:  function(name, object, property) {
+        var method = this.createMethod(name, property);
+        object[method.name] = method.body;
+    },
+
+    createMethod: function(name, property) {
+        if (!(name in this.METHODS)) {
+            throw new Error('Unsupported method "' + name + '"!');
+        }
+        var method = this.METHODS[name](property);
+
+        if (typeof method === 'function') {
+            method = {
+                name: name + property[0].toUpperCase() + property.slice(1),
+                body: method
+            }
+        }
+        return method;
+    },
+
+    METHODS: {
+        get: function(property) {
+            return function() {
+                return this.__getPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
+            }
         },
-        options: {
-            properties: 'clazz_properties',
-            methods:    'clazz_methods'
+        set: function(property) {
+            return function(value) {
+                return this.__setPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
+            }
+        },
+        is: function(property) {
+            return {
+                name: (0 !== property.indexOf('is') ? 'is' : '') + property[0].toUpperCase() + property.slice(1),
+                body: function() {
+                    return this.__isPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
+                }
+            }
+        },
+        has: function(property) {
+            return function() {
+                return this.__hasPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
+            }
         }
     }
-});
+})
+Meta.Manager.setProcessor('ClazzJS.Property.Type', {
+    process: function(object, type, option, property) {
+        var self = this, params = {};
 
-Clazz.Base    = Base;
-Clazz.Factory = Factory;
-Clazz.Manager = Manager;
+        if (Object.prototype.toString.apply(type) === '[object Array]') {
+            params = type[1] || [];
+            type   = type[0];
+        }
+        if (!(type in this.TYPES)) {
+            throw new Error('Unsupported property type "' + type + '"!');
+        }
 
-global.NameSpace = NameSpace;
-global.Clazz     = Clazz;
+        object.__setProperty(property, 'type',  type);
+
+        object.__addSetter(property, function(value) {
+            return self.checkValue(value, type, params);
+        });
+    },
+
+    checkValue: function(value, type, params) {
+        return this.TYPES[type].call(this, value, params);
+    },
+
+    TYPES: {
+        boolean: function(value) {
+            return Boolean(value);
+        },
+        number: function(value, params) {
+            value = Number(value);
+            if ('min' in params && value < params['min']) {
+                throw new Error('Value "' + value + '" must not be less then "' + params['min'] + '"!');
+            }
+            if ('max' in params && value > params['max']) {
+                throw new Error('Value "' + value + '" must not be greater then "' + params['max'] + '"!');
+            }
+            return value;
+        },
+        string: function(value, params) {
+            value = String(value);
+            if ('pattern' in params && !params.pattern.test(value)) {
+                throw new Error('Value "' + value + '" does not match pattern "' + params.pattern + '"!');
+            }
+            if ('variants' in params && -1 === params.variants.indexOf(value)) {
+                throw new Error('Value "' + value + '" must be one of "' + params.variants.join(', ') + '"!');
+            }
+            return value;
+        },
+        datetime: function(value) {
+            if (!(value instanceof Date)) {
+                value = new Date(Date.parse(value));
+            }
+            return value;
+        },
+        object: function(value, params) {
+            if (typeof value !== 'object' || Object.prototype.toString.call(value)) {
+                throw new Error('Incorrect value: not object type');
+            }
+            if ('instanceof' in params) {
+                var clazz = params.instanceof;
+
+                if (Object.prototype.toString.call(clazz) === '[object Array]') {
+                    clazz = Clazz(clazz[0], clazz[1] || []);
+                }
+                if (!(value instanceof clazz)) {
+                    throw new Error('Value does not instance of clazz "' + clazz.NAME + '"!');
+                }
+            }
+            return value
+        },
+        array: function(value, params) {
+            return typeof value === 'string' ? value.split(params['delimiter'] || ',') : [].concat(value);
+        },
+        hash: function(value, params) {
+            if ({}.constructor !== value.constructor) {
+                throw new Error('Incorrect value: not hash type!');
+            }
+            if ('keys' in params) {
+                for (var prop in value) {
+                    if (!(prop in params.keys)) {
+                        throw new Error('Unsupported hash key "' + prop + '"!');
+                    }
+                }
+            }
+            if ('element' in params) {
+                this.checkValue.apply(this, [].concat(params.element));
+            }
+            return value;
+        }
+    }
+})
+Meta.Manager.setHandler('ClazzJS.Clazz', {
+    constants:        'ClazzJS.Constants',
+    clazz_properties: 'ClazzJS.Properties',
+    clazz_methods:    'ClazzJS.Methods'
+})
+Meta.Manager.setHandler('ClazzJS.Property', {
+    type:           'ClazzJS.Property.Type',
+    default:        'ClazzJS.Property.Default',
+    methods:        'ClazzJS.Property.Methods',
+    converters:     'ClazzJS.Property.Converters',
+    constraints:    'ClazzJS.Property.Constraints'
+})
+Meta.Manager.setHandler('ClazzJS.Prototype', {
+    properties: 'ClazzJS.Properties',
+    methods:    'ClazzJS.Methods'
+})
+;(function(global) {
+
+    var factory     = new Factory(Base);
+    var manager     = new Manager();
+    var namespace   = new Namespace(manager, factory, null, '', global, Clazz);
+    var clazz       = namespace();
+
+    global.namespace = namespace;
+    global.clazz     = clazz;
+
+})(global)
 
 })(this, Meta);

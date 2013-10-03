@@ -1,4 +1,4 @@
-var PropertiesDefaultsProcessor = {
+Meta.Manager.setProcessor('ClazzJS.PropertiesDefaults', {
 
     process: function(object) {
 
@@ -49,4 +49,5 @@ var PropertiesDefaultsProcessor = {
         hash:  {},
         array: []
     }
-}
+
+})

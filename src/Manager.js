@@ -1,65 +1,33 @@
-var Manager = {
+var Manager = function() {
+    this._clazz = {};
+    this._meta  = {};
+}
+
+Manager.prototype = {
 
     _objectUID: 0,
 
-    _clazz: {},
-    _meta: {},
-
-    adjustName: function(name, namespace) {
-        if (typeof namespace === 'undefined') {
-            namespace = NameSpace.current();
-        }
-        return (namespace+'.'+name).replace(NameSpace.getDelimitersRegexp(), '.');
-    },
-
     setMeta: function(name, meta) {
-
-        if (meta.metaTypes) {
-            for (var i = 0, ii = meta.metaTypes.length; i < ii; ++i) {
-                if (typeof meta.metaTypes[i] === 'string') {
-                    meta.metaTypes[i] = Meta.Manager.getType(meta.metaTypes[i]);
-                }
-            }
-        }
-
-        this._meta[this.adjustName(name)] = meta;
+        this._meta[name] = meta;
 
         return this;
     },
 
     hasMeta: function(name) {
-        var i, ii, namespaces = NameSpace.whereLookFor();
-
-        for (i = 0, ii = namespaces.length; i < ii; ++i) {
-            if (this.adjustName(name, namespaces[i]) in this._meta) {
-                return true;
-            }
-        }
-        return false;
+        return name in this._meta;
     },
 
     getMeta: function(name) {
-        var i, ii, aname, namespaces = NameSpace.whereLookFor();
-
-        for (i = 0, ii = namespaces.length; i < ii; ++i) {
-            aname = this.adjustName(name, namespaces[i]);
-            if (aname in this._meta) {
-                return this._meta[aname];
-            }
+        if (!this.hasMeta(name)) {
+            throw new Error('Meta does not exists for "' + name + '"!');
         }
-        throw new Error('Meta does not exists for "' + name + '"!');
+        return this._meta[name];
     },
 
     getClazz: function(name, dependencies) {
-        var i, ii, j, jj, clazz, aname, namespaces = NameSpace.whereLookFor(), isFound;
+        var i, ii, j, jj, clazz, isFound;
 
-        for (i = 0, ii = namespaces.length; i < ii; ++i) {
-            aname = this.adjustName(name, namespaces[i]);
-            if (aname in this._clazz) {
-                clazz = this._clazz[aname];
-                break;
-            }
-        }
+        clazz = this._clazz[name];
 
         if (Object.prototype.toString.apply(clazz) === '[object Array]') {
             if (!dependencies) {
@@ -84,15 +52,9 @@ var Manager = {
     },
 
     hasClazz: function(name, dependencies) {
-        var i, ii, j, jj, clazz, aname, namespaces = NameSpace.whereLookFor(), isFound;
+        var i, ii, j, jj, clazz, isFound;
 
-        for (i = 0, ii = namespaces.length; i < ii; ++i) {
-            aname = this.adjustName(name, namespaces[i]);
-            if (aname in this._clazz) {
-                clazz = this._clazz[aname];
-                break;
-            }
-        }
+        clazz = this._clazz[name];
 
         if (Object.prototype.toString.apply(clazz) === '[object Array]') {
             if (!dependencies) {
@@ -124,29 +86,12 @@ var Manager = {
         if (typeof clazz !== 'function') {
             throw new Error('Clazz must be a function!');
         }
-        var aname = this.adjustName(name);
-        if (!(aname in this._clazz)) {
-            this._clazz[aname] = [];
+        if (!(name in this._clazz)) {
+            this._clazz[name] = [];
         }
-        this._clazz[aname].push(clazz);
+        this._clazz[name].push(clazz);
 
         return this;
-    },
-
-    get: function(name , dependencies) {
-
-        if (!this.hasClazz(name, dependencies)) {
-            var meta = this.getMeta(name);
-            meta.name         = name;
-            meta.dependencies = dependencies;
-
-            this.setClazz(Factory.create(meta));
-        }
-        return this.getClazz(name, dependencies);
-    },
-
-    has: function(name) {
-        return this.hasClazz(name) || this.hasMeta(name);
     },
 
     getNextObjectUID: function() {

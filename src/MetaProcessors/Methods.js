@@ -1,4 +1,4 @@
-var MethodsProcessor = function(object, methods) {
+Meta.Manager.setProcessor('ClazzJS.Methods', function(object, methods) {
 
     // Copy parent clazz methods
     if (typeof object === 'function' && object.parent) {
@@ -17,4 +17,4 @@ var MethodsProcessor = function(object, methods) {
         }
         object[method] = methods[method]
     }
-}
+})

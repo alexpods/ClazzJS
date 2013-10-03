@@ -1,4 +1,4 @@
-var PropertiesInterfaceProcessor = new Meta.Processors.Interface({
+Meta.Manager.setDefaults('ClazzJS.PropertiesInterface', 'interface', {
 
     __setters: {},
     __getters: {},
