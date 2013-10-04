@@ -24,6 +24,10 @@ Factory.prototype = {
 
         clazz.DEPENDENCIES = dependencies;
 
+        if (typeof meta === 'function') {
+            meta = meta.apply(clazz, dependencies);
+        }
+        
         if (meta) {
             this.applyMeta(clazz, meta, processors);
         }
@@ -66,9 +70,6 @@ Factory.prototype = {
     },
 
     applyMeta: function(clazz, meta, processors) {
-        if (typeof meta === 'function') {
-            meta = meta.apply(clazz, dependencies);
-        }
 
         var types = { clazz: clazz, proto: clazz.prototype }, typeProcessors, processor, i, ii;
 
