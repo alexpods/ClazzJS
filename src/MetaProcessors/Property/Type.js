@@ -52,9 +52,9 @@ meta.processor('Clazz.Property.Type', {
             }
             return value;
         },
-        object: function(value, params) {
+        object: function(value, params, property) {
             if (typeof value !== 'object' || Object.prototype.toString.call(value)) {
-                throw new Error('Incorrect value: not object type');
+                throw new Error('Incorrect value: not object type for property "' + property + '"!');
             }
             if ('instanceof' in params) {
                 var clazz = params.instanceof;
@@ -71,9 +71,9 @@ meta.processor('Clazz.Property.Type', {
         array: function(value, params) {
             return typeof value === 'string' ? value.split(params['delimiter'] || ',') : [].concat(value);
         },
-        hash: function(value, params) {
+        hash: function(value, params, property) {
             if ({}.constructor !== value.constructor) {
-                throw new Error('Incorrect value: not hash type!');
+                throw new Error('Incorrect value: not hash type for property "' + property +'"!');
             }
             if ('keys' in params) {
                 for (var prop in value) {
