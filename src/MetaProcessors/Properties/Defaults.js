@@ -1,4 +1,4 @@
-meta.processor('ClazzJS.Properties.Defaults', {
+meta.processor('Clazz.Properties.Defaults', {
 
     process: function(object) {
 
