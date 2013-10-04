@@ -597,7 +597,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
         __hasProperty: function(property) {
             property = this.__adjustPropertyName(property);
 
-            return ('_' + property) in this && typeof this['_' + property] !== 'function';
+            return property in this.__properties;
         },
 
         __adjustPropertyName: function(name) {
