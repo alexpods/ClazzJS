@@ -1,45 +1,48 @@
 meta.processor('Clazz.Constants.Interface', 'Meta.Interface', {
 
-    const: function(name) {
-        return this.__getConstant(name);
-    },
+    interface: {
 
-    __getConstant: function(name, constants) {
-        var self = this;
+        const: function(name) {
+            return this.__getConstant(name);
+        },
 
-        if (typeof constants === 'undefined') {
-            constants = self.__getConstants();
-        }
+        __getConstant: function(name, constants) {
+            var self = this;
 
-        if (typeof name !== 'undefined') {
-            if (!(name in constants)) {
-                throw new Error('Constant "' + name + '" does not defined!');
+            if (typeof constants === 'undefined') {
+                constants = self.__getConstants();
             }
-            constants = constants[name];
 
-            if (Object.prototype.toString.apply(constants) === '[object Object]') {
-                return function(name) {
-                    return self.__getConstant(name, constants)
+            if (typeof name !== 'undefined') {
+                if (!(name in constants)) {
+                    throw new Error('Constant "' + name + '" does not defined!');
                 }
-            }
-        }
+                constants = constants[name];
 
-        return constants;
-    },
-
-    __getConstants: function() {
-        var constants = {}, parent = this;
-
-        while (parent) {
-            if (parent.hasOwnProperty('__constants')) {
-                for (var constant in parent['__constants']) {
-                    if (!(constant in constants)) {
-                        constants[constant] = parent['__constants'][constant];
+                if (Object.prototype.toString.apply(constants) === '[object Object]') {
+                    return function(name) {
+                        return self.__getConstant(name, constants)
                     }
                 }
             }
-            parent = parent.parent;
+
+            return constants;
+        },
+
+        __getConstants: function() {
+            var constants = {}, parent = this;
+
+            while (parent) {
+                if (parent.hasOwnProperty('__constants')) {
+                    for (var constant in parent['__constants']) {
+                        if (!(constant in constants)) {
+                            constants[constant] = parent['__constants'][constant];
+                        }
+                    }
+                }
+                parent = parent.parent;
+            }
+            return constants;
         }
-        return constants;
     }
 })

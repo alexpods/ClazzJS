@@ -425,8 +425,10 @@ meta.processor('Clazz.Clazz', 'Meta.Options', {
     clazz_methods:    'Clazz.Methods'
 })
 meta.processor('Clazz.Constants', 'Meta.Chain', {
-    init:      'Clazz.Constants.Init',
-    interface: 'Clazz.Constants.Interface'
+    processors: {
+        init:      'Clazz.Constants.Init',
+        interface: 'Clazz.Constants.Interface'
+    }
 })
 meta.processor('Clazz.Constants.Init', function(object, constants) {
     object['__constants'] = {};
@@ -437,47 +439,50 @@ meta.processor('Clazz.Constants.Init', function(object, constants) {
 })
 meta.processor('Clazz.Constants.Interface', 'Meta.Interface', {
 
-    const: function(name) {
-        return this.__getConstant(name);
-    },
+    interface: {
 
-    __getConstant: function(name, constants) {
-        var self = this;
+        const: function(name) {
+            return this.__getConstant(name);
+        },
 
-        if (typeof constants === 'undefined') {
-            constants = self.__getConstants();
-        }
+        __getConstant: function(name, constants) {
+            var self = this;
 
-        if (typeof name !== 'undefined') {
-            if (!(name in constants)) {
-                throw new Error('Constant "' + name + '" does not defined!');
+            if (typeof constants === 'undefined') {
+                constants = self.__getConstants();
             }
-            constants = constants[name];
 
-            if (Object.prototype.toString.apply(constants) === '[object Object]') {
-                return function(name) {
-                    return self.__getConstant(name, constants)
+            if (typeof name !== 'undefined') {
+                if (!(name in constants)) {
+                    throw new Error('Constant "' + name + '" does not defined!');
                 }
-            }
-        }
+                constants = constants[name];
 
-        return constants;
-    },
-
-    __getConstants: function() {
-        var constants = {}, parent = this;
-
-        while (parent) {
-            if (parent.hasOwnProperty('__constants')) {
-                for (var constant in parent['__constants']) {
-                    if (!(constant in constants)) {
-                        constants[constant] = parent['__constants'][constant];
+                if (Object.prototype.toString.apply(constants) === '[object Object]') {
+                    return function(name) {
+                        return self.__getConstant(name, constants)
                     }
                 }
             }
-            parent = parent.parent;
+
+            return constants;
+        },
+
+        __getConstants: function() {
+            var constants = {}, parent = this;
+
+            while (parent) {
+                if (parent.hasOwnProperty('__constants')) {
+                    for (var constant in parent['__constants']) {
+                        if (!(constant in constants)) {
+                            constants[constant] = parent['__constants'][constant];
+                        }
+                    }
+                }
+                parent = parent.parent;
+            }
+            return constants;
         }
-        return constants;
     }
 })
 meta.processor('Clazz.Methods', function(object, methods) {
@@ -501,10 +506,12 @@ meta.processor('Clazz.Methods', function(object, methods) {
     }
 })
 meta.processor('Clazz.Properties', 'Meta.Chain', {
-    init:      'Clazz.Properties.Init',
-    interface: 'Clazz.Properties.Interface',
-    meta:      'Clazz.Properties.Meta',
-    defaults:  'Clazz.Properties.Defaults'
+    processors: {
+        init:      'Clazz.Properties.Init',
+        interface: 'Clazz.Properties.Interface',
+        meta:      'Clazz.Properties.Meta',
+        defaults:  'Clazz.Properties.Defaults'
+    }
 });
 meta.processor('Clazz.Properties.Defaults', {
 
@@ -566,265 +573,268 @@ meta.processor('Clazz.Properties.Init', function(object, properties) {
 })
 meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
 
-    __setters: {},
-    __getters: {},
+    interface: {
 
-    __properties: {},
+        __setters: {},
+        __getters: {},
 
-    init: function(data) {
-        this.__setData(data);
-    },
+        __properties: {},
 
-    __setProperties: function(properties) {
-        for (var property in properties) {
-            this.__setProperty(property, properties[property]);
-        }
-        return this;
-    },
+        init: function(data) {
+            this.__setData(data);
+        },
 
-    __getProperties: function() {
-        return this.__properties;
-    },
-
-    __setProperty: function(property, key, value) {
-        property = this.__adjustPropertyName(property);
-
-        if (typeof this.__properties[property] === 'undefined') {
-            this.__properties[property] = {};
-        }
-        if ({}.constructor === key.constructor) {
-            for (var prop in key) {
-                this.__properties[property][prop] = key[prop];
+        __setProperties: function(properties) {
+            for (var property in properties) {
+                this.__setProperty(property, properties[property]);
             }
-        }
-        else {
-            this.__properties[property][key] = value;
-        }
+            return this;
+        },
 
-        return this;
-    },
+        __getProperties: function() {
+            return this.__properties;
+        },
 
-    __getProperty: function(property, key) {
-        return typeof key === 'undefined'
-            ? this.__properties[property]
-            : this.__properties[property] && this.__properties[property][key];
-    },
+        __setProperty: function(property, key, value) {
+            property = this.__adjustPropertyName(property);
 
-    __hasProperty: function(property) {
-        property = this.__adjustPropertyName(property);
-
-        return ('_' + property) in this && typeof this['_' + property] !== 'function';
-    },
-
-    __adjustPropertyName: function(name) {
-        return name.replace(/(?:_)\w/, function (match) { return match[1].toUpperCase(); });
-    },
-
-    __setData: function(data) {
-        for (var property in data) {
-            if (!this.__hasProperty(property)) {
-                continue;
+            if (typeof this.__properties[property] === 'undefined') {
+                this.__properties[property] = {};
             }
-            this.__setPropertyValue(property, data[property]);
-        }
-        return this;
-    },
-
-    __getPropertyValue: function(property /*, fields... */) {
-        var getters, i, ii, name, value;
-
-        property = this.__adjustPropertyName(property);
-
-        if (!this.__hasProperty(property)) {
-            throw new Error('Can\'t get! Property "' + property + '" does not exists!');
-        }
-
-        value = this['_' + property];
-
-        getters = this.__getGetters(property);
-
-        for (name in getters) {
-            value = getters[name].call(this, value);
-        }
-
-        var fields = Object.prototype.toString.call(arguments[1]) === '[object Array]'
-            ? arguments[1]
-            : Array.prototype.slice.call(arguments, 1);
-
-        for (i = 0, ii = fields.length; i < ii; ++i) {
-            value = value[fields[i]];
-        }
-
-        return value;
-    },
-
-    __setPropertyValue: function(property /* fields... , value */) {
-        var setters, i, ii, name, fields, value, setValue = arguments[arguments.length - 1];
-
-        property = this.__adjustPropertyName(property);
-
-        if (!this.__hasProperty(property)) {
-            throw new Error('Can\'t set! Property "' + property + '" does not exists!');
-        }
-
-        fields  = Object.prototype.toString.call(arguments[1]) === '[object Array]'
-            ? arguments[1]
-            : Array.prototype.slice.call(arguments, 1, -1);
-
-        if (fields && fields.length) {
-            value = this['_' + property];
-            for (i = 0, ii = fields.length - 1; i < ii; ++i) {
-                if (!(fields[i] in value)) {
-                    value[fields[i]] = {};
+            if ({}.constructor === key.constructor) {
+                for (var prop in key) {
+                    this.__properties[property][prop] = key[prop];
                 }
-                value = value[fields[i]];
             }
-            value[fields[i]] = setValue;
-        }
-        else {
-            value = setValue;
-        }
+            else {
+                this.__properties[property][key] = value;
+            }
 
-        setters = this.__getSetters(property);
+            return this;
+        },
 
-        for (name in setters) {
-            value = setters[name].call(this, value);
-        }
+        __getProperty: function(property, key) {
+            return typeof key === 'undefined'
+                ? this.__properties[property]
+                : this.__properties[property] && this.__properties[property][key];
+        },
 
-        this['_' + property] = value;
+        __hasProperty: function(property) {
+            property = this.__adjustPropertyName(property);
 
-        return this;
-    },
+            return ('_' + property) in this && typeof this['_' + property] !== 'function';
+        },
 
-    __isPropertyValue: function(property /* fields... , value */) {
-        var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
+        __adjustPropertyName: function(name) {
+            return name.replace(/(?:_)\w/, function (match) { return match[1].toUpperCase(); });
+        },
+
+        __setData: function(data) {
+            for (var property in data) {
+                if (!this.__hasProperty(property)) {
+                    continue;
+                }
+                this.__setPropertyValue(property, data[property]);
+            }
+            return this;
+        },
+
+        __getPropertyValue: function(property /*, fields... */) {
+            var getters, i, ii, name, value;
+
+            property = this.__adjustPropertyName(property);
+
+            if (!this.__hasProperty(property)) {
+                throw new Error('Can\'t get! Property "' + property + '" does not exists!');
+            }
+
+            value = this['_' + property];
+
+            getters = this.__getGetters(property);
+
+            for (name in getters) {
+                value = getters[name].call(this, value);
+            }
+
+            var fields = Object.prototype.toString.call(arguments[1]) === '[object Array]'
                 ? arguments[1]
                 : Array.prototype.slice.call(arguments, 1);
 
-        var value   = this.__getPropertyValue(property, fields);
-        var compare = arguments[arguments.length - 1];
-
-        return typeof value !== 'undefined' ? value == compare : !!value;
-    },
-
-    __hasPropertyValue: function(property /*, fields... */) {
-        var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
-            ? arguments[1]
-            : Array.prototype.slice.call(arguments, 1);
-
-        var value = this.__getPropertyValue(property, fields);
-
-        if (Object.prototype.toString.apply(value) === '[object Object]') {
-            for (var p in value) {
-                return true;
+            for (i = 0, ii = fields.length; i < ii; ++i) {
+                value = value[fields[i]];
             }
-            return false;
-        }
 
-        return !((typeof this[value] === 'undefined')
-            || (value === null)
-            || (typeof value === 'string' && value === '')
-            || (Object.prototype.toString.apply(value) === '[object Array]' && value.length === 0));
-    },
+            return value;
+        },
 
-    __addSetter: function(property, weight, callback) {
-        if (typeof callback === 'undefined') {
-            callback = weight;
-            weight   = 0;
-        }
-        if (typeof callback !== 'function') {
-            throw new Error('Set callback must be a function!');
-        }
-        if (!(property in this.__setters)) {
-            this.__setters[property] = [];
-        }
-        this.__setters[property].push([weight, callback]);
+        __setPropertyValue: function(property /* fields... , value */) {
+            var setters, i, ii, name, fields, value, setValue = arguments[arguments.length - 1];
 
-        return this;
-    },
+            property = this.__adjustPropertyName(property);
 
-    __getSetters: function(property) {
-        var i, ii, setters, prop, allSetters = {}, parent = this.clazz.prototype;
+            if (!this.__hasProperty(property)) {
+                throw new Error('Can\'t set! Property "' + property + '" does not exists!');
+            }
 
-        while (parent) {
-            if (parent.hasOwnProperty('__setters')) {
-                for (prop in parent.__setters) {
-                    if (!(prop in allSetters)) {
-                        allSetters[prop] = parent.__setters[prop];
+            fields  = Object.prototype.toString.call(arguments[1]) === '[object Array]'
+                ? arguments[1]
+                : Array.prototype.slice.call(arguments, 1, -1);
+
+            if (fields && fields.length) {
+                value = this['_' + property];
+                for (i = 0, ii = fields.length - 1; i < ii; ++i) {
+                    if (!(fields[i] in value)) {
+                        value[fields[i]] = {};
+                    }
+                    value = value[fields[i]];
+                }
+                value[fields[i]] = setValue;
+            }
+            else {
+                value = setValue;
+            }
+
+            setters = this.__getSetters(property);
+
+            for (name in setters) {
+                value = setters[name].call(this, value);
+            }
+
+            this['_' + property] = value;
+
+            return this;
+        },
+
+        __isPropertyValue: function(property /* fields... , value */) {
+            var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
+                ? arguments[1]
+                : Array.prototype.slice.call(arguments, 1);
+
+            var value   = this.__getPropertyValue(property, fields);
+            var compare = arguments[arguments.length - 1];
+
+            return typeof value !== 'undefined' ? value == compare : !!value;
+        },
+
+        __hasPropertyValue: function(property /*, fields... */) {
+            var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
+                ? arguments[1]
+                : Array.prototype.slice.call(arguments, 1);
+
+            var value = this.__getPropertyValue(property, fields);
+
+            if (Object.prototype.toString.apply(value) === '[object Object]') {
+                for (var p in value) {
+                    return true;
+                }
+                return false;
+            }
+
+            return !((typeof this[value] === 'undefined')
+                || (value === null)
+                || (typeof value === 'string' && value === '')
+                || (Object.prototype.toString.apply(value) === '[object Array]' && value.length === 0));
+        },
+
+        __addSetter: function(property, weight, callback) {
+            if (typeof callback === 'undefined') {
+                callback = weight;
+                weight   = 0;
+            }
+            if (typeof callback !== 'function') {
+                throw new Error('Set callback must be a function!');
+            }
+            if (!(property in this.__setters)) {
+                this.__setters[property] = [];
+            }
+            this.__setters[property].push([weight, callback]);
+
+            return this;
+        },
+
+        __getSetters: function(property) {
+            var i, ii, setters, prop, allSetters = {}, parent = this.clazz.prototype;
+
+            while (parent) {
+                if (parent.hasOwnProperty('__setters')) {
+                    for (prop in parent.__setters) {
+                        if (!(prop in allSetters)) {
+                            allSetters[prop] = parent.__setters[prop];
+                        }
+                    }
+                }
+                parent = parent.parent;
+            }
+
+            if (typeof property !== 'undefined') {
+                setters = [];
+                if (property in allSetters && allSetters[property].length) {
+
+                    allSetters[property].sort(function(s1, s2) {
+                        return s2[0] - s1[0];
+                    });
+
+                    for (i = 0, ii = allSetters[property].length; i < ii; ++i) {
+                        setters.push(allSetters[property][i][1]);
                     }
                 }
             }
-            parent = parent.parent;
-        }
-
-        if (typeof property !== 'undefined') {
-            setters = [];
-            if (property in allSetters && allSetters[property].length) {
-
-                allSetters[property].sort(function(s1, s2) {
-                    return s2[0] - s1[0];
-                });
-
-                for (i = 0, ii = allSetters[property].length; i < ii; ++i) {
-                    setters.push(allSetters[property][i][1]);
-                }
+            else {
+                setters =  allSetters;
             }
-        }
-        else {
-            setters =  allSetters;
-        }
 
-        return setters;
-    },
+            return setters;
+        },
 
-    __addGetter: function(property, weight, callback) {
-        if (typeof callback === 'undefined') {
-            callback = weight;
-            weight   = 0;
-        }
-        if (typeof callback !== 'function') {
-            throw new Error('Get callback must be a function!');
-        }
-        if (!(property in this.__getters)) {
-            this.__getters[property] = [];
-        }
-        this.__getters[property].push([weight, callback]);
+        __addGetter: function(property, weight, callback) {
+            if (typeof callback === 'undefined') {
+                callback = weight;
+                weight   = 0;
+            }
+            if (typeof callback !== 'function') {
+                throw new Error('Get callback must be a function!');
+            }
+            if (!(property in this.__getters)) {
+                this.__getters[property] = [];
+            }
+            this.__getters[property].push([weight, callback]);
 
-        return this;
-    },
+            return this;
+        },
 
-    __getGetters: function(property) {
-        var i, ii, prop, getters, allGetters = {}, parent = this.clazz.prototype;
+        __getGetters: function(property) {
+            var i, ii, prop, getters, allGetters = {}, parent = this.clazz.prototype;
 
-        while (parent) {
-            if (parent.hasOwnProperty('__getters')) {
-                for (prop in parent.__getters) {
-                    if (!(prop in allGetters)) {
-                        allGetters[prop] = parent.__getters[prop];
+            while (parent) {
+                if (parent.hasOwnProperty('__getters')) {
+                    for (prop in parent.__getters) {
+                        if (!(prop in allGetters)) {
+                            allGetters[prop] = parent.__getters[prop];
+                        }
+                    }
+                }
+
+                parent = parent.parent;
+            }
+
+            if (typeof property !== 'undefined') {
+                getters = [];
+                if (property in allGetters && allGetters[property].length) {
+
+                    allGetters[property].sort(function(s1, s2) {
+                        return s2[0] - s1[0];
+                    });
+
+                    for (i = 0, ii = allGetters[property].length; i < ii; ++i) {
+                        getters.push(allGetters[property][i][1]);
                     }
                 }
             }
-
-            parent = parent.parent;
-        }
-
-        if (typeof property !== 'undefined') {
-            getters = [];
-            if (property in allGetters && allGetters[property].length) {
-
-                allGetters[property].sort(function(s1, s2) {
-                    return s2[0] - s1[0];
-                });
-
-                for (i = 0, ii = allGetters[property].length; i < ii; ++i) {
-                    getters.push(allGetters[property][i][1]);
-                }
+            else {
+                getters = allGetters;
             }
+            return getters;
         }
-        else {
-            getters = allGetters;
-        }
-        return getters;
     }
 })
 meta.processor('Clazz.Properties.Meta', function(object, properties) {
@@ -847,11 +857,13 @@ meta.processor('Clazz.Properties.Meta', function(object, properties) {
     }
 })
 meta.processor('Clazz.Property', 'Meta.Options', {
-    type:           'Clazz.Property.Type',
-    default:        'Clazz.Property.Default',
-    methods:        'Clazz.Property.Methods',
-    converters:     'Clazz.Property.Converters',
-    constraints:    'Clazz.Property.Constraints'
+    options: {
+        type:           'Clazz.Property.Type',
+        default:        'Clazz.Property.Default',
+        methods:        'Clazz.Property.Methods',
+        converters:     'Clazz.Property.Converters',
+        constraints:    'Clazz.Property.Constraints'
+    }
 })
 meta.processor('Clazz.Property.Constraints', function(object, constraints, property) {
 
@@ -1029,8 +1041,10 @@ meta.processor('Clazz.Property.Type', {
     }
 })
 meta.processor('Clazz.Proto', 'Meta.Options', {
-    properties: 'Clazz.Properties',
-    methods:    'Clazz.Methods'
+    options: {
+        properties: 'Clazz.Properties',
+        methods:    'Clazz.Methods'
+    }
 })
 ;(function(global, meta) {
 
