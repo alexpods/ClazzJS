@@ -53,7 +53,7 @@ meta.processor('Clazz.Property.Type', {
             return value;
         },
         object: function(value, params, property) {
-            if (typeof value !== 'object' || Object.prototype.toString.call(value)) {
+            if (typeof value !== 'object' || Object.prototype.toString.call(value) === '[object Array]') {
                 throw new Error('Incorrect value: not object type for property "' + property + '"!');
             }
             if ('instanceof' in params) {
