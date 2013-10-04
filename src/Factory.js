@@ -27,7 +27,7 @@ Factory.prototype = {
         if (typeof meta === 'function') {
             meta = meta.apply(clazz, dependencies);
         }
-        
+
         if (meta) {
             this.applyMeta(clazz, meta, processors);
         }

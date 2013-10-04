@@ -259,7 +259,7 @@ Factory.prototype = {
         if (typeof meta === 'function') {
             meta = meta.apply(clazz, dependencies);
         }
-        
+
         if (meta) {
             this.applyMeta(clazz, meta, processors);
         }
@@ -940,12 +940,12 @@ meta.processor('Clazz.Property.Type', {
         object.__setProperty(property, 'type',  type);
 
         object.__addSetter(property, function(value) {
-            return self.checkValue(value, type, params);
+            return self.checkValue(value, type, params, property);
         });
     },
 
-    checkValue: function(value, type, params) {
-        return this.TYPES[type].call(this, value, params);
+    checkValue: function(value, type, params, property) {
+        return this.TYPES[type].call(this, value, params, property);
     },
 
     TYPES: {
@@ -1010,6 +1010,12 @@ meta.processor('Clazz.Property.Type', {
             }
             if ('element' in params) {
                 this.checkValue.apply(this, [].concat(params.element));
+            }
+            return value;
+        },
+        clazz: function(value, params, property) {
+            if (typeof value !== 'function' || !('NAME' in value) || !('parent' in value)) {
+                throw new Error('Incorrect value: not clazz type for property "' + property +'"!');
             }
             return value;
         }
