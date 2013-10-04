@@ -6,7 +6,7 @@ var Clazz = function(manager, factory, namespace) {
 
         // Getting of existed clazz
         if (typeof last !== 'function' && Object.prototype.toString.call(last) !== '[object Object]') {
-            return clazz.get(name, last);
+            return clazz.get(name, /* actually dependencies */ parent);
         }
         clazz.set(name, parent, process, meta);
     }
