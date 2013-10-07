@@ -1,4 +1,4 @@
-meta.processor('Clazz.Property.Default', function(object, defaultValue, property) {
+Meta('Clazz.Property.Default', function(object, defaultValue, property) {
     if (typeof defaultValue === 'function') {
         defaultValue = defaultValue();
     }

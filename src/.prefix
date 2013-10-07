@@ -1,2 +1,29 @@
-;(function(global, meta, undefined) {
-
+;(function (global, name, dependencies, factory) {
+    // AMD integration
+    if (typeof define === 'function' && define.amd) {
+        define(name, dependencies, factory);
+    }
+    // CommonJS integration
+    else if (typeof exports === "object" && exports) {
+        for (var i = 0, ii = dependencies.length; i < ii; ++i) {
+            var dependency = dependencies[i];
+            if (typeof dependency === 'string') {
+                dependencies[i] = require(dependency);
+            }
+        }
+        exports = factory.apply(global, dependencies);
+    }
+    // Just global variable
+    else {
+        for (var i = 0, ii = dependencies.length; i < ii; ++i) {
+            var dependency = dependencies[i];
+            if (typeof dependency === 'string') {
+                if (!(dependency in global)) {
+                    throw new Error('"' + name + '" dependent on non exited module "' + dependency + '"!');
+                }
+                dependencies[i] = global[dependency];
+            }
+        }
+        global[name] = factory.apply(global, dependencies);
+    }
+}(this, 'ClazzJS', ['MetaJS'], function (Meta) {

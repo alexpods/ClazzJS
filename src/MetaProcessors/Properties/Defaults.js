@@ -1,4 +1,4 @@
-meta.processor('Clazz.Properties.Defaults', {
+Meta('Clazz.Properties.Defaults', {
 
     DEFAULT: {
         hash:  {},

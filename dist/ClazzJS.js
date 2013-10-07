@@ -1,6 +1,32 @@
-;(function(global, meta, undefined) {
-
-
+;(function (global, name, dependencies, factory) {
+    // AMD integration
+    if (typeof define === 'function' && define.amd) {
+        define(name, dependencies, factory);
+    }
+    // CommonJS integration
+    else if (typeof exports === "object" && exports) {
+        for (var i = 0, ii = dependencies.length; i < ii; ++i) {
+            var dependency = dependencies[i];
+            if (typeof dependency === 'string') {
+                dependencies[i] = require(dependency);
+            }
+        }
+        exports = factory.apply(global, dependencies);
+    }
+    // Just global variable
+    else {
+        for (var i = 0, ii = dependencies.length; i < ii; ++i) {
+            var dependency = dependencies[i];
+            if (typeof dependency === 'string') {
+                if (!(dependency in global)) {
+                    throw new Error('"' + name + '" dependent on non exited module "' + dependency + '"!');
+                }
+                dependencies[i] = global[dependency];
+            }
+        }
+        global[name] = factory.apply(global, dependencies);
+    }
+}(this, 'ClazzJS', ['MetaJS'], function (Meta) {
 var Clazz = function(manager, factory, namespace) {
 
     var clazz = function(name, parent, process, meta) {
@@ -420,27 +446,27 @@ Manager.prototype = {
         return this;
     }
 }
-meta.processor('Clazz.Clazz', 'Meta.Options', {
+Meta('Clazz.Clazz', 'Meta.Options', {
     options: {
         constants:        'Clazz.Constants',
         clazz_properties: 'Clazz.Properties',
         clazz_methods:    'Clazz.Methods'
     }
 })
-meta.processor('Clazz.Constants', 'Meta.Chain', {
+Meta('Clazz.Constants', 'Meta.Chain', {
     processors: {
         init:      'Clazz.Constants.Init',
         interface: 'Clazz.Constants.Interface'
     }
 })
-meta.processor('Clazz.Constants.Init', function(object, constants) {
+Meta('Clazz.Constants.Init', function(object, constants) {
     object['__constants'] = {};
 
     for (var constant in constants) {
         object['__constants'][constant] = constants[constant];
     }
 })
-meta.processor('Clazz.Constants.Interface', 'Meta.Interface', {
+Meta('Clazz.Constants.Interface', 'Meta.Interface', {
 
     interface: {
 
@@ -488,7 +514,7 @@ meta.processor('Clazz.Constants.Interface', 'Meta.Interface', {
         }
     }
 })
-meta.processor('Clazz.Methods', function(object, methods) {
+Meta('Clazz.Methods', function(object, methods) {
 
     // Copy parent clazz methods
     if (typeof object === 'function' && object.parent) {
@@ -508,7 +534,7 @@ meta.processor('Clazz.Methods', function(object, methods) {
         object[method] = methods[method]
     }
 })
-meta.processor('Clazz.Properties', 'Meta.Chain', {
+Meta('Clazz.Properties', 'Meta.Chain', {
     processors: {
         init:      'Clazz.Properties.Init',
         interface: 'Clazz.Properties.Interface',
@@ -516,7 +542,7 @@ meta.processor('Clazz.Properties', 'Meta.Chain', {
         defaults:  'Clazz.Properties.Defaults'
     }
 });
-meta.processor('Clazz.Properties.Defaults', {
+Meta('Clazz.Properties.Defaults', {
 
     DEFAULT: {
         hash:  {},
@@ -541,12 +567,12 @@ meta.processor('Clazz.Properties.Defaults', {
     }
 
 })
-meta.processor('Clazz.Properties.Init', function(object, properties) {
+Meta('Clazz.Properties.Init', function(object, properties) {
     for (var property in properties) {
         object['_' + property] = undefined;
     }
 })
-meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
+Meta('Clazz.Properties.Interface', 'Meta.Interface', {
 
     interface: {
 
@@ -812,7 +838,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
         }
     }
 })
-meta.processor('Clazz.Properties.Meta', function(object, properties) {
+Meta('Clazz.Properties.Meta', function(object, properties) {
     for (var property in properties) {
 
         var pmeta = properties[property];
@@ -831,7 +857,7 @@ meta.processor('Clazz.Properties.Meta', function(object, properties) {
         meta.processor('Clazz.Property').process(object, pmeta, property);
     }
 })
-meta.processor('Clazz.Property', 'Meta.Options', {
+Meta('Clazz.Property', 'Meta.Options', {
     options: {
         type:           'Clazz.Property.Type',
         default:        'Clazz.Property.Default',
@@ -840,7 +866,7 @@ meta.processor('Clazz.Property', 'Meta.Options', {
         constraints:    'Clazz.Property.Constraints'
     }
 })
-meta.processor('Clazz.Property.Constraints', function(object, constraints, property) {
+Meta('Clazz.Property.Constraints', function(object, constraints, property) {
 
     object.__addSetter(property, function(value) {
         for (var name in constraints) {
@@ -851,7 +877,7 @@ meta.processor('Clazz.Property.Constraints', function(object, constraints, prope
         return value;
     })
 })
-meta.processor('Clazz.Property.Converters', function(object, converters, property) {
+Meta('Clazz.Property.Converters', function(object, converters, property) {
 
     object.__addSetter(property, 1000, function(value) {
         for (var name in converters) {
@@ -860,14 +886,14 @@ meta.processor('Clazz.Property.Converters', function(object, converters, propert
         return value;
     })
 })
-meta.processor('Clazz.Property.Default', function(object, defaultValue, property) {
+Meta('Clazz.Property.Default', function(object, defaultValue, property) {
     if (typeof defaultValue === 'function') {
         defaultValue = defaultValue();
     }
 
     object.__setProperty(property, 'default', defaultValue);
 })
-meta.processor('Clazz.Property.Methods', {
+Meta('Clazz.Property.Methods', {
 
     process: function(object, methods, property) {
         if (Object.prototype.toString.apply(methods) !== '[object Array]') {
@@ -924,7 +950,7 @@ meta.processor('Clazz.Property.Methods', {
         }
     }
 })
-meta.processor('Clazz.Property.Type', {
+Meta('Clazz.Property.Type', {
 
     process: function(object, type, property) {
         var self = this, params = {};
@@ -1021,22 +1047,26 @@ meta.processor('Clazz.Property.Type', {
         }
     }
 })
-meta.processor('Clazz.Proto', 'Meta.Options', {
+Meta('Clazz.Proto', 'Meta.Options', {
     options: {
         properties: 'Clazz.Properties',
         methods:    'Clazz.Methods'
     }
 })
-;(function(global, meta) {
 
-    var factory     = new Factory(Base, meta);
-    var manager     = new Manager();
-    var namespace   = new Namespace(manager, factory, null, '', global, Clazz);
-    var clazz       = namespace();
+var factory   = new Factory(Base, Meta);
+var manager   = new Manager();
+var namespace = new Namespace(manager, factory, null, '', global, Clazz);
+var clazz     = namespace();
 
-    global.namespace = namespace;
-    global.clazz     = clazz;
+return {
+    Base:       Base,
+    Mangaer:    Manager,
+    Namespace:  Namespace,
+    Clazz:      Clazz,
 
-})(global, meta);
+    namespace:  namespace,
+    clazz:      clazz
+}
 
-})(this, meta);
+}))

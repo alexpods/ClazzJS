@@ -1,4 +1,4 @@
-meta.processor('Clazz.Methods', function(object, methods) {
+Meta('Clazz.Methods', function(object, methods) {
 
     // Copy parent clazz methods
     if (typeof object === 'function' && object.parent) {

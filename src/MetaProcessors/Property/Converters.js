@@ -1,4 +1,4 @@
-meta.processor('Clazz.Property.Converters', function(object, converters, property) {
+Meta('Clazz.Property.Converters', function(object, converters, property) {
 
     object.__addSetter(property, 1000, function(value) {
         for (var name in converters) {

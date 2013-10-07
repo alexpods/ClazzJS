@@ -1,4 +1,4 @@
-meta.processor('Clazz.Property.Type', {
+Meta('Clazz.Property.Type', {
 
     process: function(object, type, property) {
         var self = this, params = {};

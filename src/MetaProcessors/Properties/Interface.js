@@ -1,4 +1,4 @@
-meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
+Meta('Clazz.Properties.Interface', 'Meta.Interface', {
 
     interface: {
 

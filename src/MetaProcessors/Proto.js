@@ -1,4 +1,4 @@
-meta.processor('Clazz.Proto', 'Meta.Options', {
+Meta('Clazz.Proto', 'Meta.Options', {
     options: {
         properties: 'Clazz.Properties',
         methods:    'Clazz.Methods'

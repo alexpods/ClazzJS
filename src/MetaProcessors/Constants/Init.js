@@ -1,4 +1,4 @@
-meta.processor('Clazz.Constants.Init', function(object, constants) {
+Meta('Clazz.Constants.Init', function(object, constants) {
     object['__constants'] = {};
 
     for (var constant in constants) {

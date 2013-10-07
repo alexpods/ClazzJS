@@ -1,4 +1,4 @@
-meta.processor('Clazz.Properties.Meta', function(object, properties) {
+Meta('Clazz.Properties.Meta', function(object, properties) {
     for (var property in properties) {
 
         var pmeta = properties[property];

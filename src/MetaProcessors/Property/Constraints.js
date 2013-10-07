@@ -1,4 +1,4 @@
-meta.processor('Clazz.Property.Constraints', function(object, constraints, property) {
+Meta('Clazz.Property.Constraints', function(object, constraints, property) {
 
     object.__addSetter(property, function(value) {
         for (var name in constraints) {
