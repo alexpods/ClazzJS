@@ -14,8 +14,6 @@
         }
         var module = factory.apply(global, dependencies);
 
-console.log(dependencies);
-
         for (var property in module) {
             exports[property] = module[property];
         }
