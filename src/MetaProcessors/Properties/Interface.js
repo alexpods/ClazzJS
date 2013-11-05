@@ -56,7 +56,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
         },
 
         __getProperty: function(property, key) {
-            var properties = this.getProperties();
+            var properties = this.__getProperties();
 
             return typeof key === 'undefined'
                 ? properties[property]
@@ -66,7 +66,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
         __hasProperty: function(property) {
             property = this.__adjustPropertyName(property);
 
-            return property in this.getProperties();
+            return property in this.__getProperties();
         },
 
         __adjustPropertyName: function(name) {
