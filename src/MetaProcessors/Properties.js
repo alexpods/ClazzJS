@@ -1,4 +1,4 @@
-Meta('Clazz.Properties', 'Meta.Chain', {
+meta.processor('Clazz.Properties', 'Meta.Chain', {
     processors: {
         init:      'Clazz.Properties.Init',
         interface: 'Clazz.Properties.Interface',

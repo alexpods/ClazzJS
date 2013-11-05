@@ -1,2 +1,12 @@
 
+return {
+    Base:       Base,
+    Mangaer:    Manager,
+    Namespace:  Namespace,
+    Clazz:      Clazz,
+
+    namespace:  namespace,
+    clazz:      clazz
+}
+
 }))

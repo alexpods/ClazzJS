@@ -1,4 +1,4 @@
-Meta('Clazz.Constants.Interface', 'Meta.Interface', {
+meta.processor('Clazz.Constants.Interface', 'Meta.Interface', {
 
     interface: {
 

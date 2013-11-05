@@ -12,7 +12,13 @@
                 dependencies[i] = require(dependency);
             }
         }
-        exports = factory.apply(global, dependencies);
+        var module = factory.apply(global, dependencies);
+
+console.log(dependencies);
+
+        for (var property in module) {
+            exports[property] = module[property];
+        }
     }
     // Just global variable
     else {
@@ -27,6 +33,7 @@
         }
         global[name] = factory.apply(global, dependencies);
     }
-}((new Function('return this'))(), 'ClazzJS', ['MetaJS'], function (MetaJS) {
+}((new Function('return this'))(), 'ClazzJS', ['MetaJS'], function (MetaJS, undefined) {
 
-var Meta = MetaJS.meta;
+console.log(MetaJS);
+var meta = MetaJS.meta;

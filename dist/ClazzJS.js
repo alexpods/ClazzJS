@@ -12,7 +12,13 @@
                 dependencies[i] = require(dependency);
             }
         }
-        exports = factory.apply(global, dependencies);
+        var module = factory.apply(global, dependencies);
+
+console.log(dependencies);
+
+        for (var property in module) {
+            exports[property] = module[property];
+        }
     }
     // Just global variable
     else {
@@ -27,9 +33,10 @@
         }
         global[name] = factory.apply(global, dependencies);
     }
-}((new Function('return this'))(), 'ClazzJS', ['MetaJS'], function (MetaJS) {
+}((new Function('return this'))(), 'ClazzJS', ['MetaJS'], function (MetaJS, undefined) {
 
-var Meta = MetaJS.meta;
+console.log(MetaJS);
+var meta = MetaJS.meta;
 var Clazz = function(manager, factory, namespace) {
 
     var clazz = function(name, parent, process, meta) {
@@ -63,11 +70,12 @@ var Clazz = function(manager, factory, namespace) {
 }
 
 Clazz.prototype = {
-    get: function(name, dependencies) {
+    get: function(originName, dependencies) {
+        var name;
 
-        name = this.resolveName(name);
+        name = this.resolveName(originName);
         if (!name) {
-            throw new Error('Clazz with name "' + name + '" does not exits!');
+            throw new Error('Clazz with name "' + originName + '" does not exits!');
         }
 
         dependencies = dependencies || [];
@@ -449,27 +457,27 @@ Manager.prototype = {
         return this;
     }
 }
-Meta('Clazz.Clazz', 'Meta.Options', {
+meta.processor('Clazz.Clazz', 'Meta.Options', {
     options: {
         constants:        'Clazz.Constants',
         clazz_properties: 'Clazz.Properties',
         clazz_methods:    'Clazz.Methods'
     }
 })
-Meta('Clazz.Constants', 'Meta.Chain', {
+meta.processor('Clazz.Constants', 'Meta.Chain', {
     processors: {
         init:      'Clazz.Constants.Init',
         interface: 'Clazz.Constants.Interface'
     }
 })
-Meta('Clazz.Constants.Init', function(object, constants) {
+meta.processor('Clazz.Constants.Init', function(object, constants) {
     object['__constants'] = {};
 
     for (var constant in constants) {
         object['__constants'][constant] = constants[constant];
     }
 })
-Meta('Clazz.Constants.Interface', 'Meta.Interface', {
+meta.processor('Clazz.Constants.Interface', 'Meta.Interface', {
 
     interface: {
 
@@ -517,7 +525,7 @@ Meta('Clazz.Constants.Interface', 'Meta.Interface', {
         }
     }
 })
-Meta('Clazz.Methods', function(object, methods) {
+meta.processor('Clazz.Methods', function(object, methods) {
 
     // Copy parent clazz methods
     if (typeof object === 'function' && object.parent) {
@@ -537,7 +545,7 @@ Meta('Clazz.Methods', function(object, methods) {
         object[method] = methods[method]
     }
 })
-Meta('Clazz.Properties', 'Meta.Chain', {
+meta.processor('Clazz.Properties', 'Meta.Chain', {
     processors: {
         init:      'Clazz.Properties.Init',
         interface: 'Clazz.Properties.Interface',
@@ -545,7 +553,7 @@ Meta('Clazz.Properties', 'Meta.Chain', {
         defaults:  'Clazz.Properties.Defaults'
     }
 });
-Meta('Clazz.Properties.Defaults', {
+meta.processor('Clazz.Properties.Defaults', {
 
     DEFAULT: {
         hash:  {},
@@ -570,12 +578,12 @@ Meta('Clazz.Properties.Defaults', {
     }
 
 })
-Meta('Clazz.Properties.Init', function(object, properties) {
+meta.processor('Clazz.Properties.Init', function(object, properties) {
     for (var property in properties) {
         object['_' + property] = undefined;
     }
 })
-Meta('Clazz.Properties.Interface', 'Meta.Interface', {
+meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
 
     interface: {
 
@@ -841,7 +849,7 @@ Meta('Clazz.Properties.Interface', 'Meta.Interface', {
         }
     }
 })
-Meta('Clazz.Properties.Meta', function(object, properties) {
+meta.processor('Clazz.Properties.Meta', function(object, properties) {
     for (var property in properties) {
 
         var pmeta = properties[property];
@@ -860,7 +868,7 @@ Meta('Clazz.Properties.Meta', function(object, properties) {
         meta.processor('Clazz.Property').process(object, pmeta, property);
     }
 })
-Meta('Clazz.Property', 'Meta.Options', {
+meta.processor('Clazz.Property', 'Meta.Options', {
     options: {
         type:           'Clazz.Property.Type',
         default:        'Clazz.Property.Default',
@@ -869,7 +877,7 @@ Meta('Clazz.Property', 'Meta.Options', {
         constraints:    'Clazz.Property.Constraints'
     }
 })
-Meta('Clazz.Property.Constraints', function(object, constraints, property) {
+meta.processor('Clazz.Property.Constraints', function(object, constraints, property) {
 
     object.__addSetter(property, function(value) {
         for (var name in constraints) {
@@ -880,7 +888,7 @@ Meta('Clazz.Property.Constraints', function(object, constraints, property) {
         return value;
     })
 })
-Meta('Clazz.Property.Converters', function(object, converters, property) {
+meta.processor('Clazz.Property.Converters', function(object, converters, property) {
 
     object.__addSetter(property, 1000, function(value) {
         for (var name in converters) {
@@ -889,14 +897,14 @@ Meta('Clazz.Property.Converters', function(object, converters, property) {
         return value;
     })
 })
-Meta('Clazz.Property.Default', function(object, defaultValue, property) {
+meta.processor('Clazz.Property.Default', function(object, defaultValue, property) {
     if (typeof defaultValue === 'function') {
         defaultValue = defaultValue();
     }
 
     object.__setProperty(property, 'default', defaultValue);
 })
-Meta('Clazz.Property.Methods', {
+meta.processor('Clazz.Property.Methods', {
 
     process: function(object, methods, property) {
         if (Object.prototype.toString.apply(methods) !== '[object Array]') {
@@ -953,7 +961,7 @@ Meta('Clazz.Property.Methods', {
         }
     }
 })
-Meta('Clazz.Property.Type', {
+meta.processor('Clazz.Property.Type', {
 
     process: function(object, type, property) {
         var self = this, params = {};
@@ -1050,14 +1058,14 @@ Meta('Clazz.Property.Type', {
         }
     }
 })
-Meta('Clazz.Proto', 'Meta.Options', {
+meta.processor('Clazz.Proto', 'Meta.Options', {
     options: {
         properties: 'Clazz.Properties',
         methods:    'Clazz.Methods'
     }
-})
+});
 
-var factory   = new Factory(Base, Meta);
+var factory   = new Factory(Base, meta);
 var manager   = new Manager();
 var namespace = new Namespace(manager, factory, null, '', global, Clazz);
 var clazz     = namespace();

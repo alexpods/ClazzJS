@@ -31,11 +31,12 @@ var Clazz = function(manager, factory, namespace) {
 }
 
 Clazz.prototype = {
-    get: function(name, dependencies) {
+    get: function(originName, dependencies) {
+        var name;
 
-        name = this.resolveName(name);
+        name = this.resolveName(originName);
         if (!name) {
-            throw new Error('Clazz with name "' + name + '" does not exits!');
+            throw new Error('Clazz with name "' + originName + '" does not exits!');
         }
 
         dependencies = dependencies || [];

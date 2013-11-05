@@ -1,15 +1,5 @@
 
-var factory   = new Factory(Base, Meta);
+var factory   = new Factory(Base, meta);
 var manager   = new Manager();
 var namespace = new Namespace(manager, factory, null, '', global, Clazz);
 var clazz     = namespace();
-
-return {
-    Base:       Base,
-    Mangaer:    Manager,
-    Namespace:  Namespace,
-    Clazz:      Clazz,
-
-    namespace:  namespace,
-    clazz:      clazz
-}

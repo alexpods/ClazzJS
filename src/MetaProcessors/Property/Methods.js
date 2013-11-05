@@ -1,4 +1,4 @@
-Meta('Clazz.Property.Methods', {
+meta.processor('Clazz.Property.Methods', {
 
     process: function(object, methods, property) {
         if (Object.prototype.toString.apply(methods) !== '[object Array]') {
