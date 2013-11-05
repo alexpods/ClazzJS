@@ -35,7 +35,6 @@ console.log(dependencies);
     }
 }((new Function('return this'))(), 'ClazzJS', ['MetaJS'], function (MetaJS, undefined) {
 
-console.log(MetaJS);
 var meta = MetaJS.meta;
 var Clazz = function(manager, factory, namespace) {
 
