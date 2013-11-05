@@ -19,7 +19,22 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
         },
 
         __getProperties: function() {
-            return this.__properties;
+            var parent = this;
+
+            var properties = {};
+
+            while (parent) {
+                if (parent.__properties) {
+                    for (var property in parent.__properties) {
+                        if (property in properties) {
+                            continue;
+                        }
+                        properties[property] = parent.__properties[property];
+                    }
+                }
+                parent = parent.parent;
+            }
+            return properties;
         },
 
         __setProperty: function(property, key, value) {
@@ -41,15 +56,17 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
         },
 
         __getProperty: function(property, key) {
+            var properties = this.getProperties();
+
             return typeof key === 'undefined'
-                ? this.__properties[property]
-                : this.__properties[property] && this.__properties[property][key];
+                ? properties[property]
+                : properties[property] && properties[property][key];
         },
 
         __hasProperty: function(property) {
             property = this.__adjustPropertyName(property);
 
-            return property in this.__properties;
+            return property in this.getProperties();
         },
 
         __adjustPropertyName: function(name) {
