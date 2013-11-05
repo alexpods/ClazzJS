@@ -57,13 +57,13 @@ meta.processor('Clazz.Property.Type', {
                 throw new Error('Incorrect value: not object type for property "' + property + '"!');
             }
             if ('instanceof' in params) {
-                var clazz = params.instanceof;
+                var clazzInstance = params.instanceof;
 
-                if (Object.prototype.toString.call(clazz) === '[object Array]') {
-                    clazz = Clazz(clazz[0], clazz[1] || []);
+                if (Object.prototype.toString.call(clazzInstance) === '[object Array]') {
+                    clazzInstance = clazz(clazzInstance[0], clazzInstance[1] || []);
                 }
-                if (!(value instanceof clazz)) {
-                    throw new Error('Value does not instance of clazz "' + clazz.NAME + '"!');
+                if (!(value instanceof clazzInstance)) {
+                    throw new Error('Value does not instance of clazz "' + clazzInstance.NAME + '"!');
                 }
             }
             return value
