@@ -1067,7 +1067,7 @@ meta.processor('Clazz.Proto', 'Meta.Options', {
 
 var factory   = new Factory(Base, meta);
 var manager   = new Manager();
-var namespace = new Namespace(manager, factory, null, '', global, Clazz);
+var namespace = new Namespace(manager, factory, null, '', (new Function('return this')())(), Clazz);
 var clazz     = namespace();
 
 return {
