@@ -1,13 +1,14 @@
 {
   "name": "clazz-js",
   "title": "ClazzJS",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Portable JavaScript library for class-style OOP programming",
   "author": {
     "name":  "Aleksey Podskrebyshev (Alex Pods)",
     "email": "aleksey.podskrebyshev@gmail.com",
     "url":   "http://alexpods.com"
   },
+  "main": "dist/ClazzJS.js",
   "keywords": [
       "oop",
       "class",
