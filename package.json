@@ -21,6 +21,9 @@
     "type": "git",
     "url":  "http://github.com/alexpods/ClazzJS.git"
   },
+  "dependencies": {
+     "meta-js": "~0.3.1"
+  },
   "devDependencies": {
     "grunt": "~0.4.1",
     "grunt-contrib-concat": "~0.3.0",

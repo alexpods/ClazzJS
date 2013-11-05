@@ -8,6 +8,7 @@
         for (var i = 0, ii = dependencies.length; i < ii; ++i) {
             var dependency = dependencies[i];
             if (typeof dependency === 'string') {
+                dependency = dependency.replace(/([A-Z]+)/g, function($1) { return '-'+$1.toLowerCase(); }).replace(/^-/, '');
                 dependencies[i] = require(dependency);
             }
         }
@@ -26,7 +27,9 @@
         }
         global[name] = factory.apply(global, dependencies);
     }
-}(this, 'ClazzJS', ['MetaJS'], function (Meta) {
+}((new Function('return this'))(), 'ClazzJS', ['MetaJS'], function (MetaJS) {
+
+var Meta = MetaJS.meta;
 var Clazz = function(manager, factory, namespace) {
 
     var clazz = function(name, parent, process, meta) {
