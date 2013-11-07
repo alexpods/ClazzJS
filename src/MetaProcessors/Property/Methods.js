@@ -42,7 +42,7 @@ meta.processor('Clazz.Property.Methods', {
         },
         is: function(property) {
             return {
-                name: (0 !== property.indexOf('is') ? 'is' + property[0].toUpperCase() : '' + property[0]) + + property.slice(1),
+                name: (0 !== property.indexOf('is') ? 'is' + property[0].toUpperCase() : '' + property[0]) + property.slice(1),
                 body: function() {
                     return this.__isPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
                 }
