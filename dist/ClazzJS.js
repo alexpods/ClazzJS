@@ -692,15 +692,15 @@ meta.processor('Clazz.Events.Init', function(object, eventCallbacks) {
     parent = object.parent;
 
     while (parent) {
-        if (!parent.__eventsCallbacks) {
-            continue;
-        }
-        var eventCallbacks = parent.getEventCallbacks();
 
-        for (event in eventCallbacks) {
-            for (name in eventCallbacks[event]) {
-                if (!object.hasEventCallback(event, name)) {
-                    object.on(event, name, eventCallbacks[event][name]);
+        if (parent.__eventsCallbacks) {
+            var eventCallbacks = parent.getEventCallbacks();
+
+            for (event in eventCallbacks) {
+                for (name in eventCallbacks[event]) {
+                    if (!object.hasEventCallback(event, name)) {
+                        object.on(event, name, eventCallbacks[event][name]);
+                    }
                 }
             }
         }
