@@ -112,7 +112,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
         },
 
         __setPropertyValue: function(property /* fields... , value */) {
-            var setters, i, ii, name, fields, value, oldValue, setValue = arguments[arguments.length - 1];
+            var setters, i, ii, name, fields, value, fieldValue, oldValue, oldFieldValue, setValue = arguments[arguments.length - 1];
 
             property = this.__adjustPropertyName(property);
 
@@ -126,13 +126,15 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
 
             if (fields && fields.length) {
                 value = this['_' + property];
-                for (i = 0, ii = fields.length - 1; i < ii; ++i) {
+                fieldValue = value;
+                for (i = 0, ii = fields.length; i < ii; ++i) {
                     if (!(fields[i] in value)) {
-                        value[fields[i]] = {};
+                        fieldValue[fields[i]] = {};
                     }
-                    value = value[fields[i]];
+                    fieldValue= fieldValue[fields[i]];
                 }
-                value[fields[i]] = setValue;
+                oldFieldValue = fieldValue[fields[i]];
+                fieldValue[fields[i]] = setValue;
             }
             else {
                 value = setValue;
@@ -148,8 +150,8 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
             this['_' + property] = value;
 
             if (this.__eventsCallbacks) {
-                this.emit.apply(this, ['property.setted', property].concat(fields).concat([value, oldValue]));
-                this.emit('property.' + [property].concat(fields).join('.') + '.setted', value, oldValue);
+                this.emit.apply(this, ['property.setted', property].concat(fields).concat([fieldValue || value, oldFieldValue || oldValue]));
+                this.emit('property.' + [property].concat(fields).join('.') + '.setted', fieldValue || value, oldFieldValue || oldValue);
             }
 
             return this;
