@@ -6,8 +6,8 @@ meta.processor('Clazz.Base', {
     },
 
     _processors: {
-        clazz: ['Clazz.Clazz'],
-        proto: ['Clazz.Proto']
+        clazz: ['Clazz.Clazz', 'Clazz.Events'],
+        proto: ['Clazz.Proto', 'Clazz.Events']
     },
 
     process: function(clazz, metaData) {

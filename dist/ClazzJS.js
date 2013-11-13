@@ -521,8 +521,8 @@ meta.processor('Clazz.Base', {
     },
 
     _processors: {
-        clazz: ['Clazz.Clazz'],
-        proto: ['Clazz.Proto']
+        clazz: ['Clazz.Clazz', 'Clazz.Events'],
+        proto: ['Clazz.Proto', 'Clazz.Events']
     },
 
     process: function(clazz, metaData) {
@@ -680,8 +680,14 @@ meta.processor('Clazz.Events', 'Meta.Chain', {
     }
 
 });
-meta.processor('Clazz.Events.Init', function(object, eventCallbacks) {
-    var event, name, parent;
+meta.processor('Clazz.Events.Init', function(object, meta) {
+    var eventCallbacks, event, name, parent;
+
+    if (!meta.events) {
+        return;
+    }
+
+    eventCallbacks = meta.events;
 
     for (event in eventCallbacks) {
         for (name in eventCallbacks[event]) {
@@ -1331,8 +1337,7 @@ meta.processor('Clazz.Property.Type', {
 meta.processor('Clazz.Proto', 'Meta.Options', {
     options: {
         properties: 'Clazz.Properties',
-        methods:    'Clazz.Methods',
-        events:     'Clazz.Events'
+        methods:    'Clazz.Methods'
     }
 });
 
