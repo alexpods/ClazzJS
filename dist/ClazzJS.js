@@ -952,7 +952,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
             if (fields && fields.length) {
                 value = this['_' + property];
                 fieldValue = value;
-                for (i = 0, ii = fields.length; i < ii; ++i) {
+                for (i = 0, ii = fields.length - 1; i < ii; ++i) {
                     if (!(fields[i] in value)) {
                         fieldValue[fields[i]] = {};
                     }
