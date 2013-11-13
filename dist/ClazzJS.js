@@ -521,12 +521,8 @@ meta.processor('Clazz.Base', {
     },
 
     _processors: {
-        clazz: {
-            clazz: 'Clazz.Clazz'
-        },
-        proto: {
-            proto: 'Clazz.Proto'
-        }
+        clazz: ['Clazz.Clazz'],
+        proto: ['Clazz.Proto']
     },
 
     process: function(clazz, metaData) {
@@ -580,7 +576,7 @@ meta.processor('Clazz.Base', {
 
     addType: function(name, getter) {
         if (!(name in this._processors)) {
-            this._processors[name] = {};
+            this._processors[name] = [];
         }
         this._types[name] = getter;
         return this;
@@ -594,13 +590,14 @@ meta.processor('Clazz.Base', {
         return this;
     },
 
-    addProcessor: function(type, name, processor) {
-        this._processors[type][name] = processor;
+    addProcessor: function(type, processor) {
+        this._processors[type].push(processor)
         return this;
     },
 
     removeProcessor: function(type, name) {
-        delete this._processors[type][name];
+        var index = this._processors[type].indexOf(name);
+        this._processors[type].splice(index, 1);
         return this;
     }
 
