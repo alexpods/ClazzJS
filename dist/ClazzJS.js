@@ -532,38 +532,35 @@ meta.processor('Clazz.Base', {
     process: function(clazz, metaData) {
         var self = this;
 
-        var type, processingObject, processor;
+        var type, processingObject, processor, i, ii, j, jj, processorsContainer;
 
         var parentProcessors = clazz.parent && ('__getMetaProcessors' in clazz.parent)
             ? clazz.parent.__getMetaProcessors()
             : this._processors;
-
         var metaProcessors = metaData.meta_processors || {};
+
+        var processorsContainers = [parentProcessors, metaProcessors];
 
         var processors = {};
 
-        for (type in  parentProcessors) {
-            if (!(type in processors)) {
-                processors[type] = {};
-            }
-            for (processor in parentProcessors[type]) {
-                processors[type][processor] = parentProcessors[type][processor];
-            }
-        }
+        for (j = 0, jj = processorsContainers.length; j < jj; ++j) {
+            processorsContainer = processorsContainers[j];
 
-        for (type in  metaProcessors) {
-            if (!(type in processors)) {
-                processors[type] = {};
-            }
-            for (processor in metaProcessors[type]) {
-                processors[type][processor] = metaProcessors[type][processor];
-            }
-        }
+            for (type in  processorsContainer) {
+                if (!(type in processors)) {
+                    processors[type] = [];
+                }
 
-        for (type in processors) {
-            for (processor in processors[type]) {
-                if (typeof processors[type][processor] === 'string') {
-                    processors[type][processor] = meta.processor(processors[type][processor]);
+                processorsContainer[type] = [].concat(processorsContainer[type]);
+
+                for (i = 0, ii = processorsContainer[type].length; i < ii; ++i) {
+                    processor = processorsContainer[type][i];
+                    if (typeof processor === 'string') {
+                        processor = meta.processor(processor);
+                    }
+                    if (!(processor in processors[type])) {
+                        processors[type].push(processor);
+                    }
                 }
             }
         }
@@ -571,8 +568,8 @@ meta.processor('Clazz.Base', {
         for (type in processors) {
             processingObject = self._types[type](clazz);
 
-            for (processor in processors[type]) {
-                processors[type][processor].process(processingObject, metaData);
+            for (i = 0, ii = processors[type].length; i < ii; ++i) {
+                processors[type][i].process(processingObject, metaData);
             }
         }
 
