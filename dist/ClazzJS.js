@@ -692,6 +692,9 @@ meta.processor('Clazz.Events.Init', function(object, eventCallbacks) {
     parent = object.parent;
 
     while (parent) {
+        if (!parent.__eventsCallbacks) {
+            continue;
+        }
         var eventCallbacks = parent.getEventCallbacks();
 
         for (event in eventCallbacks) {
