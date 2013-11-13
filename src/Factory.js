@@ -1,22 +1,17 @@
-var Factory = function(BaseClazz, meta) {
-    this._clazzUID = 0;
-    this.BaseClazz = BaseClazz;
-    this.meta      = meta;
+var Factory = function(BaseClazz, metaProcessor) {
+    this._BaseClazz     = BaseClazz     || Base;
+    this._metaProcessor = metaProcessor || meta.processor('Clazz.Base');
 }
+var clazzUID = 0;
 
 Factory.prototype = {
 
-    DEFAULT_PROCESSORS: {
-        clazz: ['Clazz.Clazz'],
-        proto: ['Clazz.Proto']
-    },
     CLASS_NAME: 'Clazz{uid}',
 
     create: function(params) {
 
         var name           = params.name || this.generateName();
         var parent         = params.parent;
-        var processors     = params.process || this.DEFAULT_PROCESSORS;
         var meta           = params.meta;
         var dependencies   = params.dependencies || [];
 
@@ -29,7 +24,7 @@ Factory.prototype = {
         }
 
         if (meta) {
-            this.applyMeta(clazz, meta, processors);
+            this.applyMeta(clazz, meta);
         }
 
         return clazz;
@@ -37,7 +32,7 @@ Factory.prototype = {
 
     createClazz: function(name, parent) {
         if (!parent) {
-            parent = this.BaseClazz;
+            parent = this._BaseClazz;
         }
 
         var clazz = function () {
@@ -46,7 +41,7 @@ Factory.prototype = {
             if (typeof response !== 'undefined') {
                 return response;
             }
-        }
+        };
 
         // Copy all parent methods and initialize properties
         for (var property in parent) {
@@ -69,28 +64,43 @@ Factory.prototype = {
         return clazz;
     },
 
-    applyMeta: function(clazz, meta, processors) {
+    applyMeta: function(clazz, meta) {
+        this._metaProcessor.process(clazz, meta);
+    },
 
-        var types = { clazz: clazz, proto: clazz.prototype }, typeProcessors, processor, i, ii;
+    combineProcessors: function(/* processors... */) {
+        var i, ii, type, processors;
 
-        for (var type in types) {
-            if (type in processors) {
-                typeProcessors = processors[type]
-                if (Object.prototype.toString.call(typeProcessors) !== '[object Array]') {
-                    typeProcessors = [typeProcessors];
+        var combined = { clazz: [], proto: [] };
+
+        for (i = 0, ii = arguments.length; i < ii; ++i) {
+            processors = arguments[i];
+            if (Object.prototype.toString.call(processors) === '[object Array]') {
+                processors = {
+                    clazz: processors,
+                    proto: processors
+                };
+            }
+            for (type in combined) {
+                if (!(type in processors)) {
+                    continue;
                 }
-                for (i = 0, ii = typeProcessors.length; i < ii; ++i) {
-                    processor = typeProcessors[i];
-                    if (typeof processor === 'string') {
-                        processor = this.meta.processor(processor);
-                    }
-                    processor.process(types[type], meta);
-                }
+                combined[type] = combined[type].concat(processors[type]);
             }
         }
+
+        return combined;
     },
 
     generateName: function() {
-        return this.CLASS_NAME.replace('{uid}', ++this._clazzUID);
+        return this.CLASS_NAME.replace('{uid}', ++clazzUID);
+    },
+
+    getMetaProcessor: function() {
+        return this._metaProcessor;
+    },
+
+    getBaseClazz: function() {
+        return this._BaseClazz;
     }
-}
+};

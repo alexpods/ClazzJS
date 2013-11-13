@@ -7,7 +7,7 @@ meta.processor('Clazz.Properties.Defaults', {
 
     process: function(object) {
 
-        var type, defaultValue, property, properties = object.__properties
+        var type, defaultValue, property, properties = object.__properties;
 
         for (property in properties) {
             defaultValue = properties[property]['default'];
@@ -22,4 +22,4 @@ meta.processor('Clazz.Properties.Defaults', {
         }
     }
 
-})
+});

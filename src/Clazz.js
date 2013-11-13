@@ -1,6 +1,6 @@
 var Clazz = function(manager, factory, namespace) {
 
-    var clazz = function(name, parent, process, meta) {
+    var clazz = function(name, parent, meta) {
 
         var last = arguments[arguments.length-1];
 
@@ -8,8 +8,8 @@ var Clazz = function(manager, factory, namespace) {
         if (typeof last !== 'function' && Object.prototype.toString.call(last) !== '[object Object]') {
             return clazz.get(name, /* actually dependencies */ parent);
         }
-        clazz.set(name, parent, process, meta);
-    }
+        clazz.set(name, parent, meta);
+    };
 
     for (var property in Clazz.prototype) {
         clazz[property] = Clazz.prototype[property];
@@ -17,20 +17,22 @@ var Clazz = function(manager, factory, namespace) {
 
     clazz.getManager = function() {
         return manager;
-    }
+    };
 
     clazz.getFactory = function() {
         return factory;
-    }
+    };
 
     clazz.getNamespace = function() {
         return namespace;
-    }
+    };
 
     return clazz;
-}
+};
 
 Clazz.prototype = {
+    constructor: Clazz,
+
     get: function(originName, dependencies) {
         var name;
 
@@ -50,7 +52,6 @@ Clazz.prototype = {
             manager.setClazz(factory.create({
                 name:         name,
                 dependencies: dependencies,
-                process:      meta.process,
                 parent:       this.adjustParent(meta.parent),
                 meta:         meta.meta
             }));
@@ -62,7 +63,7 @@ Clazz.prototype = {
         return !!this.resolveName(name);
     },
 
-    set: function(name, parent, process, meta) {
+    set: function(name, parent, meta) {
 
         var namespace = this.getNamespace();
         var manager   = this.getManager();
@@ -70,30 +71,17 @@ Clazz.prototype = {
         // Creation of new clazz
         if (typeof name === 'object') {
             parent   = name.parent;
-            process  = name.process;
             meta     = name.meta;
             name     = name.name;
         }
-        else {
-            if (typeof meta === 'undefined') {
-                meta     = process;
-                process  = null;
-            }
-            if (typeof meta === 'undefined') {
-                meta = parent;
-                parent = null;
-            }
-
-            if (Object.prototype.toString.call(parent) === '[object Array]') {
-                process  = parent;
-                parent   = null;
-            }
+        else if (typeof meta === 'undefined') {
+            meta    = parent;
+            parent = null;
         }
         name = namespace.apply(name);
 
         manager.setMeta(name, {
-            parent:     parent ,
-            process:    process,
+            parent:     parent,
             meta:       meta
         });
 
@@ -106,24 +94,37 @@ Clazz.prototype = {
         var manager   = this.getManager();
         var namespace = this.getNamespace();
 
+        var anames = [];
+
         paths = namespace.getPaths();
         for (i = 0, ii = paths.length; i < ii; ++i) {
             aname = namespace.apply(name, paths[i]);
             if (manager.hasMeta(aname)) {
                 return aname;
             }
+            anames.push(aname);
         }
+
+        for (i = 0, ii = anames.length; i < ii; ++i) {
+            while (namespace.callback(anames[i])) {
+                if (manager.hasMeta(anames[i])) {
+                    return aname;
+                }
+            }
+        }
+
         return false;
     },
-
 
     adjustParent: function(parent) {
         if (typeof parent === 'string') {
             parent = [parent];
         }
+
         if (Object.prototype.toString.call(parent) === '[object Array]') {
             parent = this.get(parent[0], parent[1] || [])
         }
+
         return parent;
     }
-}
+};

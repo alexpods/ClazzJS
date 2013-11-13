@@ -5,5 +5,6 @@ meta.processor('Clazz.Property.Converters', function(object, converters, propert
             value = converters[name].call(this, value);
         }
         return value;
-    })
-})
+    });
+
+});

@@ -112,7 +112,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
         },
 
         __setPropertyValue: function(property /* fields... , value */) {
-            var setters, i, ii, name, fields, value, setValue = arguments[arguments.length - 1];
+            var setters, i, ii, name, fields, value, oldValue, setValue = arguments[arguments.length - 1];
 
             property = this.__adjustPropertyName(property);
 
@@ -144,7 +144,13 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
                 value = setters[name].call(this, value);
             }
 
+            oldValue = this['_' + property];
             this['_' + property] = value;
+
+            if (this.__eventsCallbacks) {
+                this.emit.apply(this, ['property.setted', property].concat(fields).concat([value, oldValue]));
+                this.emit('property.' + [property].concat(fields).join('.') + '.setted', value, oldValue);
+            }
 
             return this;
         },
@@ -174,7 +180,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
                 return false;
             }
 
-            return !((typeof this[value] === 'undefined')
+            return !((typeof value === 'undefined')
                 || (value === null)
                 || (typeof value === 'string' && value === '')
                 || (Object.prototype.toString.apply(value) === '[object Array]' && value.length === 0));

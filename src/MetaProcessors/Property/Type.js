@@ -47,9 +47,13 @@ meta.processor('Clazz.Property.Type', {
             return value;
         },
         datetime: function(value) {
-            if (!(value instanceof Date)) {
+            if (!isNaN(value) && (typeof value === 'number' || value instanceof Number)) {
+                value = new Date(value);
+            }
+            else if (typeof value === 'string' || value instanceof String) {
                 value = new Date(Date.parse(value));
             }
+
             return value;
         },
         object: function(value, params, property) {
