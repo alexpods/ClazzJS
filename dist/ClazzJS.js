@@ -675,8 +675,8 @@ meta.processor('Clazz.Constants.Interface', 'Meta.Interface', {
 meta.processor('Clazz.Events', 'Meta.Chain', {
 
     processors: {
-        init:      'Clazz.Events.Init',
-        interface: 'Clazz.Events.Interface'
+        interface: 'Clazz.Events.Interface',
+        init:      'Clazz.Events.Init'
     }
 
 });
