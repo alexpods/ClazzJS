@@ -1032,7 +1032,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
 
             var fields  = Object.prototype.toString.call(arguments[1]) === '[object Array]'
                 ? arguments[1]
-                : Array.prototype.slice.call(arguments, 1, -1);
+                : Array.prototype.slice.call(arguments, 1);
 
 
             if (fields && fields.length) {
