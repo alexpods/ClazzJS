@@ -306,7 +306,11 @@ Base.parent = null;
 Base.create = function() {
     // Dirty hack!!!! But I don't know better solution:(
     var a = arguments;
-    return new this(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]);
+    var newEntity = new this(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]);
+
+    this.emit('entity.create', newEntity);
+
+    return newEntity;
 }
 
 Base.prototype = {
@@ -900,6 +904,14 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
             return property in this.__getProperties();
         },
 
+        __getPropertyType: function(property) {
+            var properties = this.__getProperties();
+            if (!(property in properties)) {
+                throw new Error('Property "' + property + '" does not exists!');
+            }
+            return [].concat(properties[property].type)[0];
+        },
+
         __adjustPropertyName: function(name) {
             return name.replace(/(?:_)\w/, function (match) { return match[1].toUpperCase(); });
         },
@@ -959,7 +971,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
                 value = this['_' + property];
                 fieldValue = value;
                 for (i = 0, ii = fields.length - 1; i < ii; ++i) {
-                    if (!(fields[i] in value)) {
+                    if (!(fields[i] in fieldValue)) {
                         fieldValue[fields[i]] = {};
                     }
                     fieldValue= fieldValue[fields[i]];
@@ -1017,6 +1029,45 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
                 || (value === null)
                 || (typeof value === 'string' && value === '')
                 || (Object.prototype.toString.apply(value) === '[object Array]' && value.length === 0));
+        },
+
+        __removePropertyValue: function(property /* , fields */) {
+            var i, ii, fieldValue, oldValue
+
+            var fields  = Object.prototype.toString.call(arguments[1]) === '[object Array]'
+                ? arguments[1]
+                : Array.prototype.slice.call(arguments, 1, -1);
+
+
+            if (fields && fields.length) {
+                fieldValue = this['_' + property];
+                for (i = 0, ii = fields.length - 1; i < ii; ++i) {
+                    if (!(fields[i] in fieldValue)) {
+                        fieldValue[fields[i]] = {};
+                    }
+                    fieldValue = fieldValue[fields[i]];
+                }
+                oldValue = fieldValue[fields[i]];
+                delete fieldValue[fields[i]];
+            }
+            else {
+                oldValue = this['_' + property];
+                this['_' + property] = undefined;
+            }
+
+            return oldValue;
+        },
+
+        __clearPropertyValue: function(property) {
+            var type = this.__getPropertyType(property);
+
+            switch (type) {
+                case 'hash':  this['_' + property] = {}; break;
+                case 'array': this['_' + property] = []; break;
+                default:
+                    this['_' + property] = undefined;
+            }
+            return this;
         },
 
         __addSetter: function(property, weight, callback) {
@@ -1126,14 +1177,14 @@ meta.processor('Clazz.Properties.Meta', function(object, properties) {
         var pmeta = properties[property];
 
         if (Object.prototype.toString.call(pmeta) === '[object Array]') {
-            properties[property] = pmeta = 3 === pmeta.length ? { type: [pmeta[0], pmeta[2]], default: pmeta[1] }: { type: pmeta }
+            properties[property] = pmeta = 3 === pmeta.length ? { type: [pmeta[0], pmeta[2]], default: pmeta[1] } : { type: pmeta }
         }
         else if (typeof pmeta !== 'object' || pmeta === null) {
             properties[property] = pmeta = { default: pmeta }
         }
 
         if (!('methods' in pmeta)) {
-            pmeta.methods = ['get', 'set', 'has', 'is']
+            pmeta.methods = ['get', 'set', 'has', 'is', 'clear', 'remove']
         }
 
         meta.processor('Clazz.Property').process(object, pmeta, property);
@@ -1229,6 +1280,16 @@ meta.processor('Clazz.Property.Methods', {
         has: function(property) {
             return function() {
                 return this.__hasPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
+            }
+        },
+        clear: function(property) {
+            return function() {
+                return this.__clearPropertyValue.apply(this, [property]);
+            }
+        },
+        remove: function(property) {
+            return function() {
+                return this.__removePropertyValue.apply(this, [property].concat(Array.prototyp.slice.call(arguments)))
             }
         }
     }

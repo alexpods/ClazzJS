@@ -52,6 +52,16 @@ meta.processor('Clazz.Property.Methods', {
             return function() {
                 return this.__hasPropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)));
             }
+        },
+        clear: function(property) {
+            return function() {
+                return this.__clearPropertyValue.apply(this, [property]);
+            }
+        },
+        remove: function(property) {
+            return function() {
+                return this.__removePropertyValue.apply(this, [property].concat(Array.prototyp.slice.call(arguments)))
+            }
         }
     }
 })
