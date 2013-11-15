@@ -48,7 +48,7 @@ meta.processor('Clazz.Events.Interface', 'Meta.Interface', {
         emit: function(event) {
             if (this.hasEventCallback(event)) {
                 for (var name in this.__eventsCallbacks[event]) {
-                    this.__eventsCallbacks[event][name].apply(this, Array.prototype.slice(1));
+                    this.__eventsCallbacks[event][name].apply(this, Array.prototype.slice.call(arguments, 1));
                 }
             }
             return this;

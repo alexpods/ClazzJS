@@ -1,11 +1,7 @@
 meta.processor('Clazz.Events.Init', function(object, meta) {
     var eventCallbacks, event, name, parent;
 
-    if (!meta.events) {
-        return;
-    }
-
-    eventCallbacks = meta.events;
+    eventCallbacks = (object.clazz && meta.events) || (meta.clazz_events) || {};
 
     for (event in eventCallbacks) {
         for (name in eventCallbacks[event]) {

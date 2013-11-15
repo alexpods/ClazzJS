@@ -308,7 +308,7 @@ Base.create = function() {
     var a = arguments;
     var newEntity = new this(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]);
 
-    this.emit('entity.create', newEntity);
+    this.emit('object.create', newEntity);
 
     return newEntity;
 }
@@ -687,11 +687,7 @@ meta.processor('Clazz.Events', 'Meta.Chain', {
 meta.processor('Clazz.Events.Init', function(object, meta) {
     var eventCallbacks, event, name, parent;
 
-    if (!meta.events) {
-        return;
-    }
-
-    eventCallbacks = meta.events;
+    eventCallbacks = (object.clazz && meta.events) || (meta.clazz_events) || {};
 
     for (event in eventCallbacks) {
         for (name in eventCallbacks[event]) {
@@ -767,7 +763,7 @@ meta.processor('Clazz.Events.Interface', 'Meta.Interface', {
         emit: function(event) {
             if (this.hasEventCallback(event)) {
                 for (var name in this.__eventsCallbacks[event]) {
-                    this.__eventsCallbacks[event][name].apply(this, Array.prototype.slice(1));
+                    this.__eventsCallbacks[event][name].apply(this, Array.prototype.slice.call(arguments, 1));
                 }
             }
             return this;
