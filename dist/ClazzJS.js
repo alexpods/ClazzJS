@@ -1285,7 +1285,7 @@ meta.processor('Clazz.Property.Methods', {
         },
         remove: function(property) {
             return function() {
-                return this.__removePropertyValue.apply(this, [property].concat(Array.prototyp.slice.call(arguments)))
+                return this.__removePropertyValue.apply(this, [property].concat(Array.prototype.slice.call(arguments)))
             }
         }
     }
