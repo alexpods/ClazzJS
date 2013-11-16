@@ -1341,7 +1341,10 @@ meta.processor('Clazz.Property.Type', {
         object.__setProperty(property, 'type',  type);
 
         object.__addSetter(property, function(value) {
-            return self.convertAndCheckValue(value, type, params, property);
+            if (typeof value !== 'undefined' && value !== null) {
+                value = self.convertAndCheckValue(value, type, params, property);
+            }
+            return value;
         });
     },
 
