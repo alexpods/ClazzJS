@@ -14,88 +14,115 @@ meta.processor('Clazz.Property.Type', {
         object.__setProperty(property, 'type',  type);
 
         object.__addSetter(property, function(value) {
-            return self.checkValue(value, type, params, property);
+            return self.convertAndCheckValue(value, type, params, property);
         });
     },
 
-    checkValue: function(value, type, params, property) {
+    convertAndCheckValue: function(value, type, params, property) {
+        if (!(type in this.TYPES)) {
+            throw new Error('Type "' + type + '" does not exists!');
+        }
+
         return this.TYPES[type].call(this, value, params, property);
     },
+
+    DEFAULT_ARRAY_DELIMITER: /\s*,\s*/g,
 
     TYPES: {
         boolean: function(value) {
             return Boolean(value);
         },
-        number: function(value, params) {
+        number: function(value, params, property) {
             value = Number(value);
+
             if ('min' in params && value < params['min']) {
                 throw new Error('Value "' + value + '" must not be less then "' + params['min'] + '"!');
             }
             if ('max' in params && value > params['max']) {
-                throw new Error('Value "' + value + '" must not be greater then "' + params['max'] + '"!');
+                throw new Error('Value "' + value + '" of property "' + property + '" must not be greater then "' + params['max'] + '"!');
             }
             return value;
         },
-        string: function(value, params) {
+        string: function(value, params, property) {
             value = String(value);
+
             if ('pattern' in params && !params.pattern.test(value)) {
-                throw new Error('Value "' + value + '" does not match pattern "' + params.pattern + '"!');
+                throw new Error('Value "' + value + '" of property "' + property + '" does not match pattern "' + params.pattern + '"!');
             }
             if ('variants' in params && -1 === params.variants.indexOf(value)) {
-                throw new Error('Value "' + value + '" must be one of "' + params.variants.join(', ') + '"!');
+                throw new Error('Value "' + value + '" of property "' + property + '" must be one of "' + params.variants.join(', ') + '"!');
             }
             return value;
         },
-        datetime: function(value) {
+        datetime: function(value, params, property) {
             if (!isNaN(value) && (typeof value === 'number' || value instanceof Number)) {
                 value = new Date(value);
             }
             else if (typeof value === 'string' || value instanceof String) {
                 value = new Date(Date.parse(value));
             }
-
+            if (!(value instanceof Date)) {
+                throw new Error('Value of property "' + property + '" must be compatible with datetime type!');
+            }
             return value;
         },
-        object: function(value, params, property) {
-            if (typeof value !== 'object' || Object.prototype.toString.call(value) === '[object Array]') {
-                throw new Error('Incorrect value: not object type for property "' + property + '"!');
-            }
-            if ('instanceof' in params) {
-                var clazzInstance = params.instanceof;
+        array: function(value, params, property) {
+            var i, ii, type;
 
-                if (Object.prototype.toString.call(clazzInstance) === '[object Array]') {
-                    clazzInstance = clazz(clazzInstance[0], clazzInstance[1] || []);
-                }
-                if (!(value instanceof clazzInstance)) {
-                    throw new Error('Value does not instance of clazz "' + clazzInstance.NAME + '"!');
+            if (typeof value === 'string' || value instanceof String) {
+                value = value.split(params.delimiter || this.DEFAULT_ARRAY_DELIMITER);
+            }
+            if ('element' in params) {
+                type = [].concat(params.element);
+                for (i = 0, ii = value.length; i < ii; ++i) {
+                    value[i] = this.convertAndCheckValue.call(this, value[i], type[0], type[1] || {}, property + '.' + i);
                 }
             }
-            return value
-        },
-        array: function(value, params) {
-            return typeof value === 'string' ? value.split(params['delimiter'] || ',') : [].concat(value);
+            return value;
         },
         hash: function(value, params, property) {
+            var key, type;
+
             if ({}.constructor !== value.constructor) {
-                throw new Error('Incorrect value: not hash type for property "' + property +'"!');
+                throw new Error('Value of property "' + property +'" must be compatible with hash type!');
             }
+
             if ('keys' in params) {
-                for (var prop in value) {
-                    if (!(prop in params.keys)) {
-                        throw new Error('Unsupported hash key "' + prop + '"!');
+                for (key in value) {
+                    if (!(key in params.keys)) {
+                        throw new Error('Unsupported hash key "' + prop + '" for property "' + property + '"!');
                     }
                 }
             }
             if ('element' in params) {
-                this.checkValue.apply(this, [].concat(params.element));
+                type = [].concat(params.element);
+                for (key in value) {
+                    value[key] = this.convertAndCheckValue.call(this, value[key], type[0], type[1] || {}, property + '.' + key);
+                }
             }
             return value;
         },
-        clazz: function(value, params, property) {
-            if (typeof value !== 'function' || !('NAME' in value) || !('parent' in value)) {
-                throw new Error('Incorrect value: not clazz type for property "' + property +'"!');
+        object: function(value, params, property) {
+
+            if ('instanceof' in params) {
+                var klass = params.instanceof;
+
+                if (typeof klass === 'string' || klass instanceof String) {
+                    klass = [String(klass)];
+                }
+                if (Object.prototype.toString.call(clazz) === '[object Array]') {
+                    klass = clazz(klass[0], klass[1] || []);
+                }
+                if (!(value instanceof klass)) {
+                    value = new klass(value);
+                }
             }
+
+            if (typeof value !== 'object') {
+                throw new Error('Value of property "' + property + '" must be compatible with object type!');
+            }
+
             return value;
         }
     }
-})
+});
