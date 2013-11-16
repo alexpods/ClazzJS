@@ -91,6 +91,41 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
             return this;
         },
 
+        __getData: function() {
+            var property, value, type;
+
+            var data = {};
+
+            for (property in this.__properties) {
+                type  = this.__properties[property].type;
+                value = this.__getPropertyValue(property);
+
+                switch (type) {
+                    case 'array':
+                        for (var i = 0, ii = value.length; i < ii; ++i) {
+                            if (value[i].__getData) {
+                                value[i] = value[i].__getData();
+                            }
+                        }
+                        break;
+                    case 'hash':
+                        for (var key in value) {
+                            if (value[key].__getData) {
+                                value[key] = value[key].__getData();
+                            }
+                        }
+                        break;
+                }
+
+                if (value.__getData) {
+                    value = value.__getData();
+                }
+
+                data[property] = value;
+            }
+            return data;
+        },
+
         __getPropertyValue: function(property /*, fields... */) {
             var getters, i, ii, name, value;
 
