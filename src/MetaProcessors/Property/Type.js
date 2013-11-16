@@ -110,7 +110,7 @@ meta.processor('Clazz.Property.Type', {
                 if (typeof klass === 'string' || klass instanceof String) {
                     klass = [String(klass)];
                 }
-                if (Object.prototype.toString.call(clazz) === '[object Array]') {
+                if (Object.prototype.toString.call(klass) === '[object Array]') {
                     klass = clazz(klass[0], klass[1] || []);
                 }
                 if (!(value instanceof klass)) {
