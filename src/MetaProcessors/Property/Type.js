@@ -29,10 +29,10 @@ meta.processor('Clazz.Property.Type', {
     DEFAULT_ARRAY_DELIMITER: /\s*,\s*/g,
 
     TYPES: {
-        boolean: function(value) {
+        "boolean": function(value) {
             return Boolean(value);
         },
-        number: function(value, params, property) {
+        "number": function(value, params, property) {
             value = Number(value);
 
             if ('min' in params && value < params['min']) {
@@ -43,7 +43,7 @@ meta.processor('Clazz.Property.Type', {
             }
             return value;
         },
-        string: function(value, params, property) {
+        "string": function(value, params, property) {
             value = String(value);
 
             if ('pattern' in params && !params.pattern.test(value)) {
@@ -54,7 +54,7 @@ meta.processor('Clazz.Property.Type', {
             }
             return value;
         },
-        datetime: function(value, params, property) {
+        "datetime": function(value, params, property) {
             if (!isNaN(value) && (typeof value === 'number' || value instanceof Number)) {
                 value = new Date(value);
             }
@@ -66,7 +66,7 @@ meta.processor('Clazz.Property.Type', {
             }
             return value;
         },
-        array: function(value, params, property) {
+        "array": function(value, params, property) {
             var i, ii, type;
 
             if (typeof value === 'string' || value instanceof String) {
@@ -80,7 +80,7 @@ meta.processor('Clazz.Property.Type', {
             }
             return value;
         },
-        hash: function(value, params, property) {
+        "hash": function(value, params, property) {
             var key, type;
 
             if ({}.constructor !== value.constructor) {
@@ -102,7 +102,7 @@ meta.processor('Clazz.Property.Type', {
             }
             return value;
         },
-        object: function(value, params, property) {
+        "object": function(value, params, property) {
 
             if ('instanceof' in params) {
                 var klass = params.instanceof;
@@ -122,6 +122,12 @@ meta.processor('Clazz.Property.Type', {
                 throw new Error('Value of property "' + property + '" must be compatible with object type!');
             }
 
+            return value;
+        },
+        "function": function(value, params, property) {
+            if (typeof value !== 'function') {
+                throw new Error('Value of property "' + property + '" must be a function type');
+            }
             return value;
         }
     }
