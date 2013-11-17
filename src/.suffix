@@ -5,6 +5,7 @@ return {
     Namespace:  Namespace,
     Clazz:      Clazz,
 
+    utils:      utils,
     namespace:  namespace,
     clazz:      clazz
 }

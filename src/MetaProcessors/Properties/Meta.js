@@ -14,6 +14,10 @@ meta.processor('Clazz.Properties.Meta', function(object, properties) {
             pmeta.methods = ['get', 'set', 'has', 'is', 'clear', 'remove']
         }
 
+        if ('alias' in pmeta) {
+            pmeta.methods.alias = [].concat(pmeta.alias);
+        }
+
         meta.processor('Clazz.Property').process(object, pmeta, property);
     }
 })

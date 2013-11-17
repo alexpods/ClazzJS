@@ -43,7 +43,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
             if (typeof this.__properties[property] === 'undefined') {
                 this.__properties[property] = {};
             }
-            if ({}.constructor === key.constructor) {
+            if (key && {}.constructor === key.constructor) {
                 for (var prop in key) {
                     this.__properties[property][prop] = key[prop];
                 }
@@ -63,10 +63,23 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
                 : properties[property] && properties[property][key];
         },
 
-        __hasProperty: function(property) {
+        __hasProperty: function(property, fields) {
             property = this.__adjustPropertyName(property);
 
-            return property in this.__getProperties();
+            var propertyExists = property in this.__getProperties();
+
+            if (propertyExists && fields && fields.length) {
+
+                var property = this.__getPropertyValue(property);
+                for (var i = 0, ii = fields.length; i < ii; ++i) {
+                    if (!property || !(fields[i] in property)) {
+                        return false;
+                    }
+                    property = property[fields[i]];
+                }
+            }
+
+            return propertyExists;
         },
 
         __getPropertyType: function(property) {
@@ -126,13 +139,13 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
             return data;
         },
 
-        __getPropertyValue: function(property /*, fields... */) {
+        __getPropertyValue: function(property, fields) {
             var getters, i, ii, name, value;
 
             property = this.__adjustPropertyName(property);
 
-            if (!this.__hasProperty(property)) {
-                throw new Error('Can\'t get! Property "' + property + '" does not exists!');
+            if (!this.__hasProperty(property, fields)) {
+                throw new Error('Can\'t get! Property "' + [property].concat(fields || []).join('.') + '" does not exists!');
             }
 
             value = this['_' + property];
@@ -143,130 +156,304 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
                 value = getters[name].call(this, value);
             }
 
-            var fields = Object.prototype.toString.call(arguments[1]) === '[object Array]'
-                ? arguments[1]
-                : Array.prototype.slice.call(arguments, 1);
-
-            for (i = 0, ii = fields.length; i < ii; ++i) {
-                value = value[fields[i]];
+            if (typeof fields !== 'undefined') {
+                for (i = 0, ii = fields.length; i < ii; ++i) {
+                    value = value[fields[i]];
+                }
             }
 
             return value;
         },
 
-        __setPropertyValue: function(property /* fields... , value */) {
-            var setters, i, ii, name, fields, value, fieldValue, oldValue, oldFieldValue, setValue = arguments[arguments.length - 1];
 
-            property = this.__adjustPropertyName(property);
-
-            if (!this.__hasProperty(property)) {
-                throw new Error('Can\'t set! Property "' + property + '" does not exists!');
+        __isPropertyValue: function(property, fields, compareValue) {
+            if (Object.prototype.toString.call(fields) !== '[object Array]') {
+                compareValue = fields;
+                fields       = undefined;
             }
-
-            fields  = Object.prototype.toString.call(arguments[1]) === '[object Array]'
-                ? arguments[1]
-                : Array.prototype.slice.call(arguments, 1, -1);
-
-            if (fields && fields.length) {
-                value = this['_' + property];
-                fieldValue = value;
-                for (i = 0, ii = fields.length - 1; i < ii; ++i) {
-                    if (!(fields[i] in fieldValue)) {
-                        fieldValue[fields[i]] = {};
-                    }
-                    fieldValue= fieldValue[fields[i]];
-                }
-                oldFieldValue = fieldValue[fields[i]];
-                fieldValue[fields[i]] = setValue;
-            }
-            else {
-                value = setValue;
-            }
-
-            setters = this.__getSetters(property);
-
-            for (name in setters) {
-                value = setters[name].call(this, value);
-            }
-
-            oldValue = this['_' + property];
-            this['_' + property] = value;
-
-            if (this.__eventsCallbacks) {
-                this.emit.apply(this, ['property.setted', property].concat(fields).concat([fieldValue || value, oldFieldValue || oldValue]));
-                this.emit('property.' + [property].concat(fields).join('.') + '.setted', fieldValue || value, oldFieldValue || oldValue);
-            }
-
-            return this;
-        },
-
-        __isPropertyValue: function(property /* fields... , value */) {
-            var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
-                ? arguments[1]
-                : Array.prototype.slice.call(arguments, 1);
-
-            var value   = this.__getPropertyValue(property, fields);
-            var compare = arguments[arguments.length - 1];
-
-            return typeof value !== 'undefined' ? value == compare : !!value;
-        },
-
-        __hasPropertyValue: function(property /*, fields... */) {
-            var fields = Object.prototype.toString.apply(arguments[1]) === '[object Array]'
-                ? arguments[1]
-                : Array.prototype.slice.call(arguments, 1);
 
             var value = this.__getPropertyValue(property, fields);
 
-            if (Object.prototype.toString.apply(value) === '[object Object]') {
-                for (var p in value) {
+            return typeof compareValue !== 'undefined' ? value === compareValue : !!value;
+        },
+
+        __hasPropertyValue: function(property, fields, searchValue) {
+            if (Object.prototype.toString.call(fields) !== '[object Array]') {
+                searchValue = fields;
+                fields      = undefined;
+            }
+
+            var value = this.__getPropertyValue(property, fields.slice(0, -1));
+
+            if (typeof searchValue !== 'undefined') {
+
+                if (Object.prototype.toString.call(value) === '[object Array]') {
+                    if (-1 !== value.indexOf(searchValue)) {
+                        return true;
+                    }
+                }
+                else if (value && {}.constructor === value.constructor) {
+                    for (var key in value) {
+                        if (value[key] === searchValue) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            if (value && {}.constructor === value.constructor) {
+                for (var key in value) {
                     return true;
                 }
                 return false;
             }
 
-            return !((typeof value === 'undefined')
-                || (value === null)
-                || (typeof value === 'string' && value === '')
-                || (Object.prototype.toString.apply(value) === '[object Array]' && value.length === 0));
+            return !(typeof value === 'undefined')
+                && !(value === null)
+                && !(typeof value == 'string' && value === '')
+                && !(Object.prototype.toString.call(value) === '[object Array]' && value.length === 0);
         },
 
-        __removePropertyValue: function(property /* , fields */) {
-            var i, ii, fieldValue, oldValue
+        __clearPropertyValue: function(property, fields) {
+            if (!this.__hasProperty(property, fields)) {
+                throw new Error('Can\'t clear value! Property "' + [property].concat(fields || []).join('.') + '" does not exists!');
+            }
 
-            var fields  = Object.prototype.toString.call(arguments[1]) === '[object Array]'
-                ? arguments[1]
-                : Array.prototype.slice.call(arguments, 1);
+            property = this.__adjustPropertyName(property);
 
+            fields = fields || [];
 
-            if (fields && fields.length) {
-                fieldValue = this['_' + property];
-                for (i = 0, ii = fields.length - 1; i < ii; ++i) {
-                    if (!(fields[i] in fieldValue)) {
-                        fieldValue[fields[i]] = {};
-                    }
-                    fieldValue = fieldValue[fields[i]];
+            var currentValue = this.__getPropertyValue(property);
+            var oldValue     = utils.copy(currentValue);
+
+            if (fields.length) {
+
+                var container = this.__getPropertyValue(property);
+
+                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
+                    container = container[fields[i]];
                 }
-                oldValue = fieldValue[fields[i]];
-                delete fieldValue[fields[i]];
+
+                if (container[fields[i]] && {}.constructor === container[fields[i]].container) {
+                    container[fields[i]] = {};
+                }
+                else if (Object.prototype.toString.call(container[fields[i]]) === '[object Array]') {
+                    container[fields[i]] = [];
+                }
+                else {
+                    container[fields[i]] = undefined;
+                }
             }
             else {
-                oldValue = this['_' + property];
                 this['_' + property] = undefined;
             }
 
-            return oldValue;
+            // Event emitting
+
+            this.emit('property.changed', property, currentValue, oldValue);
+            this.emit('property.' + property + '.changed', currentValue, oldValue);
+
+            if (fields.length) {
+
+                var oldValueContainer = oldValue;
+                var newValueContainer = currentValue;
+
+                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
+
+                    oldValueContainer = oldValueContainer[fields[i]];
+                    newValueContainer = newValueContainer[fields[i]];
+
+                    this.emit('property.' + [property].concat(fields.slice(0, i-1)).join('.') + '.item_changed', fields[i], newValueContainer, oldValueContainer);
+                    this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.changed', newValueContainer, oldValueContainer);
+                }
+                oldValueContainer = oldValueContainer[fields[i]];
+
+                if (oldValueContainer && {}.constructor === oldValueContainer.constructor) {
+
+                    for (var key in oldValueContainer) {
+                        this.emit('property.' + [property].concat(fields).join('.') + '.item_removed', key, oldValueContainer[key]);
+                        this.emit('property.' + [property].concat(fields, key).join('.') + '.removed', oldValueContainer[key]);
+                    }
+                }
+                else if (Object.prototype.toString.call(oldValueContainer) === '[object Array]') {
+
+                    for (var i = 0, ii = oldValueContainer.length; i < ii; ++i) {
+                        this.emit('property.' + [property].concat(fields).join('.') + '.item_removed', i, oldValueContainer[i]);
+                        this.emit('property.' + [property].concat(fields, i).join('.') + '.removed', oldValueContainer[i]);
+                    }
+                }
+                else {
+                    this.emit('property.' + [property].concat(fields).join('.') + '.cleared', oldValueContainer);
+                }
+            }
+            else {
+                this.emit('property.' + property + '.cleared', oldValue);
+                this.emit('property.' + property + '.removed', oldValue);
+            }
+
+            return this;
         },
 
-        __clearPropertyValue: function(property) {
-            var type = this.__getPropertyType(property);
-
-            switch (type) {
-                case 'hash':  this['_' + property] = {}; break;
-                case 'array': this['_' + property] = []; break;
-                default:
-                    this['_' + property] = undefined;
+        __removePropertyValue: function(property, fields) {
+            if (!this.__hasProperty(property, fields)) {
+                throw new Error('Can\'t remove value! Property "' + [property].concat(fields || []).join('.') + '" does not exists!');
             }
+
+            property = this.__adjustPropertyName(property);
+
+            fields = fields || [];
+
+            var currentValue = this.__getPropertyValue(property);
+            var oldValue     = utils.copy(currentValue);
+
+            if (fields.length) {
+
+                var container = this.__getPropertyValue(property);
+
+                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
+                    container = container[fields[i]];
+                }
+
+                delete container[fields[i]];
+            }
+            else {
+                this['_' + property] = undefined;
+            }
+
+            // Event emitting
+
+            this.emit('property.changed', property, currentValue, oldValue);
+            this.emit('property.' + property + '.changed', currentValue, oldValue);
+
+            if (fields.length) {
+
+                var oldValueContainer = oldValue;
+                var newValueContainer = currentValue;
+
+                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
+
+                    oldValueContainer = oldValueContainer[fields[i]];
+                    newValueContainer = newValueContainer[fields[i]];
+
+                    this.emit('property.' + [property].concat(fields.slice(0, i-1)).join('.') + '.item_changed', fields[i], newValueContainer, oldValueContainer);
+                    this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.changed', newValueContainer, oldValueContainer);
+                }
+
+                this.emit('property.' + [property].concat(fields.slice(0, -1)).join('.') + '.item_removed', fields[i], oldValueContainer[fields[i]]);
+                this.emit('property.' + [property].concat(fields).join('.') + '.removed', oldValueContainer[fields[i]]);
+
+                var isCleared = false;
+                if (newValueContainer && {}.constructor === newValueContainer.constructor) {
+                    for (var i in newValueContainer) {
+                        isCleared = true;
+                        break;
+                    }
+                }
+                else if (Object.prototype.toString.call(newValueContainer) === '[object Array') {
+                    if (newValueContainer.length === 0) {
+                        isCleared = true;
+                    }
+                }
+
+                if (isCleared) {
+                    this.emit('property.' + [property].concat(fields).join('.') + '.cleared', oldValueContainer);
+                }
+            }
+            else {
+                this.emit('property.' + property + '.removed', oldValue);
+                this.emit('property.' + property + '.cleared', oldValue);
+            }
+
+            return this;
+        },
+
+        __setPropertyValue: function(property, fields, value) {
+            if (typeof value === 'undefined') {
+                value  = fields;
+                fields = [];
+            }
+
+            if (!this.__hasProperty(property)) {
+                throw new Error('Can\'t set value! Property "' + property + '" does not exists!');
+            }
+
+            property = this.__adjustPropertyName(property);
+
+            var currentValue = this.__getPropertyValue(property);
+            var oldValue     = utils.copy(currentValue);
+            var isChanged    = false;
+
+            if (fields.length) {
+
+                var container = currentValue;
+                var setValue  = value;
+
+                value = container;
+
+                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
+                    if (!(fields[i] in container)) {
+                        container[fields[i]] = {};
+                    }
+                    container = container[fields[i]];
+                }
+                if (container[fields[i]] !== setValue) {
+                    isChanged = true;
+                    container[fields[i]] = setValue;
+                }
+            }
+            else {
+                if (oldValue !== value) {
+                    isChanged = true;
+                }
+            }
+
+            if (isChanged) {
+                var setters = this.__getSetters(property);
+
+                for (var name in setters) {
+                    value = setters[name].call(this, value);
+                }
+
+                this['_' + property] = value;
+
+                // Events emitting
+                this.emit('property.changed', property, value);
+                this.emit('property.' + property + '.changed', value, oldValue);
+
+                if (typeof oldValue === 'undefined' || oldValue === null) {
+                    this.emit('property.' + property + '.setted', value);
+                    this.emit('property.setted', property, value);
+                }
+                else {
+
+                    if (fields.length) {
+
+                        var newValueContainer = value;
+                        var oldValueContainer = oldValue;
+
+                        for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
+
+                            oldValueContainer = typeof oldValueContainer == 'undefined' ? oldValueContainer : oldValueContainer[fields[i]];
+                            newValueContainer = newValueContainer[fields[i]];
+
+                            this.emit('property.' + [property].concat(fields.slice(0, i-1)).join('.') + '.item_changed', fields[i], newValueContainer, oldValueContainer);
+                            this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.changed', newValueContainer, oldValueContainer);
+                        }
+
+                        if (oldValueContainer && fields[i] in oldValueContainer) {
+                            this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.item_changed', fields[i], newValueContainer[fields[i], oldValueContainer[fields[i]]])
+                            this.emit('property.' + [property].concat(fields).join('.') + '.changed', newValueContainer[fields[i]], oldValueContainer[fields[i]]);
+                        }
+                        else {
+                            this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.item_setted', fields[i], newValueContainer[fields[i]]);
+                            this.emit('property.' + [property].concat(fields).join('.') + '.setted', newValueContainer[fields[i]]);
+                        }
+                    }
+                }
+            }
+
+
             return this;
         },
 

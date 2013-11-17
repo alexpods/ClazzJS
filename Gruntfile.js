@@ -13,6 +13,8 @@ module.exports = function(grunt) {
                 src: [
                     "src/.prefix",
 
+                    "src/utils.js",
+
                     "src/Clazz.js",
                     "src/Namespace.js",
                     "src/Base.js",

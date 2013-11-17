@@ -60,6 +60,7 @@ Factory.prototype = {
 
         clazz.prototype.clazz  = clazz;
         clazz.prototype.parent = parent.prototype;
+        clazz.prototype.constructor = clazz;
 
         return clazz;
     },
