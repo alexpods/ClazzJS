@@ -108,7 +108,7 @@ Clazz.prototype = {
         for (i = 0, ii = anames.length; i < ii; ++i) {
             while (namespace.callback(anames[i])) {
                 if (manager.hasMeta(anames[i])) {
-                    return aname;
+                    return anames[i];
                 }
             }
         }
