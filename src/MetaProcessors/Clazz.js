@@ -4,4 +4,4 @@ meta.processor('Clazz.Clazz', 'Meta.Options', {
         clazz_properties: 'Clazz.Properties',
         clazz_methods:    'Clazz.Methods'
     }
-})
+});

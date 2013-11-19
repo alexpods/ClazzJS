@@ -418,7 +418,7 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
                 this['_' + property] = value;
 
                 // Events emitting
-                this.emit('property.changed', property, value);
+                this.emit('property.changed', property, value, oldValue);
                 this.emit('property.' + property + '.changed', value, oldValue);
 
                 if (typeof oldValue === 'undefined' || oldValue === null) {
