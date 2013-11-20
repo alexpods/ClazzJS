@@ -827,34 +827,8 @@ meta.processor('Clazz.Properties', 'Meta.Chain', {
     processors: {
         init:      'Clazz.Properties.Init',
         interface: 'Clazz.Properties.Interface',
-        meta:      'Clazz.Properties.Meta',
-        defaults:  'Clazz.Properties.Defaults'
+        meta:      'Clazz.Properties.Meta'
     }
-});
-meta.processor('Clazz.Properties.Defaults', {
-
-    DEFAULT: {
-        hash:  {},
-        array: []
-    },
-
-    process: function(object) {
-
-        var type, defaultValue, property, properties = object.__properties;
-
-        for (property in properties) {
-            defaultValue = properties[property]['default'];
-
-            if (typeof defaultValue === 'undefined') {
-                type = properties[property]['type'];
-                if (typeof type !== 'undefined' && type in this.DEFAULT) {
-                    defaultValue = this.DEFAULT[type];
-                }
-            }
-            object['_' + property] = this.__copy(defaultValue);
-        }
-    }
-
 });
 meta.processor('Clazz.Properties.Init', function(object, properties) {
     for (var property in properties) {
@@ -870,8 +844,29 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
 
         __properties: {},
 
+
         init: function(data) {
+            this.__setDefaults();
             this.__setData(data);
+        },
+
+        __setDefaults: function() {
+            var defaultValue, property;
+
+            var properties = this.__properties;
+
+            for (property in properties) {
+                defaultValue = properties[property]['default'];
+
+                if (typeof defaultValue === 'undefined') {
+                    continue;
+                }
+                else if (typeof defaultValue === 'function') {
+                    defaultValue = defaultValue.call(this);
+                }
+
+                this['_'+property] = utils.copy(defaultValue);
+            }
         },
 
         __setProperties: function(properties) {
@@ -1475,12 +1470,8 @@ meta.processor('Clazz.Property.Converters', function(object, converters, propert
 
 });
 meta.processor('Clazz.Property.Default', function(object, defaultValue, property) {
-    if (typeof defaultValue === 'function') {
-        defaultValue = defaultValue();
-    }
-
     object.__setProperty(property, 'default', defaultValue);
-})
+});
 meta.processor('Clazz.Property.Methods', {
 
     process: function(object, methods, property) {

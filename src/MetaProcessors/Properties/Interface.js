@@ -7,8 +7,29 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
 
         __properties: {},
 
+
         init: function(data) {
+            this.__setDefaults();
             this.__setData(data);
+        },
+
+        __setDefaults: function() {
+            var defaultValue, property;
+
+            var properties = this.__properties;
+
+            for (property in properties) {
+                defaultValue = properties[property]['default'];
+
+                if (typeof defaultValue === 'undefined') {
+                    continue;
+                }
+                else if (typeof defaultValue === 'function') {
+                    defaultValue = defaultValue.call(this);
+                }
+
+                this['_'+property] = utils.copy(defaultValue);
+            }
         },
 
         __setProperties: function(properties) {
