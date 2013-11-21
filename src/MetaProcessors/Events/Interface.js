@@ -2,7 +2,9 @@ meta.processor('Clazz.Events.Interface', 'Meta.Interface', {
 
     interface: {
 
-        __eventsCallbacks: {},
+        __initEventsCallbacks: function() {
+            this.__eventsCallbacks = {};
+        },
 
         on: function(event, name, callback) {
             if (this.hasEventCallback(event, name)) {

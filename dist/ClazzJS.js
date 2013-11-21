@@ -749,7 +749,9 @@ meta.processor('Clazz.Events.Interface', 'Meta.Interface', {
 
     interface: {
 
-        __eventsCallbacks: {},
+        __initEventsCallbacks: function() {
+            this.__eventsCallbacks = {};
+        },
 
         on: function(event, name, callback) {
             if (this.hasEventCallback(event, name)) {
@@ -831,6 +833,11 @@ meta.processor('Clazz.Properties', 'Meta.Chain', {
     }
 });
 meta.processor('Clazz.Properties.Init', function(object, properties) {
+
+    object.__setters = {};
+    object.__getters = {};
+    object.__properties = {};
+
     for (var property in properties) {
         object['_' + property] = undefined;
     }
@@ -839,15 +846,18 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
 
     interface: {
 
-        __setters: {},
-        __getters: {},
-
-        __properties: {},
-
-
         init: function(data) {
+            this.__initialization();
             this.__setDefaults();
             this.__setData(data);
+        },
+
+        __initialization: function() {
+            for (var name in this) {
+                if (typeof this[name] === 'function' && 0 === name.indexOf('__init')) {
+                    this[name]();
+                }
+            }
         },
 
         __setDefaults: function() {

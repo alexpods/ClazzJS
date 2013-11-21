@@ -2,15 +2,18 @@ meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
 
     interface: {
 
-        __setters: {},
-        __getters: {},
-
-        __properties: {},
-
-
         init: function(data) {
+            this.__initialization();
             this.__setDefaults();
             this.__setData(data);
+        },
+
+        __initialization: function() {
+            for (var name in this) {
+                if (typeof this[name] === 'function' && 0 === name.indexOf('__init')) {
+                    this[name]();
+                }
+            }
         },
 
         __setDefaults: function() {
