@@ -1,0 +1,7 @@
+return {
+    Clazz:   Clazz,
+    Factory: Factory,
+    Manager: Manager
+};
+
+})();

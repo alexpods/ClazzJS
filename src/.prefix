@@ -31,6 +31,4 @@
         }
         global[name] = factory.apply(global, dependencies);
     }
-}((new Function('return this'))(), 'ClazzJS', ['MetaJS'], function (MetaJS, undefined) {
-
-var meta = MetaJS.meta;
+}((new Function('return this'))(), 'ClazzJS', [], function (undefined) {

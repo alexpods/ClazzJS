@@ -1,4 +1,5 @@
-;(function (global, name, dependencies, factory) {
+;
+(function(global, name, dependencies, factory) {
     // AMD integration
     if (typeof define === 'function' && define.amd) {
         define(name, dependencies, factory);
@@ -8,7 +9,9 @@
         for (var i = 0, ii = dependencies.length; i < ii; ++i) {
             var dependency = dependencies[i];
             if (typeof dependency === 'string') {
-                dependency = dependency.replace(/([A-Z]+)/g, function($1) { return '-'+$1.toLowerCase(); }).replace(/^-/, '');
+                dependency = dependency.replace(/([A-Z]+)/g, function($1) {
+                    return '-' + $1.toLowerCase();
+                }).replace(/^-/, '');
                 dependencies[i] = require(dependency);
             }
         }
@@ -31,1737 +34,1862 @@
         }
         global[name] = factory.apply(global, dependencies);
     }
-}((new Function('return this'))(), 'ClazzJS', ['MetaJS'], function (MetaJS, undefined) {
+}((new Function('return this'))(), 'ClazzJS', [], function(undefined) {
+    var Namespace = (function() {
+        var Namespace = function(scope, path) {
 
-var meta = MetaJS.meta;
-var utils = {
+            var self = function(path /* injects.. , callback */ ) {
+                var namespace = self.getScope().getNamespace(self.adjustPath(path));
 
-    copy: function(object) {
-        var copy, toString = Object.prototype.toString.apply(object);
-
-        if ('[object Date]' === toString) {
-            copy = new Date(object.getTime())
-        }
-        else if ('[object Array]' === toString) {
-            copy = [];
-            for (var i = 0, ii = object.length; i < ii; ++i) {
-                copy[i] = this.copy(object[i]);
-            }
-        }
-        else if ('[object RegExp]' === toString) {
-            copy = new RegExp(object.source);
-        }
-        else if (object && {}.constructor == object.constructor) {
-            copy = {};
-            for (var property in object) {
-                copy[property] = this.copy(object[property]);
-            }
-        }
-        else {
-            copy = object;
-        }
-
-        return copy;
-    }
-
-};
-var Clazz = function(manager, factory, namespace) {
-
-    var clazz = function(name, parent, meta) {
-
-        var last = arguments[arguments.length-1];
-
-        // Getting of existed clazz
-        if (typeof last !== 'function' && Object.prototype.toString.call(last) !== '[object Object]') {
-            return clazz.get(name, /* actually dependencies */ parent);
-        }
-        clazz.set(name, parent, meta);
-    };
-
-    for (var property in Clazz.prototype) {
-        clazz[property] = Clazz.prototype[property];
-    }
-
-    clazz.getManager = function() {
-        return manager;
-    };
-
-    clazz.getFactory = function() {
-        return factory;
-    };
-
-    clazz.getNamespace = function() {
-        return namespace;
-    };
-
-    return clazz;
-};
-
-Clazz.prototype = {
-    constructor: Clazz,
-
-    get: function(originName, dependencies) {
-        var name;
-
-        name = this.resolveName(originName);
-        if (!name) {
-            throw new Error('Clazz with name "' + originName + '" does not exits!');
-        }
-
-        dependencies = dependencies || [];
-
-        var manager   = this.getManager();
-        var factory   = this.getFactory();
-
-        if (!manager.hasClazz(name, dependencies)) {
-            var meta = manager.getMeta(name);
-
-            manager.setClazz(factory.create({
-                name:         name,
-                dependencies: dependencies,
-                parent:       this.adjustParent(meta.parent),
-                meta:         meta.meta
-            }));
-        }
-        return manager.getClazz(name, dependencies)
-    },
-
-    has: function(name) {
-        return !!this.resolveName(name);
-    },
-
-    set: function(name, parent, meta) {
-
-        var namespace = this.getNamespace();
-        var manager   = this.getManager();
-
-        // Creation of new clazz
-        if (typeof name === 'object') {
-            parent   = name.parent;
-            meta     = name.meta;
-            name     = name.name;
-        }
-        else if (typeof meta === 'undefined') {
-            meta    = parent;
-            parent = null;
-        }
-        name = namespace.apply(name);
-
-        manager.setMeta(name, {
-            parent:     parent,
-            meta:       meta
-        });
-
-        return this;
-    },
-
-    resolveName: function(name) {
-        var paths, aname, i, ii;
-
-        var manager   = this.getManager();
-        var namespace = this.getNamespace();
-
-        var anames = [];
-
-        paths = namespace.getPaths();
-        for (i = 0, ii = paths.length; i < ii; ++i) {
-            aname = namespace.apply(name, paths[i]);
-            if (manager.hasMeta(aname)) {
-                return aname;
-            }
-            anames.push(aname);
-        }
-
-        for (i = 0, ii = anames.length; i < ii; ++i) {
-            while (namespace.callback(anames[i])) {
-                if (manager.hasMeta(anames[i])) {
-                    return anames[i];
+                if (arguments.length > 1) {
+                    namespace.space.apply(namespace, _.toArray(arguments).slice(1));
                 }
-            }
-        }
+                return namespace;
+            };
 
-        return false;
-    },
+            _.extend(self, Namespace.prototype);
 
-    adjustParent: function(parent) {
-        if (typeof parent === 'string') {
-            parent = [parent];
-        }
+            self._scope = scope;
+            self._path = path;
+            self._spaces = [];
+            self._objects = {};
 
-        if (Object.prototype.toString.call(parent) === '[object Array]') {
-            parent = this.get(parent[0], parent[1] || [])
-        }
-
-        return parent;
-    }
-};
-var Namespace = function(manager, factory, baseNamespace, space, global, Class) {
-    Class = Class || Clazz;
-
-    var namespace = function(space, callback) {
-        var newNamespace = new Namespace(manager, factory, namespace, space, global);
-        var newClazz     = new Class(manager, factory, newNamespace);
-
-        if (callback) {
-            Namespace.setCallback(newNamespace, newClazz, callback);
-        }
-
-        return newClazz;
-    };
-
-    namespace.getManager = function() {
-        return manager;
-    };
-
-    namespace.getFactory = function() {
-        return factory;
-    };
-
-    namespace.getBaseNamespace = function() {
-        return baseNamespace;
-    };
-
-    namespace.getGlobal = function() {
-        return global;
-    };
-
-    namespace.getPath = function() {
-        return Namespace.adjust((baseNamespace ? baseNamespace.getPath() : Namespace.getGlobalPath())+(space ? Namespace.getDelimiter()+space : ''));
-    };
-
-    namespace.getPaths = function() {
-        var paths = [].concat(this.getPath());
-
-        if (-1 === paths.indexOf(Namespace.getGlobalPath())) {
-            paths.push(Namespace.getGlobalPath());
-        }
-        return paths;
-    };
-
-    namespace.apply = function(space, path) {
-        if (0 === space.search('[\\' + Namespace.DELIMITERS.join('\\') + ']')) {
-            return Namespace.adjust(space);
-        }
-        return Namespace.adjust((path || this.getPath())+Namespace.getDelimiter()+space);
-    };
-
-    namespace.callback = function(clazzName) {
-        return Namespace.executeNextCallback(clazzName);
-    };
-
-    return namespace;
-};
-
-Namespace.DEFAULT_DELIMITER = '/';
-Namespace.DELIMITERS        = ['\\', '/', '_', '-', '.'];
-
-Namespace._delimiter = null;
-Namespace._callbacks = {};
-
-Namespace.setDelimiter = function(delimiter) {
-    if (!(delimiter in this.DELIMITERS)) {
-        throw new Error('Unsupported delimiter');
-    }
-    this._delimiter = delimiter;
-    return this;
-};
-
-Namespace.getDelimiter = function() {
-    return this._delimiter || this.DEFAULT_DELIMITER
-};
-
-Namespace.getGlobalPath = function() {
-    return this.getDelimiter();
-}
-
-Namespace.adjust = function(space) {
-    var regexp = '[\\' + this.DELIMITERS.join('\\') + ']';
-
-    return space
-        .replace(new RegExp(regexp + '+', 'g'), this.getDelimiter())
-        .replace(new RegExp(regexp + '$'), '')
-};
-
-Namespace.setCallback = function(namespace, clazz, callback) {
-    var path = namespace.getPath();
-
-    if (!(path in this._callbacks)) {
-        this._callbacks[path] = [];
-    }
-
-    this._callbacks[path].push(function() {
-        callback(clazz, namespace);
-    })
-};
-
-Namespace.executeNextCallback = function(clazzName) {
-    var part, callback;
-
-    var delimiter = this.getDelimiter();
-    var parts     = clazzName.split(delimiter);
-
-    parts.pop();
-
-    while (parts.length) {
-        part = parts.join(delimiter);
-        if (part in this._callbacks) {
-            callback = this._callbacks[part].shift();
-            if (!this._callbacks[part].length) {
-                delete this._callbacks[part];
-            }
-            callback();
-            return true;
-        }
-        parts.pop();
-    }
-    return false;
-};
-var Base = function() {
-    this.uid = ++Base.uid;
-
-    if (typeof this.init === 'function') {
-        var response = this.init.apply(this, Array.prototype.slice.call(arguments));
-
-        if (typeof response !== 'undefined') {
-            return response;
-        }
-    }
-}
-
-Base.NAME         = '__BASE_CLAZZ__';
-Base.DEPENDENCIES = [];
-Base.uid          = 0;
-
-Base.parent = null;
-
-Base.create = function() {
-    // Dirty hack!!!! But I don't know better solution:(
-    var a = arguments;
-    var newEntity = new this(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]);
-
-    this.emit('object.create', newEntity);
-
-    return newEntity;
-}
-
-Base.prototype = {
-    parent: null,
-    clazz:  Base
-}
-var Factory = function(BaseClazz, metaProcessor) {
-    this._BaseClazz     = BaseClazz     || Base;
-    this._metaProcessor = metaProcessor || meta.processor('Clazz.Base');
-}
-var clazzUID = 0;
-
-Factory.prototype = {
-
-    CLASS_NAME: 'Clazz{uid}',
-
-    create: function(params) {
-
-        var name           = params.name || this.generateName();
-        var parent         = params.parent;
-        var meta           = params.meta;
-        var dependencies   = params.dependencies || [];
-
-        var clazz = this.createClazz(name, parent);
-
-        clazz.DEPENDENCIES = dependencies;
-
-        if (typeof meta === 'function') {
-            meta = meta.apply(clazz, dependencies);
-        }
-
-        if (meta) {
-            this.applyMeta(clazz, meta);
-        }
-
-        return clazz;
-    },
-
-    createClazz: function(name, parent) {
-        if (!parent) {
-            parent = this._BaseClazz;
-        }
-
-        var clazz = function () {
-            var response = parent.apply(this, Array.prototype.slice.call(arguments));
-
-            if (typeof response !== 'undefined') {
-                return response;
-            }
+            return self;
         };
 
-        // Copy all parent methods and initialize properties
-        for (var property in parent) {
-            if (typeof parent[property] === 'function') {
-                clazz[property] = parent[property];
-            }
-            else if (property[0] === '_') {
-                clazz[property] = undefined;
-            }
-        }
+        _.extend(Namespace.prototype, {
 
-        clazz.NAME   = name || this.generateName();
-        clazz.parent = parent;
+            getPath: function() {
+                return this._path;
+            },
 
-        clazz.prototype = Object.create(parent.prototype);
+            getScope: function() {
+                return this._scope;
+            },
 
-        clazz.prototype.clazz  = clazz;
-        clazz.prototype.parent = parent.prototype;
-        clazz.prototype.constructor = clazz;
+            adjustPath: function(path) {
+                return this._scope.isAbsolutePath(path) ? this._scope.adjustPath(path) : this._scope.concatPaths(this.getPath(), path);
+            },
 
-        return clazz;
-    },
-
-    applyMeta: function(clazz, meta) {
-        this._metaProcessor.process(clazz, meta);
-    },
-
-    combineProcessors: function(/* processors... */) {
-        var i, ii, type, processors;
-
-        var combined = { clazz: [], proto: [] };
-
-        for (i = 0, ii = arguments.length; i < ii; ++i) {
-            processors = arguments[i];
-            if (Object.prototype.toString.call(processors) === '[object Array]') {
-                processors = {
-                    clazz: processors,
-                    proto: processors
-                };
-            }
-            for (type in combined) {
-                if (!(type in processors)) {
-                    continue;
+            get: function(name) {
+                if (!(name in this._objects)) {
+                    this._objects[name] = this._scope.get(name).call(this);
                 }
-                combined[type] = combined[type].concat(processors[type]);
-            }
-        }
+                return this._objects[name];
+            },
 
-        return combined;
-    },
+            has: function(name) {
+                return this._scope.has(name);
+            },
 
-    generateName: function() {
-        return this.CLASS_NAME.replace('{uid}', ++clazzUID);
-    },
+            space: function( /* injects.. , callback */ ) {
+                var self = this;
 
-    getMetaProcessor: function() {
-        return this._metaProcessor;
-    },
+                var injects = _.toArray(arguments).slice(0, -1);
+                var callback = _.last(arguments);
+                var objects = [];
 
-    getBaseClazz: function() {
-        return this._BaseClazz;
-    }
-};
-var Manager = function() {
-    this._clazz = {};
-    this._meta  = {};
-}
-
-Manager.prototype = {
-
-    setMeta: function(name, meta) {
-        this._meta[name] = meta;
-
-        return this;
-    },
-
-    hasMeta: function(name) {
-        return name in this._meta;
-    },
-
-    getMeta: function(name) {
-        if (!this.hasMeta(name)) {
-            throw new Error('Meta does not exists for "' + name + '"!');
-        }
-        return this._meta[name];
-    },
-
-    getClazz: function(name, dependencies) {
-        var i, ii, j, jj, clazz, isFound;
-
-        clazz = this._clazz[name];
-
-        if (Object.prototype.toString.apply(clazz) === '[object Array]') {
-            if (!dependencies) {
-                dependencies = [];
-            }
-            for (i = 0, ii = clazz.length; i < ii; ++i) {
-
-                isFound = true;
-                for (j = 0, jj = clazz[i].DEPENDENCIES.length; j < jj; ++j) {
-                    if (clazz[i].DEPENDENCIES[j] !== dependencies[j]) {
-                        isFound = false;
-                        break;
-                    }
+                if (!injects.length) {
+                    injects = this._scope.getDefaultInjects();
                 }
 
-                if (isFound) {
-                    return clazz[i];
+                for (var i = 0, ii = injects.length; i < ii; ++i) {
+                    objects[i] = this.get(injects[i]);
                 }
-            }
-        }
-        throw new Error('Clazz "' + name + '" does not exists!');
-    },
 
-    hasClazz: function(name, dependencies) {
-        var i, ii, j, jj, clazz, isFound;
+                this._spaces.push(function() {
+                    callback.apply(self, objects);
+                });
 
-        clazz = this._clazz[name];
+                return this;
+            },
 
-        if (Object.prototype.toString.apply(clazz) === '[object Array]') {
-            if (!dependencies) {
+            executeSpace: function() {
+                if (!this._spaces.length) {
+                    return false;
+                }
+                this._spaces.pop()();
                 return true;
             }
-            for (i = 0, ii = clazz.length; i < ii; ++i) {
 
-                isFound = true;
-                for (j = 0, jj = clazz[i].DEPENDENCIES.length; j < jj; ++j) {
-                    if (clazz[i].DEPENDENCIES[j] !== dependencies[j]) {
-                        isFound = false;
-                        break;
-                    }
+        });
+        var Scope = function(options) {
+            options = options || {};
+
+            this._innerDelimiter = options.innerDelimiter || '/';
+            this._delimiters = options.delimiters || ['\\', '/', '.'];
+            this._defaultInjects = options.defaultInjects || [];
+
+            this._namespaces = {};
+            this._factories = {};
+            this._search = [];
+        };
+
+        _.extend(Scope.prototype, {
+
+            getInnerDelimiter: function() {
+                return this._innerDelimiter;
+            },
+
+            setInnerDelimiter: function(delimiter) {
+                if (!this.hasDelimiter(delimiter)) {
+                    throw new Error('Delimiter "' + delimiter + '" does not supported!');
+                }
+                this._innerDelimiter = delimiter;
+                return this;
+            },
+
+            getDelimiters: function() {
+                return this._delimiters;
+            },
+
+            addDelimiter: function(delimiter) {
+                if (this.hasDelimiter(delimiter)) {
+                    throw new Error('Delimiter "' + delimiter + '" is already exists!');
+                }
+                return this;
+            },
+
+            removeDelimiter: function(delimiter) {
+                if (!this.hasDelimiter(delimiter)) {
+                    throw new Error('Delimiter "' + delimiter + '" does not exists!');
+                }
+            },
+
+            hasDelimiter: function(delimiter) {
+                return -1 !== this._delimiters.indexOf(delimiter);
+            },
+
+            getNamespace: function(path) {
+                path = this.adjustPath(path);
+
+                if (!(path in this._namespaces)) {
+                    this._namespaces[path] = Namespace(this, path);
                 }
 
-                if (isFound) {
-                    return true;
+                return this._namespaces[path];
+            },
+
+            getRootNamespace: function() {
+                return this.getNamespace(this.getRootPath());
+            },
+
+            getRootPath: function() {
+                return this._innerDelimiter;
+            },
+
+            adjustPath: function(path) {
+
+                var innerDelimiter = this.getInnerDelimiter();
+                var delimiters = this.getDelimiters();
+
+                return path
+                    .replace(new RegExp('[\\' + delimiters.join('\\') + ']', 'g'), innerDelimiter)
+                    .replace(new RegExp(innerDelimiter + '+', 'g'), innerDelimiter)
+                    .replace(new RegExp('(.+)' + innerDelimiter + '$'), function($1) {
+                        return $1;
+                    });
+            },
+
+            isAbsolutePath: function(path) {
+                return 0 === path.indexOf(this.getRootNamespace().getPath());
+            },
+
+            concatPaths: function() {
+                return this.adjustPath(_.toArray(arguments).join(this.getInnerDelimiter()));
+            },
+
+            set: function(name, factory) {
+                if (name in this._factories) {
+                    throw new Error('Factory for object "' + name + '" is already exists!');
                 }
-            }
-        }
-        return false;
-    },
+                this._factories[name] = factory;
+                return this;
+            },
 
-    setClazz: function(name, clazz) {
-        if (typeof name === 'function') {
-            clazz = name;
-            name  = clazz.NAME;
-        }
-        if (typeof clazz !== 'function') {
-            throw new Error('Clazz must be a function!');
-        }
-        if (!(name in this._clazz)) {
-            this._clazz[name] = [];
-        }
-        this._clazz[name].push(clazz);
-
-        return this;
-    }
-}
-meta.processor('Clazz.Base', {
-
-    _types: {
-        clazz: function(clazz) { return clazz; },
-        proto: function(clazz) { return clazz.prototype; }
-    },
-
-    _processors: {
-        clazz: ['Clazz.Clazz', 'Clazz.Events'],
-        proto: ['Clazz.Proto', 'Clazz.Events']
-    },
-
-    process: function(clazz, metaData) {
-        var self = this;
-
-        var type, processingObject, processor, i, ii, j, jj, processorsContainer;
-
-        var parentProcessors = clazz.parent && ('__getMetaProcessors' in clazz.parent)
-            ? clazz.parent.__getMetaProcessors()
-            : this._processors;
-        var metaProcessors = metaData.meta_processors || {};
-
-        var processorsContainers = [parentProcessors, metaProcessors];
-
-        var processors = {};
-
-        for (j = 0, jj = processorsContainers.length; j < jj; ++j) {
-            processorsContainer = processorsContainers[j];
-
-            for (type in  processorsContainer) {
-                if (!(type in processors)) {
-                    processors[type] = [];
+            get: function(name) {
+                if (!(name in this._factories)) {
+                    throw new Error('Factory for object "' + name + '" does not exists!');
                 }
+                return this._factories[name];
+            },
 
-                processorsContainer[type] = [].concat(processorsContainer[type]);
+            has: function(name) {
+                return name in this._factories;
+            },
 
-                for (i = 0, ii = processorsContainer[type].length; i < ii; ++i) {
-                    processor = processorsContainer[type][i];
-                    if (typeof processor === 'string') {
-                        processor = meta.processor(processor);
-                    }
-                    if (!(processor in processors[type])) {
-                        processors[type].push(processor);
-                    }
-                }
-            }
-        }
+            remove: function(name) {
+                delete this._factories[name];
+                return this;
+            },
 
-        for (type in processors) {
-            processingObject = self._types[type](clazz);
+            getInSearchError: function(path) {
+                var error = new Error('Path "' + path + '" is in search state!');
+                error.inSearch = true;
+                error.path = path;
+                return error;
+            },
 
-            for (i = 0, ii = processors[type].length; i < ii; ++i) {
-                processors[type][i].process(processingObject, metaData);
-            }
-        }
+            isInSearchError: function(e) {
+                return e.inSearch;
+            },
 
-        clazz.__getMetaProcessors =  function(type) {
-            return typeof type !== 'undefined' ? processors[type] : processors;
-        }
-    },
+            search: function(path, callback) {
+                path = this.adjustPath(path);
 
-    addType: function(name, getter) {
-        if (!(name in this._processors)) {
-            this._processors[name] = [];
-        }
-        this._types[name] = getter;
-        return this;
-    },
+                var result = callback(path);
 
-    removeType: function(name) {
-        if (name in this._processors) {
-            delete this._processors[name];
-        }
-        delete this._types[name];
-        return this;
-    },
-
-    addProcessor: function(type, processor) {
-        this._processors[type].push(processor)
-        return this;
-    },
-
-    removeProcessor: function(type, name) {
-        var index = this._processors[type].indexOf(name);
-        this._processors[type].splice(index, 1);
-        return this;
-    }
-
-});
-meta.processor('Clazz.Clazz', 'Meta.Options', {
-    options: {
-        constants:        'Clazz.Constants',
-        clazz_properties: 'Clazz.Properties',
-        clazz_methods:    'Clazz.Methods'
-    }
-});
-meta.processor('Clazz.Constants', 'Meta.Chain', {
-
-    processors: {
-        init:      'Clazz.Constants.Init',
-        interface: 'Clazz.Constants.Interface'
-    }
-
-});
-meta.processor('Clazz.Constants.Init', function(object, constants) {
-    object['__constants'] = {};
-
-    for (var constant in constants) {
-        object['__constants'][constant] = constants[constant];
-    }
-});
-meta.processor('Clazz.Constants.Interface', 'Meta.Interface', {
-
-    interface: {
-
-        const: function(name) {
-            return this.__getConstant(name);
-        },
-
-        __getConstant: function(name, constants) {
-            var self = this;
-
-            if (typeof constants === 'undefined') {
-                constants = self.__getConstants();
-            }
-
-            if (typeof name !== 'undefined') {
-                if (!(name in constants)) {
-                    throw new Error('Constant "' + name + '" does not defined!');
-                }
-                constants = constants[name];
-
-                if (Object.prototype.toString.apply(constants) === '[object Object]') {
-                    return function(name) {
-                        return self.__getConstant(name, constants)
-                    }
-                }
-            }
-
-            return constants;
-        },
-
-        __getConstants: function() {
-            var constants = {}, parent = this;
-
-            while (parent) {
-                if (parent.hasOwnProperty('__constants')) {
-                    for (var constant in parent['__constants']) {
-                        if (!(constant in constants)) {
-                            constants[constant] = parent['__constants'][constant];
-                        }
-                    }
-                }
-                parent = parent.parent;
-            }
-            return constants;
-        }
-    }
-})
-meta.processor('Clazz.Events', 'Meta.Chain', {
-
-    processors: {
-        interface: 'Clazz.Events.Interface',
-        init:      'Clazz.Events.Init'
-    }
-
-});
-meta.processor('Clazz.Events.Init', function(object, meta) {
-    var eventCallbacks, event, name, parent;
-
-    eventCallbacks = (object.clazz && meta.events) || (meta.clazz_events) || {};
-
-    for (event in eventCallbacks) {
-        for (name in eventCallbacks[event]) {
-            object.on(event, name, eventCallbacks[event][name]);
-        }
-    }
-
-    parent = object.parent;
-
-    while (parent) {
-
-        if (parent.__eventsCallbacks) {
-            var eventCallbacks = parent.getEventCallbacks();
-
-            for (event in eventCallbacks) {
-                for (name in eventCallbacks[event]) {
-                    if (!object.hasEventCallback(event, name)) {
-                        object.on(event, name, eventCallbacks[event][name]);
-                    }
-                }
-            }
-        }
-        parent = parent.parent;
-    }
-});
-meta.processor('Clazz.Events.Interface', 'Meta.Interface', {
-
-    interface: {
-
-        __initEventsCallbacks: function() {
-            this.__eventsCallbacks = {};
-        },
-
-        on: function(event, name, callback) {
-            if (this.hasEventCallback(event, name)) {
-                throw new Error('Event callback for "' + event + '"::"' + name + '" is already exists!');
-            }
-
-            if (!(event in this.__eventsCallbacks)) {
-                this.__eventsCallbacks[event] = {};
-            }
-            this.__eventsCallbacks[event][name] = callback;
-
-            return this;
-        },
-
-        off: function(event, name) {
-            if (!this.hasEventCallback(event, name)) {
-                throw new Error('There is no "' + event +  (name ? '"::"' + name : '') + '" event callback!');
-            }
-
-            typeof name === 'undefined'
-                ? delete this.__eventsCallbacks[event]
-                : delete this.__eventsCallbacks[event][name];
-
-            return this;
-        },
-
-        hasEventCallback: function(event, name) {
-            return (event in this.__eventsCallbacks) && (typeof name === 'undefined' || name in this.__eventsCallbacks[event]);
-        },
-
-        getEventCallback: function(event, name) {
-            if (this.hasEventCallback(event, name)) {
-                throw new Error('Event callback for "' + event + '"::"' + name + '" is not exists!');
-            }
-
-            return this.__eventsCallbacks[event][name];
-        },
-
-        getEventCallbacks: function(event) {
-            return typeof event !== 'undefined' ? (this.__eventsCallbacks[event] || {}) : this.__eventsCallbacks;
-        },
-
-        emit: function(event) {
-            if (this.hasEventCallback(event)) {
-                for (var name in this.__eventsCallbacks[event]) {
-                    this.__eventsCallbacks[event][name].apply(this, Array.prototype.slice.call(arguments, 1));
-                }
-            }
-            return this;
-        }
-    }
-
-});
-meta.processor('Clazz.Methods', function(object, methods) {
-
-    // Copy parent clazz methods
-    if (typeof object === 'function' && object.parent) {
-        for (var method in object.parent) {
-            if (typeof object.parent[method] !== 'function') {
-                continue;
-            }
-            object[method] = object.parent[method];
-        }
-    }
-
-    // Creates specified methods
-    for (var method in methods) {
-        if (typeof methods[method] !== 'function') {
-            throw new Error('Method "' + method + '" must be a function!');
-        }
-        object[method] = methods[method]
-    }
-})
-meta.processor('Clazz.Properties', 'Meta.Chain', {
-    processors: {
-        init:      'Clazz.Properties.Init',
-        interface: 'Clazz.Properties.Interface',
-        meta:      'Clazz.Properties.Meta'
-    }
-});
-meta.processor('Clazz.Properties.Init', function(object, properties) {
-
-    object.__setters = {};
-    object.__getters = {};
-    object.__properties = {};
-
-    for (var property in properties) {
-        object['_' + property] = undefined;
-    }
-})
-meta.processor('Clazz.Properties.Interface', 'Meta.Interface', {
-
-    interface: {
-
-        init: function(data) {
-            this.__initialization();
-            this.__setDefaults();
-            this.__setData(data);
-        },
-
-        __initialization: function() {
-            for (var name in this) {
-                if (typeof this[name] === 'function' && 0 === name.indexOf('__init')) {
-                    this[name]();
-                }
-            }
-        },
-
-        __setDefaults: function() {
-            var defaultValue, property;
-
-            var properties = this.__properties;
-
-            for (property in properties) {
-                defaultValue = properties[property]['default'];
-
-                if (typeof defaultValue === 'undefined') {
-                    continue;
-                }
-                else if (typeof defaultValue === 'function') {
-                    defaultValue = defaultValue.call(this);
+                if (!_.isUndefined(result)) {
+                    return result;
                 }
 
-                this['_'+property] = utils.copy(defaultValue);
-            }
-        },
+                var delimiter = this.getInnerDelimiter();
+                var parts = path.split(delimiter);
 
-        __setProperties: function(properties) {
-            for (var property in properties) {
-                this.__setProperty(property, properties[property]);
-            }
-            return this;
-        },
+                var name = parts.pop();
 
-        __getProperties: function() {
-            var parent = this;
+                while (parts.length) {
+                    var subpath = parts.join(delimiter);
 
-            var properties = {};
+                    if (subpath in this._namespaces) {
+                        var namespace = this._namespaces[subpath];
 
-            while (parent) {
-                if (parent.__properties) {
-                    for (var property in parent.__properties) {
-                        if (property in properties) {
-                            continue;
-                        }
-                        properties[property] = parent.__properties[property];
-                    }
-                }
-                parent = parent.parent;
-            }
-            return properties;
-        },
-
-        __setProperty: function(property, key, value) {
-            property = this.__adjustPropertyName(property);
-
-            if (typeof this.__properties[property] === 'undefined') {
-                this.__properties[property] = {};
-            }
-            if (key && {}.constructor === key.constructor) {
-                for (var prop in key) {
-                    this.__properties[property][prop] = key[prop];
-                }
-            }
-            else {
-                this.__properties[property][key] = value;
-            }
-
-            return this;
-        },
-
-        __getProperty: function(property, key) {
-            var properties = this.__getProperties();
-
-            return typeof key === 'undefined'
-                ? properties[property]
-                : properties[property] && properties[property][key];
-        },
-
-        __hasProperty: function(property, fields) {
-            property = this.__adjustPropertyName(property);
-
-            var propertyExists = property in this.__getProperties();
-
-            if (propertyExists && fields && fields.length) {
-
-                var property = this.__getPropertyValue(property);
-                for (var i = 0, ii = fields.length; i < ii; ++i) {
-                    if (!property || !(fields[i] in property)) {
-                        return false;
-                    }
-                    property = property[fields[i]];
-                }
-            }
-
-            return propertyExists;
-        },
-
-        __getPropertyType: function(property) {
-            var properties = this.__getProperties();
-            if (!(property in properties)) {
-                throw new Error('Property "' + property + '" does not exists!');
-            }
-            return [].concat(properties[property].type)[0];
-        },
-
-        __adjustPropertyName: function(name) {
-            return name.replace(/(?:_)\w/, function (match) { return match[1].toUpperCase(); });
-        },
-
-        __setData: function(data) {
-            for (var property in data) {
-                if (!this.__hasProperty(property)) {
-                    continue;
-                }
-                this.__setPropertyValue(property, data[property]);
-            }
-            return this;
-        },
-
-        __getData: function() {
-            var property, value, type;
-
-            var data = {};
-
-            for (property in this.__properties) {
-                type  = this.__properties[property].type;
-                value = this.__getPropertyValue(property);
-
-                switch (type) {
-                    case 'array':
-                        for (var i = 0, ii = value.length; i < ii; ++i) {
-                            if (value[i].__getData) {
-                                value[i] = value[i].__getData();
+                        while (namespace.executeSpace()) {
+                            result = callback(subpath + delimiter + name);
+                            if (!_.isUndefined(result)) {
+                                return result;
                             }
                         }
-                        break;
-                    case 'hash':
-                        for (var key in value) {
-                            if (value[key].__getData) {
-                                value[key] = value[key].__getData();
-                            }
-                        }
-                        break;
+                    }
+                    name = parts.pop();
                 }
+            },
 
-                if (value.__getData) {
-                    value = value.__getData();
+            getDefaultInjects: function() {
+                return this._defaultInjects;
+            },
+
+            addDefaultInject: function(name) {
+                if (-1 !== this._defaultInjects.indexOf(name)) {
+                    throw new Error('Default inject "' + name + '" is already exists!');
                 }
+                this._defaultInjects.push(name);
+                return this;
+            },
 
-                data[property] = value;
-            }
-            return data;
-        },
-
-        __getPropertyValue: function(property, fields) {
-            var getters, i, ii, name, value;
-
-            property = this.__adjustPropertyName(property);
-
-            if (!this.__hasProperty(property, fields)) {
-                throw new Error('Can\'t get! Property "' + [property].concat(fields || []).join('.') + '" does not exists!');
-            }
-
-            value = this['_' + property];
-
-            getters = this.__getGetters(property);
-
-            for (name in getters) {
-                value = getters[name].call(this, value);
-            }
-
-            if (typeof fields !== 'undefined') {
-                for (i = 0, ii = fields.length; i < ii; ++i) {
-                    value = value[fields[i]];
+            removeDefaultInject: function(name) {
+                var i = this._defaultInjects.indexOf(name);
+                if (-1 === i) {
+                    throw new Error('Default inject "' + name + '" does not exists!');
                 }
+                this._defaultInjects.splice(i, 1);
+                return this;
             }
 
-            return value;
-        },
+        });
+        return {
+            Namespace: Namespace,
+            Scope: Scope
+        };
 
+    })();
+    var Meta = (function() {
+        var Manager = function() {
+            this._processors = {};
+        };
 
-        __isPropertyValue: function(property, fields, compareValue) {
-            if (Object.prototype.toString.call(fields) !== '[object Array]') {
-                compareValue = fields;
-                fields       = undefined;
-            }
+        _.extend(Manager.prototype, {
 
-            var value = this.__getPropertyValue(property, fields);
+            getProcessor: function(name) {
+                this.checkProcessor(name);
+                return this._processors[name];
+            },
 
-            return typeof compareValue !== 'undefined' ? value === compareValue : !!value;
-        },
+            hasProcessor: function(name) {
+                return name in this._processors;
+            },
 
-        __hasPropertyValue: function(property, fields, searchValue) {
-            if (Object.prototype.toString.call(fields) !== '[object Array]') {
-                searchValue = fields;
-                fields      = undefined;
-            }
+            setProcessor: function(name, processor) {
 
-            var value = this.__getPropertyValue(property, fields.slice(0, -1));
-
-            if (typeof searchValue !== 'undefined') {
-
-                if (Object.prototype.toString.call(value) === '[object Array]') {
-                    if (-1 !== value.indexOf(searchValue)) {
-                        return true;
+                if (_.isFunction(processor)) {
+                    processor = {
+                        process: processor
                     }
                 }
-                else if (value && {}.constructor === value.constructor) {
-                    for (var key in value) {
-                        if (value[key] === searchValue) {
+
+                if (!('__name' in processor)) {
+                    processor.__name = name;
+                }
+
+                this._processors[name] = processor;
+                return this;
+            },
+
+            removeProcessor: function(name) {
+                this.checkProcessor(name);
+
+                var processor = this._processors[name];
+                delete this._processors[name];
+
+                return processor;
+            },
+
+            getProcessors: function() {
+                return this._processors;
+            },
+
+            setProcessors: function(processors) {
+                for (var name in processors) {
+                    this.setProcessor(name, processors[name]);
+                }
+                return this;
+            },
+
+            checkProcessor: function(name) {
+                if (!this.hasProcessor(name)) {
+                    throw new Error('Meta processor "' + name + '" does not exists!');
+                }
+            }
+
+        });
+        var Meta = function(manager, namespace) {
+
+            var self = function(name, processor) {
+                return _.isUndefined(processor) ? self.get(name) : self.set(name, processor);
+            };
+
+            _.extend(self, Meta.prototype);
+
+            self._manager = manager;
+            self._namespace = namespace;
+
+            return self
+        };
+
+        _.extend(Meta.prototype, {
+
+            getManager: function() {
+                return this._manager;
+            },
+
+            getNamespace: function() {
+                return this._namespace;
+            },
+
+            get: function(originalName) {
+
+                var manager = this.getManager();
+                var name = this.resolveProcessorName(originalName);
+
+                if (!name) {
+                    throw new Error('Meta processor "' + originalName + '" does not exist!');
+                }
+
+                return manager.getProcessor(name);
+            },
+
+            set: function(name, processor) {
+
+                var namespace = this.getNamespace();
+                var manager = this.getManager();
+
+                manager.setProcessor(namespace.adjustPath(name), processor);
+
+                return this;
+            },
+
+            resolveProcessorName: function(name) {
+
+                var manager = this.getManager();
+                var namespace = this.getNamespace();
+
+                return namespace.getScope().search(namespace.adjustPath(name), function(name) {
+                    if (manager.hasProcessor(name)) {
+                        return name;
+                    }
+                });
+            }
+        });
+        return {
+            Meta: Meta,
+            Manager: Manager
+        };
+
+    })();
+    var Clazz = (function() {
+        var Clazz = function(manager, factory, namespace) {
+
+            var self = function(name, parentOrDependencies, meta) {
+                var last = _.last(arguments);
+
+                if (!_.isFunction(last) && Object.prototype.toString.call(last) !== '[object Object]') {
+                    return self.get(name, /* dependencies */ parentOrDependencies);
+                }
+                self.set(name, /* parent */ parentOrDependencies, meta);
+            };
+
+            _.extend(self, Clazz.prototype);
+
+            self._manager = manager;
+            self._factory = factory;
+            self._namespace = namespace;
+
+            return self;
+        };
+
+        _.extend(Clazz.prototype, {
+
+            getManager: function() {
+                return this._manager;
+            },
+
+            getFactory: function() {
+                return this._factory;
+            },
+
+            getNamespace: function() {
+                return this._namespace;
+            },
+
+            has: function(name) {
+                return !!this.resolveName(name);
+            },
+
+            get: function(originalName, dependencies) {
+
+                var name = this.resolvePath(originalName);
+
+                if (!name) {
+                    throw new Error('Clazz "' + originalName + '" does not exists!');
+                }
+
+                dependencies = dependencies || [];
+
+                var manager = this.getManager();
+
+                if (!manager.hasClazz(name, dependencies)) {
+
+                    var factory = this.getFactory();
+                    var clazzData = manager.getClazzData(name);
+
+                    manager.setClazz(name, factory.create({
+                        name: clazzData.name,
+                        parent: clazzData.parent,
+                        meta: clazzData.meta,
+                        dependencies: dependencies
+                    }), dependencies);
+                }
+                return manager.getClazz(name, dependencies);
+            },
+
+            set: function(name, parent, meta) {
+
+                var namespace = this.getNamespace();
+                var manager = this.getManager();
+
+                if (_.isUndefined(meta)) {
+                    meta = parent;
+                    parent = null;
+                }
+
+                name = namespace.adjustPath(name);
+
+                manager.setClazzData(name, {
+                    name: name,
+                    parent: parent,
+                    meta: meta
+                });
+
+                return this;
+            },
+
+            resolvePath: function(path) {
+
+                var namespace = this.getNamespace();
+                var manager = this.getManager();
+
+                return namespace.getScope().search(namespace.adjustPath(path), function(path) {
+                    if (manager.hasClazzData(path)) {
+                        return path;
+                    }
+                })
+            }
+        });
+        var Factory = function(options) {
+            options = options || {};
+
+            this._clazzUID = 0;
+            this._metaProcessor = options.metaProcessor || null;
+            this._baseClazz = options.baseClazz || null;
+        };
+
+        _.extend(Factory.prototype, {
+
+            CLAZZ_NAME: 'Clazz{uid}',
+
+            getBaseClazz: function() {
+                return this._baseClazz;
+            },
+
+            setBaseClazz: function(baseClazz) {
+                if (!_.isFunction(baseClazz)) {
+                    throw new Error('Base clazz must be a function!');
+                }
+                this._baseClazz = baseClazz;
+                return this;
+            },
+
+            getMetaProcessor: function() {
+                return this._metaProcessor;
+            },
+
+            setMetaProcessor: function(metaProcessor) {
+                if (!_.isFunction(metaProcessor.process)) {
+                    throw new Error('Meta processor must have "process" method!');
+                }
+                this._metaProcessor = metaProcessor;
+                return this;
+            },
+
+            create: function(params) {
+
+                var name = params.name;
+                var parent = params.parent || this.getBaseClazz() || null;
+                var meta = params.meta;
+                var dependencies = params.dependencies || [];
+
+                return this.processMeta(this.createClazz({
+                    name: name,
+                    parent: parent
+                }), meta, dependencies);
+            },
+
+            createClazz: function(params) {
+
+                var name = params.name || this.generateName();
+                var parent = params.parent;
+                var body = params.body;
+
+                var clazz = body || function() {
+                        var result;
+
+                        if (_.isFunction(this.__construct)) {
+                            result = this.__construct.apply(this, _.toArray(arguments));
+                        } else if (parent) {
+                            result = parent.apply(this, _.toArray(arguments));
+                        }
+
+                        if (!_.isUndefined(result)) {
+                            return result;
+                        }
+                    };
+
+                if (parent) {
+                    for (var property in parent) {
+                        if (_.isFunction(parent[property])) {
+                            clazz[property] = parent[property];
+                        } else if (property[0] === '_') {
+                            clazz[property] = undefined;
+                        }
+                    }
+                }
+
+                _.extend(clazz, {
+                    __name: name,
+                    __parent: parent || null
+                });
+
+                clazz.prototype = _.extend(Object.create(parent ? parent.prototype : {}), {
+                    constructor: clazz,
+                    __parent: parent ? parent.prototype : null,
+                    __clazz: clazz,
+                    __proto: clazz.prototype
+                });
+
+                return clazz;
+            },
+
+            processMeta: function(clazz, meta, dependencies) {
+
+                dependencies = dependencies || []
+                var metaProcessor = this.getMetaProcessor();
+
+                if (metaProcessor) {
+                    if (_.isFunction(meta)) {
+                        meta = meta.apply(clazz, dependencies);
+                    }
+
+                    if (_.isObject(meta)) {
+                        metaProcessor.process(clazz, meta);
+                    }
+                }
+
+                return clazz;
+            },
+
+            generateName: function() {
+                return this.CLAZZ_NAME.replace('{uid}', ++this._clazzUID);
+            }
+        });
+        var Manager = function() {
+            this._clazz = {};
+            this._clazzData = {};
+        };
+
+        _.extend(Manager.prototype, {
+
+            setClazzData: function(name, meta) {
+                this._clazzData[name] = meta;
+                return this;
+            },
+
+            hasClazzData: function(name) {
+                return name in this._clazzData;
+            },
+
+            getClazzData: function(name) {
+                if (!this.hasClazzData(name)) {
+                    throw new Error('Data does not exists for clazz "' + name + '"!');
+                }
+                return this._clazzData[name];
+            },
+
+            getClazz: function(name, dependencies) {
+                dependencies = dependencies || [];
+
+                if (name in this._clazz) {
+                    var clazzes = this._clazz[name];
+
+                    for (var i = 0, ii = clazzes.length; i < ii; ++i) {
+
+                        var isFound = true;
+                        for (var j = 0, jj = clazzes[i][1].length; j < jj; ++j) {
+                            if (clazzes[i][1][j] !== dependencies[j]) {
+                                isFound = false;
+                                break;
+                            }
+                        }
+
+                        if (isFound) {
+                            return clazzes[i][0];
+                        }
+                    }
+
+                }
+                throw new Error('Clazz "' + name + '" does not exists!');
+            },
+
+            hasClazz: function(name, dependencies) {
+                dependencies = dependencies || [];
+
+                if (name in this._clazz) {
+                    var clazzes = this._clazz[name];
+
+                    for (var i = 0, ii = clazzes.length; i < ii; ++i) {
+
+                        var isFound = true;
+                        for (var j = 0, jj = clazzes[i][1].length; j < jj; ++j) {
+                            if (clazzes[i][1][j] !== dependencies[j]) {
+                                isFound = false;
+                                break;
+                            }
+                        }
+
+                        if (isFound) {
                             return true;
                         }
                     }
+
                 }
                 return false;
+            },
+
+            setClazz: function(name, clazz, dependencies) {
+                if (!_.isFunction(clazz)) {
+                    throw new Error('Clazz must be a function!');
+                }
+
+                if (!(name in this._clazz)) {
+                    this._clazz[name] = [];
+                }
+
+                this._clazz[name].push([clazz, dependencies || []]);
+
+                return this;
             }
+        });
+        return {
+            Clazz: Clazz,
+            Factory: Factory,
+            Manager: Manager
+        };
 
-            if (value && {}.constructor === value.constructor) {
-                for (var key in value) {
-                    return true;
+    })();
+
+    var namespaceScope = new Namespace.Scope({
+        defaultInjects: ['clazz', 'namespace']
+    });
+    var namespace = namespaceScope.getRootNamespace();
+
+    var metaManager = new Meta.Manager();
+    var meta = new Meta.Meta(metaManager, namespace);
+
+    var clazzManager = new Clazz.Manager();
+    var clazzFactory = new Clazz.Factory();
+    var clazz = new Clazz.Clazz(clazzManager, clazzFactory, namespace);
+
+    namespaceScope.set('namespace', function() {
+        return this;
+    });
+
+    namespaceScope.set('meta', function() {
+        return new Meta.Meta(metaManager, this);
+    });
+
+    namespaceScope.set('clazz', function() {
+        return new Clazz.Clazz(clazzManager, clazzFactory, this);
+    });
+
+    namespace('ClazzJS', 'clazz', 'meta', 'namespace', function(clazz, meta, namespace) {
+        meta('Base', {
+
+            _objectTypes: {
+                clazz: function(clazz) {
+                    return clazz;
+                },
+                proto: function(clazz) {
+                    return clazz.prototype;
                 }
-                return false;
-            }
+            },
 
-            return !(typeof value === 'undefined')
-                && !(value === null)
-                && !(typeof value == 'string' && value === '')
-                && !(Object.prototype.toString.call(value) === '[object Array]' && value.length === 0);
-        },
-
-        __clearPropertyValue: function(property, fields) {
-            if (!this.__hasProperty(property, fields)) {
-                throw new Error('Can\'t clear value! Property "' + [property].concat(fields || []).join('.') + '" does not exists!');
-            }
-
-            property = this.__adjustPropertyName(property);
-
-            fields = fields || [];
-
-            var currentValue = this.__getPropertyValue(property);
-            var oldValue     = utils.copy(currentValue);
-
-            if (fields.length) {
-
-                var container = this.__getPropertyValue(property);
-
-                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
-                    container = container[fields[i]];
+            _processors: {
+                clazz: {
+                    constants: 'Constants',
+                    clazz_properties: 'Properties',
+                    clazz_methods: 'Methods',
+                    clazz_events: 'Events'
+                },
+                proto: {
+                    properties: 'Properties',
+                    methods: 'Methods',
+                    events: 'Events'
                 }
+            },
 
-                if (container[fields[i]] && {}.constructor === container[fields[i]].container) {
-                    container[fields[i]] = {};
-                }
-                else if (Object.prototype.toString.call(container[fields[i]]) === '[object Array]') {
-                    container[fields[i]] = [];
-                }
-                else {
-                    container[fields[i]] = undefined;
-                }
-            }
-            else {
-                this['_' + property] = undefined;
-            }
+            process: function(clazz, metaData) {
 
-            // Event emitting
+                for (var objectType in this._processors) {
 
-            this.emit('property.changed', property, currentValue, oldValue);
-            this.emit('property.' + property + '.changed', currentValue, oldValue);
+                    var object = this._objectTypes[objectType](clazz);
+                    var processors = this._processors[objectType];
 
-            if (fields.length) {
+                    if (!object.__interfaces) {
+                        object.__interfaces = [this.__name];
+                        _.extend(object, this.interface);
+                    }
 
-                var oldValueContainer = oldValue;
-                var newValueContainer = currentValue;
+                    for (var option in processors) {
+                        var processor = processors[option];
 
-                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
+                        if (_.isString(processor)) {
+                            processor = meta(processor);
+                        }
 
-                    oldValueContainer = oldValueContainer[fields[i]];
-                    newValueContainer = newValueContainer[fields[i]];
+                        if (processor.interface && !object.__isInterfaceImplemented(processor.__name)) {
+                            object.__implementInterface(processor.__name, processor.interface);
+                        }
 
-                    this.emit('property.' + [property].concat(fields.slice(0, i-1)).join('.') + '.item_changed', fields[i], newValueContainer, oldValueContainer);
-                    this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.changed', newValueContainer, oldValueContainer);
-                }
-                oldValueContainer = oldValueContainer[fields[i]];
-
-                if (oldValueContainer && {}.constructor === oldValueContainer.constructor) {
-
-                    for (var key in oldValueContainer) {
-                        this.emit('property.' + [property].concat(fields).join('.') + '.item_removed', key, oldValueContainer[key]);
-                        this.emit('property.' + [property].concat(fields, key).join('.') + '.removed', oldValueContainer[key]);
+                        processor.process(object, metaData[option] || {}, option);
                     }
                 }
-                else if (Object.prototype.toString.call(oldValueContainer) === '[object Array]') {
+            },
 
-                    for (var i = 0, ii = oldValueContainer.length; i < ii; ++i) {
-                        this.emit('property.' + [property].concat(fields).join('.') + '.item_removed', i, oldValueContainer[i]);
-                        this.emit('property.' + [property].concat(fields, i).join('.') + '.removed', oldValueContainer[i]);
+            addObjectType: function(name, getter) {
+                if (!(name in this._processors)) {
+                    this._processors[name] = [];
+                }
+                this._objectTypes[name] = getter;
+                return this;
+            },
+
+            removeObjectType: function(name) {
+                if (name in this._processors) {
+                    delete this._processors[name];
+                }
+                delete this._objectTypes[name];
+                return this;
+            },
+
+            addProcessor: function(objectType, option, processor) {
+                this._processors[objectType][option] = processor;
+                return this;
+            },
+
+            removeProcessor: function(objectType, option) {
+                delete this._processors[objectType][option];
+                return this;
+            },
+
+
+            interface: {
+
+                __isInterfaceImplemented: function(interfaceName) {
+                    return -1 !== this.__interfaces.indexOf(interfaceName);
+                },
+
+                __implementInterface: function(interfaceName, interfaceMethods) {
+                    if (-1 !== this.__interfaces.indexOf(interfaceName)) {
+                        throw new Error('Interface "' + interfaceName + '" is already implemented!');
+                    }
+                    this.__interfaces.push(interfaceName);
+                    _.extend(this, interfaceMethods);
+                    return this;
+                },
+
+                __collectAllPropertyValues: function(property, level /* fields */ ) {
+
+                    var propertyContainers = [];
+
+                    if (this.hasOwnProperty(property)) {
+                        propertyContainers.push(this[property]);
+                    }
+
+                    if (this.__proto && this.__proto.hasOwnProperty(property)) {
+                        propertyContainers.push(this.__proto[property]);
+                    }
+
+                    var parent = this.__parent;
+
+                    while (parent) {
+                        if (parent.hasOwnProperty(property)) {
+                            propertyContainers.push(parent[property]);
+                        }
+                        parent = parent.__parent;
+                    }
+
+                    var fields = _.toArray(arguments).slice(2);
+                    var propertyValues = {};
+
+                    for (var i = 0, ii = propertyContainers.length; i < ii; ++i) {
+                        collectValues(propertyValues, propertyContainers[i], level || 1, fields);
+                    }
+
+                    return propertyValues;
+
+                    function collectValues(collector, container, level, fields) {
+                        fields = [].concat(fields);
+
+                        for (var name in container) {
+                            if (fields[0] && (name !== fields[0])) {
+                                continue;
+                            }
+
+                            if (level > 1 && _.isObject(container[name])) {
+                                if (!(name in collector)) {
+                                    collector[name] = {};
+                                }
+                                collectValues(collector[name], container[name], level - 1, fields.slice(1));
+                            } else if (!(name in collector)) {
+                                collector[name] = container[name];
+                            }
+                        }
                     }
                 }
-                else {
-                    this.emit('property.' + [property].concat(fields).join('.') + '.cleared', oldValueContainer);
+            }
+        });
+        meta('Constants', {
+
+            process: function(object, constants) {
+                object.__constants = {};
+
+                for (var constant in constants) {
+                    object.__constants[constant] = constants[constant];
+                }
+            },
+
+            interface: {
+
+                __initConstants: function() {
+                    this.__constants = {};
+                },
+
+                __getConstants: function() {
+                    return this.__collectAllPropertyValues('__constants', 99);
+                },
+
+                __getConstant: function( /* fields */ ) {
+
+                    var fields = _.toArray(arguments)
+                    var constant = this.__collectAllPropertyValues.apply(null, ['__constants', 99].concat(fields));
+
+                    for (var i = 0, ii = fields.length; i < ii; ++i) {
+                        if (!(fields[i] in constant)) {
+                            throw new Error('Constant "' + fields.splice(0, i).join('.') + '" does not exists!');
+                        }
+                        constant = fields[i];
+                    }
+
+                    return constant;
+                },
+
+                __executeConstant: function(name, constants) {
+                    var self = this;
+
+                    if (_.isUndefined(constants)) {
+                        constants = self.__getConstants();
+                    }
+
+                    if (_.isUndefined(name)) {
+                        if (!(name in constants)) {
+                            throw new Error('Constant "' + name + '" does not defined!');
+                        }
+                        constants = constants[name];
+
+                        if (_.isObject(constants)) {
+                            return function(name) {
+                                return self.__getConstant(name, constants)
+                            }
+                        }
+                    }
+
+                    return constants;
                 }
             }
-            else {
-                this.emit('property.' + property + '.cleared', oldValue);
-                this.emit('property.' + property + '.removed', oldValue);
-            }
+        });
+        meta('Events', {
 
-            return this;
-        },
+            process: function(object, events) {
+                object.__events = {};
 
-        __removePropertyValue: function(property, fields) {
-            if (!this.__hasProperty(property, fields)) {
-                throw new Error('Can\'t remove value! Property "' + [property].concat(fields || []).join('.') + '" does not exists!');
-            }
-
-            property = this.__adjustPropertyName(property);
-
-            fields = fields || [];
-
-            var currentValue = this.__getPropertyValue(property);
-            var oldValue     = utils.copy(currentValue);
-
-            if (fields.length) {
-
-                var container = this.__getPropertyValue(property);
-
-                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
-                    container = container[fields[i]];
-                }
-
-                delete container[fields[i]];
-            }
-            else {
-                this['_' + property] = undefined;
-            }
-
-            // Event emitting
-
-            this.emit('property.changed', property, currentValue, oldValue);
-            this.emit('property.' + property + '.changed', currentValue, oldValue);
-
-            if (fields.length) {
-
-                var oldValueContainer = oldValue;
-                var newValueContainer = currentValue;
-
-                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
-
-                    oldValueContainer = oldValueContainer[fields[i]];
-                    newValueContainer = newValueContainer[fields[i]];
-
-                    this.emit('property.' + [property].concat(fields.slice(0, i-1)).join('.') + '.item_changed', fields[i], newValueContainer, oldValueContainer);
-                    this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.changed', newValueContainer, oldValueContainer);
-                }
-
-                this.emit('property.' + [property].concat(fields.slice(0, -1)).join('.') + '.item_removed', fields[i], oldValueContainer[fields[i]]);
-                this.emit('property.' + [property].concat(fields).join('.') + '.removed', oldValueContainer[fields[i]]);
-
-                var isCleared = false;
-                if (newValueContainer && {}.constructor === newValueContainer.constructor) {
-                    for (var i in newValueContainer) {
-                        isCleared = true;
-                        break;
+                for (var event in events) {
+                    for (var name in events[event]) {
+                        object.__addEventListener(event, name, events[event][name]);
                     }
                 }
-                else if (Object.prototype.toString.call(newValueContainer) === '[object Array') {
-                    if (newValueContainer.length === 0) {
-                        isCleared = true;
+            },
+
+            interface: {
+
+                __initEventsCallbacks: function() {
+                    this.__events = {};
+                },
+
+                __emitEvent: function(event) {
+                    var eventListeners = this.__getEventListeners(event);
+
+                    for (var name in eventListeners) {
+                        eventListeners[name].apply(this, _.toArray(arguments).slice(1));
                     }
-                }
+                    return this;
+                },
 
-                if (isCleared) {
-                    this.emit('property.' + [property].concat(fields).join('.') + '.cleared', oldValueContainer);
-                }
-            }
-            else {
-                this.emit('property.' + property + '.removed', oldValue);
-                this.emit('property.' + property + '.cleared', oldValue);
-            }
-
-            return this;
-        },
-
-        __setPropertyValue: function(property, fields, value) {
-            if (typeof value === 'undefined') {
-                value  = fields;
-                fields = [];
-            }
-
-            if (!this.__hasProperty(property)) {
-                throw new Error('Can\'t set value! Property "' + property + '" does not exists!');
-            }
-
-            property = this.__adjustPropertyName(property);
-
-            var currentValue = this.__getPropertyValue(property);
-            var oldValue     = utils.copy(currentValue);
-            var isChanged    = false;
-
-            if (fields.length) {
-
-                var container = currentValue;
-                var setValue  = value;
-
-                value = container;
-
-                for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
-                    if (!(fields[i] in container)) {
-                        container[fields[i]] = {};
+                __addEventListener: function(event, name, callback) {
+                    if (this.__hasEventListener(event, name)) {
+                        throw new Error('Event listener for event "' + event + '" with name "' + name + '" is already exists!');
                     }
-                    container = container[fields[i]];
-                }
-                if (container[fields[i]] !== setValue) {
-                    isChanged = true;
-                    container[fields[i]] = setValue;
+
+                    if (!(event in this.__events)) {
+                        this.__events[event] = {};
+                    }
+
+                    this.__events[event][name] = callback;
+
+                    return this;
+                },
+
+                __removeEventListener: function(event, name) {
+                    if (!this.hasEventCallback(event, name)) {
+                        throw new Error('There is no "' + event + (name ? '"::"' + name : '') + '" event callback!');
+                    }
+
+                    this.__events[event][name] = undefined;
+
+                    return this;
+                },
+
+                __hasEventListener: function(event, name) {
+                    return name in this.__getEventListeners(event)
+                },
+
+                __getEventListener: function(event, name) {
+
+                    var eventListeners = this.__getEventListeners(event);
+
+                    if (!(name in eventListeners)) {
+                        throw new Error('Event listener for event "' + event + '" with name "' + name + '" does not exists!');
+                    }
+
+                    return eventListeners[event][name];
+                },
+
+                __getEventListeners: function(event) {
+                    return this.__collectAllPropertyValues.apply(null, ['__events', 2].concat(event || []));
                 }
             }
-            else {
-                if (oldValue !== value) {
-                    isChanged = true;
+        });
+        meta('Methods', {
+
+            process: function(object, methods) {
+                for (var method in methods) {
+                    if (!_.isFunction(methods[method])) {
+                        throw new Error('Method "' + method + '" must be a function!');
+                    }
+                    object[method] = methods[method]
                 }
             }
 
-            if (isChanged) {
-                var setters = this.__getSetters(property);
+        });
+        meta('Properties', {
 
-                for (var name in setters) {
-                    value = setters[name].call(this, value);
+            _propertyMetaProcessor: 'Property',
+
+            process: function(object, properties) {
+                object.__properties = {};
+                object.__setters = {};
+                object.__getters = {};
+
+                var propertyMetaProcessor = this.getPropertyMetaProcessor();
+
+                for (var property in properties) {
+                    propertyMetaProcessor.process(object, properties[property], property);
                 }
+            },
 
-                this['_' + property] = value;
-
-                // Events emitting
-                this.emit('property.changed', property, value, oldValue);
-                this.emit('property.' + property + '.changed', value, oldValue);
-
-                if (typeof oldValue === 'undefined' || oldValue === null) {
-                    this.emit('property.' + property + '.setted', value);
-                    this.emit('property.setted', property, value);
+            getPropertyMetaProcessor: function() {
+                if (_.isString(this._propertyMetaProcessor)) {
+                    this._propertyMetaProcessor = meta(this._propertyMetaProcessor);
                 }
-                else {
+                return this._propertyMetaProcessor;
+            },
+
+            setPropertyMetaProcessor: function(metaProcessor) {
+                this._propertyMetaProcessor = metaProcessor;
+                return this;
+            },
+
+            interface: {
+
+                __initProperties: function() {
+                    this.__properties = {};
+                    this.__setters = {};
+                    this.__getters = {};
+
+                    var propertiesParams = this.__getPropertiesParam();
+
+                    for (var property in propertiesParams) {
+                        if ('default' in propertiesParams[property]) {
+                            this['_' + property] = propertiesParams[property]['default'];
+                        }
+                    }
+                },
+
+                __setPropertiesParam: function(parameters) {
+                    for (var property in parameters) {
+                        this.__setPropertyParam(property, parameters[property]);
+                    }
+                    return this;
+                },
+
+                __getPropertiesParam: function() {
+                    return this.__collectAllPropertyValues('__properties', 2);
+                },
+
+                __setPropertyParam: function(property, param, value) {
+                    var params = {};
+
+                    if (!_.isUndefined(value)) {
+                        params[param] = value;
+                    } else if (_.isObject(param)) {
+                        _.extend(params, param);
+                    }
+
+                    property = this.__adjustPropertyName(property);
+
+                    if (!(property in this.__properties)) {
+                        this.__properties[property] = {};
+                    }
+
+                    _.extend(this.__properties[property], params);
+
+                    return this;
+                },
+
+                __getPropertyParam: function(property, param) {
+                    var params = this.__collectAllPropertyValues.apply(null, ['__properties', 2, property].concat(param || []));
+                    return param ? params[param] : params;
+                },
+
+                __hasProperty: function(property) {
+                    property = this.__adjustPropertyName(property);
+                    return ('_' + property) in this;
+                },
+
+                __adjustPropertyName: function(name) {
+                    return name.replace(/(?:_)\w/, function(match) {
+                        return match[1].toUpperCase();
+                    });
+                },
+
+                __getPropertyValue: function(property /* fields.. */ ) {
+
+                    property = this.__adjustPropertyName(property);
+                    var fields = _.toArray(arguments).slice(1);
+
+                    if (!(('_' + property) in this)) {
+                        throw new Error('Property "' + property + '" does not exists!');
+                    }
+
+                    var value = this['_' + property];
+
+                    var getters = this.__getGetters(property);
+
+                    for (var name in getters) {
+                        value = getters[name].call(this, value);
+                    }
+
+                    for (var i = 0, ii = fields.length; i < ii; ++i) {
+                        value = value[fields[i]];
+                    }
+
+                    return value;
+                },
+
+                __hasPropertyValue: function(property /* fields... */ ) {
+
+                    property = this.__adjustPropertyName(property);
+                    var fields = _.toArray(arguments).slice(1);
+
+                    var value = this.__getPropertyValue(property);
+                    for (var i = 0, ii = fields.length; i < ii; ++i) {
+                        if (!(fields[i] in value)) {
+                            return false;
+                            property = this.__adjustPropertyName(property);
+
+                            if (!this.__hasProperty(property)) {
+                                throw new Error('Property "' + property + '" does not exists!');
+                            }
+                            var fields = _.toArray(arguments).slice(1, -1);
+                            var value = _.last(arguments);
+
+                            var oldValue;
+
+                            if (fields.length) {
+
+                                var container = this['_' + property];
+                                var field = fields.pop();
+
+                                for (var i = 0, ii = fields.length; i < ii; ++i) {
+                                    if (!(fields[i] in container)) {
+                                        container[fields[i]] = {};
+                                    }
+                                    container = container[fields[i]];
+                                }
+                                oldValue = container[field];
+                                container[field] = value;
+                            } else {
+                                var setters = this.__getSetters(property);
+
+                                for (var name in setters) {
+                                    value = setters[name].call(this, value);
+                                }
+                                oldValue = this['_' + property];
+                                this['_' + property] = value;
+                            }
+
+                            // Event emitting
+                            if (_.isFunction(this.__emitEvent)) {
+                                this.__emitEvent('property.changed', fields.length ? [property].concat(fields) : property, value, oldValue);
+                                this.__emitEvent('property.' + fields.length ? [property].concat(fields) : property + '.changed', value, oldValue);
+                            }
+
+                            return this;
+                        }
+                    }
+
+                    return !_.isUndefined(value) && !_.isNull(value);
+                },
+
+
+                __isPropertyValue: function(property /* fields.. , compareValue */ ) {
+
+                    var fields = _.toArray(arguments).slice(1, -1);
+                    var compareValue = arguments.length > 1 ? _.last(arguments) : undefined;
+                    var value = this.__getPropertyValue.apply(this, [property].concat(fields));
+
+                    return !_.isUndefined(compareValue) ? value === compareValue : !! value;
+                },
+
+                __clearPropertyValue: function(property /* fields */ ) {
+
+                    property = this.__adjustPropertyName(property);
+                    var fields = _.toArray(arguments).slice(1);
+
+                    var container = fields.length ? this.__getPropertyValue.apply(this, [property].concat(fields.slice(0, -1))) : this;
+                    var field = fields.length ? _.last(fields) : '_' + property;
+
+                    if (!(field in container)) {
+                        throw new Error('Property "' + [property].concat(fields) + '" does not exists!');
+                    }
+
+                    var oldValue = container[field];
+                    var newValue = undefined;
+
+                    if (oldValue.constructor === {}.constructor) {
+                        newValue = {};
+                    } else if (_.isArray(oldValue)) {
+                        newValue = [];
+                    }
+
+                    container[field] = newValue;
+
+                    // Event emitting
+                    if (_.isFunction(this.__emitEvent)) {
+
+                        if (oldValue.constructor === {}.constructor) {
+                            for (var key in oldValue) {
+                                this.__emitEvent('property.' + [property].concat(fields).join('.') + '.item_removed', key, oldValue[key]);
+                                this.__emitEvent('property.' + [property].concat(fields, key).join('.') + '.removed', oldValue[key]);
+                            }
+                        } else if (_.isArray(oldValue)) {
+                            for (var i = 0, ii = oldValue.length; i < ii; ++i) {
+                                this.__emitEvent('property.' + [property].concat(fields).join('.') + '.item_removed', i, oldValue[i]);
+                                this.__emitEvent('property.' + [property].concat(fields, i).join('.') + '.removed', oldValue[i]);
+                            }
+                        }
+
+                        this.__emitEvent('property.cleared', fields.length ? [property].concat(fields) : property, oldValue);
+                        this.__emitEvent('property.' + [property].concat(fields).join('.') + '.cleared', oldValue);
+                    }
+
+                    return this;
+                },
+
+                __removePropertyValue: function(property /* fields */ ) {
+
+                    property = this.__adjustPropertyName(property);
+                    var fields = _.toArray(arguments).slice(1);
+
+                    var container = fields.length ? this.__getPropertyValue.apply(this, [property].concat(fields.slice(0, -1))) : this;
+                    var field = fields.length ? _.last(fields) : '_' + property;
+
+                    if (!(field in container)) {
+                        throw new Error('Property "' + [property].concat(fields) + '" does not exists!');
+                    }
+
+                    var oldValue = container[field];
+                    delete container[field];
+
+                    // Event emitting
+                    if (_.isFunction(this.__emitEvent)) {
+                        this.__emitEvent('property.removed', fields.length ? [property].concat(fields) : property, oldValue);
+                        this.__emitEvent('property.' + [property].concat(fields).join('.') + '.removed', oldValue);
+                    }
+
+                    return this;
+                },
+
+                __setPropertyValue: function(property /* fields.. , value */ ) {
+
+                    property = this.__adjustPropertyName(property);
+
+                    if (!this.__hasProperty(property)) {
+                        throw new Error('Property "' + property + '" does not exists!');
+                    }
+                    var fields = _.toArray(arguments).slice(1, -1);
+                    var value = _.last(arguments);
+
+                    var oldValue;
 
                     if (fields.length) {
 
-                        var newValueContainer = value;
-                        var oldValueContainer = oldValue;
+                        var container = this;
 
-                        for (var i = 0, ii = fields.length - 1; i < ii; ++i) {
+                        fields.unshift('_' + property);
+                        var field = fields.pop();
 
-                            oldValueContainer = typeof oldValueContainer == 'undefined' ? oldValueContainer : oldValueContainer[fields[i]];
-                            newValueContainer = newValueContainer[fields[i]];
-
-                            this.emit('property.' + [property].concat(fields.slice(0, i-1)).join('.') + '.item_changed', fields[i], newValueContainer, oldValueContainer);
-                            this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.changed', newValueContainer, oldValueContainer);
+                        for (var i = 0, ii = fields.length; i < ii; ++i) {
+                            if (_.isUndefined(container[fields[i]])) {
+                                container[fields[i]] = {};
+                            }
+                            container = container[fields[i]];
                         }
 
-                        if (oldValueContainer && fields[i] in oldValueContainer) {
-                            this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.item_changed', fields[i], newValueContainer[fields[i], oldValueContainer[fields[i]]])
-                            this.emit('property.' + [property].concat(fields).join('.') + '.changed', newValueContainer[fields[i]], oldValueContainer[fields[i]]);
+                        oldValue = container[field];
+                        container[field] = value;
+
+                    } else {
+                        var setters = this.__getSetters(property);
+
+                        for (var name in setters) {
+                            value = setters[name].call(this, value);
                         }
-                        else {
-                            this.emit('property.' + [property].concat(fields.slice(0, i)).join('.') + '.item_setted', fields[i], newValueContainer[fields[i]]);
-                            this.emit('property.' + [property].concat(fields).join('.') + '.setted', newValueContainer[fields[i]]);
-                        }
+                        oldValue = this['_' + property];
+                        this['_' + property] = value;
                     }
+
+                    // Event emitting
+                    if (_.isFunction(this.__emitEvent)) {
+                        this.__emitEvent('property.changed', fields.length ? [property].concat(fields) : property, value, oldValue);
+                        this.__emitEvent('property.' + fields.length ? [property].concat(fields) : property + '.changed', value, oldValue);
+                    }
+
+                    return this;
+                },
+
+                __addSetter: function(property, name, callback) {
+                    if (!_.isFunction(callback)) {
+                        throw new Error('Setter callback must be a function!');
+                    }
+                    if (!(property in this.__setters)) {
+                        this.__setters[property] = {};
+                    }
+                    this.__setters[property][name] = callback;
+
+                    return this;
+                },
+
+                __getSetters: function(property) {
+                    var setters = this.__collectAllPropertyValues.apply(null, ['__setters', 1].concat(property || []));
+                    return property ? (setters[property] || {}) : setters;
+                },
+
+                __addGetter: function(property, callback) {
+                    if (!_.isFunction(callback)) {
+                        throw new Error('Getter callback must be a function!');
+                    }
+                    if (!(property in this.__getters)) {
+                        this.__getters[property] = [];
+                    }
+                    this.__getters[property].push([weight, callback]);
+
+                    return this;
+                },
+
+                __getGetters: function(property) {
+                    var getters = this.__collectAllPropertyValues.apply(null, ['__getters', 1].concat(property || []));
+                    return property ? (getters[property] || {}) : getters;
+                },
+
+                __setData: function(data) {
+                    for (var property in data) {
+                        if (!this.__hasProperty(property)) {
+                            continue;
+                        }
+                        this.__setPropertyValue(property, data[property]);
+                    }
+                    return this;
+                },
+
+                __getData: function() {
+
+                    var data = {};
+                    var properties = this.__getPropertiesMeta();
+
+                    for (var property in properties) {
+                        var value = this.__getPropertyValue(property);
+
+                        if (_.isArray(value)) {
+                            for (var i = 0, ii = value.length; i < ii; ++i) {
+                                if (_.isFunction(value[i].__getData)) {
+                                    value[i] = value[i].__getData();
+                                }
+                            }
+                        } else if (value.constructor === {}.constructor) {
+                            for (var key in value) {
+                                if (_.isFunction(value[key].__getData)) {
+                                    value[key] = value[key].__getData();
+                                }
+                            }
+                        } else if (_.isFunction(value.__getData)) {
+                            value = value.__getData();
+                        }
+                        data[property] = value;
+                    }
+
+                    return data;
                 }
             }
 
+        });
+        meta('Property', {
 
-            return this;
-        },
+            process: function(object, propertyMeta, property) {
+                object['_' + property] = undefined;
 
-        __addSetter: function(property, weight, callback) {
-            if (typeof callback === 'undefined') {
-                callback = weight;
-                weight   = 0;
-            }
-            if (typeof callback !== 'function') {
-                throw new Error('Set callback must be a function!');
-            }
-            if (!(property in this.__setters)) {
-                this.__setters[property] = [];
-            }
-            this.__setters[property].push([weight, callback]);
-
-            return this;
-        },
-
-        __getSetters: function(property) {
-            var i, ii, setters, prop, allSetters = {}, parent = this.clazz.prototype;
-
-            while (parent) {
-                if (parent.hasOwnProperty('__setters')) {
-                    for (prop in parent.__setters) {
-                        if (!(prop in allSetters)) {
-                            allSetters[prop] = parent.__setters[prop];
-                        }
+                if (_.isArray(propertyMeta)) {
+                    propertyMeta = propertyMeta.length === 3 ? {
+                        type: [propertyMeta[0], propertyMeta[2]],
+                        default: propertyMeta[1]
+                    } : {
+                        type: propertyMeta
+                    }
+                } else if (!_.isObject(propertyMeta)) {
+                    propertyMeta = {
+                        default: propertyMeta
                     }
                 }
-                parent = parent.parent;
+
+                if (!('methods' in propertyMeta)) {
+                    propertyMeta.methods = ['get', 'set', 'has', 'is', 'clear', 'remove']
+                }
+
+                for (var option in propertyMeta) {
+                    if (option in this._options) {
+                        var processor = this._options[option];
+
+                        if (_.isString(processor)) {
+                            processor = meta(processor);
+                        }
+                        processor.process(object, propertyMeta[option], property);
+                    }
+                }
+            },
+
+            addOption: function(option, metaProcessor) {
+                if (option in this._options) {
+                    throw new Error('Option "' + option + '" is already exists!');
+                }
+                this._options[option] = metaProcessor;
+                return this;
+            },
+
+            hasOption: function(option) {
+                return option in this._options;
+            },
+
+            removeOption: function(option) {
+                if (!(option in this._options)) {
+                    throw new Error('Option "' + option + '" does not exists!');
+                }
+                delete this._options[option];
+                return this;
+            },
+
+            _options: {
+                type: 'Property/Type',
+                default: 'Property/Default',
+                alias: 'Property/Alias',
+                methods: 'Property/Methods',
+                constraints: 'Property/Constraints',
+                converters: 'Property/Converters',
+                getters: 'Property/Getters',
+                setters: 'Property/Setters'
             }
+        });
+        namespace('Property', 'meta', function(meta) {
+            meta('Alias', {
 
-            if (typeof property !== 'undefined') {
-                setters = [];
-                if (property in allSetters && allSetters[property].length) {
+                process: function(object, aliases, property) {
+                    if (aliases) {
+                        object.__setPropertyParam(property, 'aliases', [].concat(aliases));
+                    }
+                }
 
-                    allSetters[property].sort(function(s1, s2) {
-                        return s2[0] - s1[0];
+            });
+            meta('Constraints', {
+
+                SETTER_NAME: '__constraints__',
+
+                process: function(object, constraints, property) {
+                    object.__addSetter(property, this.SETTER_NAME, function(value) {
+                        for (var name in constraints) {
+                            if (!constraints[name].call(this, value)) {
+                                throw new Error('Constraint "' + name + '" was failed!');
+                            }
+                        }
+                        return value;
                     });
+                }
 
-                    for (i = 0, ii = allSetters[property].length; i < ii; ++i) {
-                        setters.push(allSetters[property][i][1]);
+            });
+            meta('Converters', {
+
+                SETTER_NAME: '__converters__',
+
+                process: function(object, converters, property) {
+                    object.__addSetter(property, this.SETTER_NAME, function(value) {
+                        for (var name in converters) {
+                            value = converters[name].call(this, value);
+                        }
+                        return value;
+                    });
+                }
+            });
+            meta('Default', {
+
+                process: function(object, defaultValue, property) {
+                    if (defaultValue) {
+                        object.__setPropertyParam(property, 'default', defaultValue);
                     }
                 }
-            }
-            else {
-                setters =  allSetters;
-            }
 
-            return setters;
-        },
+            });
+            meta('Getters', {
 
-        __addGetter: function(property, weight, callback) {
-            if (typeof callback === 'undefined') {
-                callback = weight;
-                weight   = 0;
-            }
-            if (typeof callback !== 'function') {
-                throw new Error('Get callback must be a function!');
-            }
-            if (!(property in this.__getters)) {
-                this.__getters[property] = [];
-            }
-            this.__getters[property].push([weight, callback]);
+                process: function(object, getters, property) {
+                    for (var name in getters) {
+                        object.__addGetter(property, name, getters[name]);
+                    }
+                }
 
-            return this;
-        },
+            });
+            meta('Methods', {
 
-        __getGetters: function(property) {
-            var i, ii, prop, getters, allGetters = {}, parent = this.clazz.prototype;
+                process: function(object, methods, property, aliases) {
 
-            while (parent) {
-                if (parent.hasOwnProperty('__getters')) {
-                    for (prop in parent.__getters) {
-                        if (!(prop in allGetters)) {
-                            allGetters[prop] = parent.__getters[prop];
+                    for (var i = 0, ii = methods.length; i < ii; ++i) {
+                        this.addMethodToObject(methods[i], object, property);
+                    }
+
+                    var aliases = object.__getPropertyParam(property, 'aliases') || [];
+
+                    for (var j = 0, jj = aliases.length; j < jj; ++j) {
+                        for (var i = 0, ii = methods.length; i < ii; ++i) {
+                            this.addMethodToObject(methods[i], object, property, aliases[j]);
+                        }
+                    }
+                },
+
+                addMethodToObject: function(name, object, property, alias) {
+                    var method = this.createMethod(name, property, alias);
+                    object[method.name] = method.body;
+                },
+
+                createMethod: function(name, property, alias) {
+                    if (!(name in this._methods)) {
+                        throw new Error('Method "' + name + '" does not exists!');
+                    }
+                    var method = this._methods[name](property, alias);
+
+                    if (_.isFunction(method)) {
+
+                        var propertyName = typeof alias !== 'undefined' ? alias : property;
+
+                        method = {
+                            name: name + propertyName[0].toUpperCase() + propertyName.slice(1),
+                            body: method
+                        }
+                    }
+
+                    return method;
+                },
+
+                addMethod: function(name, callback) {
+                    if (name in this._methods) {
+                        throw new Error('Method "' + name + '" is already exists!');
+                    }
+                    this._methods[name] = callback;
+                    return this;
+                },
+
+                hasMethod: function(name) {
+                    return name in this._methods;
+                },
+
+                removeMethod: function(name) {
+                    if (!(name in this._methods)) {
+                        throw new Error('Method "' + name + '" does not exists!');
+                    }
+                    delete this._methods[name];
+                    return this;
+                },
+
+                _methods: {
+                    get: function(property) {
+                        return function( /* fields */ ) {
+                            return this.__getPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                        };
+                    },
+                    set: function(property) {
+                        return function( /* fields, value */ ) {
+                            return this.__setPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                        };
+                    },
+                    is: function(property, alias) {
+                        var propertyName = !_.isUndefined(alias) ? alias : property;
+
+                        return {
+                            name: 0 !== propertyName.indexOf('is') ? 'is' + propertyName[0].toUpperCase() + propertyName.slice(1) : propertyName,
+                            body: function( /* fields, value */ ) {
+                                return this.__isPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                            }
+                        }
+                    },
+                    has: function(property) {
+                        return function( /* fields */ ) {
+                            return this.__hasPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                        }
+                    },
+                    clear: function(property) {
+                        return function( /* fields */ ) {
+                            return this.__clearPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                        };
+                    },
+                    remove: function(property) {
+                        return function( /* fields */ ) {
+                            return this.__removePropertyValue.apply(this, [property].concat(_.toArray(arguments)));
                         }
                     }
                 }
+            });
 
-                parent = parent.parent;
-            }
 
-            if (typeof property !== 'undefined') {
-                getters = [];
-                if (property in allGetters && allGetters[property].length) {
+            meta('Setters', {
 
-                    allGetters[property].sort(function(s1, s2) {
-                        return s2[0] - s1[0];
-                    });
-
-                    for (i = 0, ii = allGetters[property].length; i < ii; ++i) {
-                        getters.push(allGetters[property][i][1]);
+                process: function(object, setters, property) {
+                    for (var name in setters) {
+                        object.__addSetter(property, name, setters[name]);
                     }
                 }
-            }
-            else {
-                getters = allGetters;
-            }
-            return getters;
-        }
-    }
-})
-meta.processor('Clazz.Properties.Meta', function(object, properties) {
-    for (var property in properties) {
 
-        var pmeta = properties[property];
+            });
+            meta('Type', {
 
-        if (Object.prototype.toString.call(pmeta) === '[object Array]') {
-            properties[property] = pmeta = 3 === pmeta.length ? { type: [pmeta[0], pmeta[2]], default: pmeta[1] } : { type: pmeta }
-        }
-        else if (typeof pmeta !== 'object' || pmeta === null) {
-            properties[property] = pmeta = { default: pmeta }
-        }
+                SETTER_NAME: '__type__',
 
-        if (!('methods' in pmeta)) {
-            pmeta.methods = ['get', 'set', 'has', 'is', 'clear', 'remove']
-        }
+                process: function(object, type, property) {
 
-        if ('alias' in pmeta) {
-            pmeta.methods.alias = [].concat(pmeta.alias);
-        }
+                    var self = this;
+                    var params = {};
 
-        meta.processor('Clazz.Property').process(object, pmeta, property);
-    }
-})
-meta.processor('Clazz.Property', 'Meta.Options', {
-    options: {
-        type:           'Clazz.Property.Type',
-        default:        'Clazz.Property.Default',
-        methods:        'Clazz.Property.Methods',
-        converters:     'Clazz.Property.Converters',
-        constraints:    'Clazz.Property.Constraints'
-    }
-})
-meta.processor('Clazz.Property.Constraints', function(object, constraints, property) {
+                    if (_.isArray(type)) {
+                        params = type[1] || {};
+                        type = type[0];
+                    }
 
-    object.__addSetter(property, function(value) {
-        for (var name in constraints) {
-            if (!constraints[name].call(this, value)) {
-                throw new Error('Constraint "' + name + '" was failed!');
-            }
-        }
-        return value;
-    })
-})
-meta.processor('Clazz.Property.Converters', function(object, converters, property) {
+                    object.__addSetter(property, this.SETTER_NAME, function(value) {
+                        if (!_.isUndefined(value) && !_.isNull(value)) {
+                            value = self.applyType(type, value, params, property);
+                        }
+                        return value;
+                    });
+                },
 
-    object.__addSetter(property, 1000, function(value) {
-        for (var name in converters) {
-            value = converters[name].call(this, value);
-        }
-        return value;
-    });
+                applyType: function(type, value, params, property) {
+                    if (!(type in this._types)) {
+                        throw new Error('Property type "' + type + '" does not exists!');
+                    }
 
-});
-meta.processor('Clazz.Property.Default', function(object, defaultValue, property) {
-    object.__setProperty(property, 'default', defaultValue);
-});
-meta.processor('Clazz.Property.Methods', {
+                    return this._types[type].call(this, value, params, property);
+                },
 
-    process: function(object, methods, property) {
-        if (Object.prototype.toString.apply(methods) !== '[object Array]') {
-            methods = [methods];
-        }
+                addType: function(name, callback) {
+                    if (name in this._types) {
+                        throw new Error('Property type "' + name + '" is already exists!');
+                    }
+                    this._types[name] = callback;
+                    return this;
+                },
 
-        for (var i = 0, ii = methods.length; i < ii; ++i) {
-            this.addMethod(methods[i], object, property);
-        }
+                hasType: function(name) {
+                    return name in this._types;
+                },
 
-        if (methods.alias) {
-            var aliases = [].concat(methods.alias);
-            for (var j = 0, jj = aliases.length; j < jj; ++j) {
-                for (var i = 0, ii = methods.length; i < ii; ++i) {
-                    this.addMethod(methods[i], object, property, aliases[j]);
+                removeType: function(name) {
+                    if (!(name in this._types)) {
+                        throw new Error('Property type "' + name + '" does not exists!');
+                    }
+                    delete this._types[name];
+                    return this;
+                },
+
+                setDefaultArrayDelimiter: function(delimiter) {
+                    if (!_.isString(delimiter) && !_.isRegExp(delimiter)) {
+                        throw new Error('Delimiter must be a string or a regular expression!');
+                    }
+                    this._defaultArrayDelimiter = delimiter;
+                    return this;
+                },
+
+                getDefaultArrayDelimiter: function() {
+                    return this._defaultArrayDelimiter;
+                },
+
+                _defaultArrayDelimiter: /\s*,\s*/g,
+
+                _types: {
+                    boolean: function(value) {
+                        return Boolean(value);
+                    },
+                    number: function(value, params, property) {
+                        value = Number(value);
+
+                        if ('min' in params && value < params.min) {
+                            throw new Error('Value "' + value + '" of property "' + property + '" must not be less then "' + params.min + '"!');
+                        }
+                        if ('max' in params && value > params.max) {
+                            throw new Error('Value "' + value + '" of property "' + property + '" must not be greater then "' + params.max + '"!');
+                        }
+                        return value;
+                    },
+                    string: function(value, params, property) {
+                        value = String(value);
+
+                        if ('pattern' in params && !params.pattern.test(value)) {
+                            throw new Error('Value "' + value + '" of property "' + property + '" does not match pattern "' + params.pattern + '"!');
+                        }
+                        if ('variants' in params && -1 === params.variants.indexOf(value)) {
+                            throw new Error('Value "' + value + '" of property "' + property + '" must be one of "' + params.variants.join(', ') + '"!');
+                        }
+                        return value;
+                    },
+                    datetime: function(value, params, property) {
+                        if (_.isNumber(value) && !isNaN(value)) {
+                            value = new Date(value);
+                        } else if (_.isString(value)) {
+                            value = new Date(Date.parse(value));
+                        }
+
+                        if (value instanceof Date) {
+                            throw new Error('Value of property "' + property + '" must have datetime type!');
+                        }
+
+                        return value;
+                    },
+                    array: function(value, params, property) {
+                        var i, ii, type;
+
+                        if (_.isString(value)) {
+                            value = value.split(params.delimiter || this._defaultArrayDelimiter);
+                        }
+                        if ('element' in params) {
+                            type = [].concat(params.element);
+                            for (i = 0, ii = value.length; i < ii; ++i) {
+                                value[i] = this.applyType.call(this, value[i], type[0], type[1] || {}, property + '.' + i);
+                            }
+                        }
+                        return value;
+                    },
+                    hash: function(value, params, property) {
+                        var key, type;
+
+                        if (!_.isObject(value)) {
+                            throw new Error('Value of property "' + property + '" must have object type!');
+                        }
+
+                        if ('keys' in params) {
+                            for (key in value) {
+                                if (!(key in params.keys)) {
+                                    throw new Error('Unsupported hash key "' + key + '" for property "' + property + '"!');
+                                }
+                            }
+                        }
+                        if ('element' in params) {
+                            type = [].concat(params.element);
+                            for (key in value) {
+                                value[key] = this.applyType.call(this, value[key], type[0], type[1] || {}, property + '.' + key);
+                            }
+                        }
+                        return value;
+                    },
+                    object: function(value, params, property) {
+
+                        if ('instanceof' in params) {
+                            if (!(value instanceof params.instanceof)) {
+                                value = new klass(value);
+                            }
+                        }
+
+                        if (!_.isObject(value)) {
+                            throw new Error('Value of property "' + property + '" must have object type!');
+                        }
+
+                        return value;
+                    },
+                    function: function(value, params, property) {
+                        if (!_.isFunction('function')) {
+                            throw new Error('Value of property "' + property + '" must have function type');
+                        }
+                        return value;
+                    }
                 }
-            }
-        }
-    },
-    addMethod:  function(name, object, property, alias) {
-        var method = this.createMethod(name, property, alias);
-        object[method.name] = method.body;
-    },
+            });
+        });
+        clazz('Base', function() {
 
-    createMethod: function(name, property, alias) {
-        if (!(name in this.METHODS)) {
-            throw new Error('Unsupported method "' + name + '"!');
-        }
-        var method = this.METHODS[name](property, alias);
-
-        if (typeof method === 'function') {
-
-            var propertyName = typeof alias !== 'undefined' ? alias : property;
-
-            method = {
-                name: name + propertyName[0].toUpperCase() + propertyName.slice(1),
-                body: method
-            }
-        }
-        return method;
-    },
-
-    METHODS: {
-        get: function(property) {
-            return function() {
-
-                var fields = Object.prototype.toString.call(arguments[0]) === '[object Array]'
-                    ? arguments[0]
-                    : Array.prototype.slice.call(arguments);
-
-                return this.__getPropertyValue(property, fields);
-            };
-        },
-        set: function(property) {
-            return function(/* fields, value */) {
-
-                var fields = arguments.length > 1 && Object.prototype.toString.call(arguments[0]) === '[object Array]'
-                    ? arguments[0]
-                    : Array.prototype.slice.call(arguments, 0, -1);
-
-                var value  = arguments[arguments.length - 1];
-
-                return this.__setPropertyValue(property, fields, value);
-            };
-        },
-        is: function(property, alias) {
-
-            var propertyName = typeof alias !== 'undefined' ? alias : property;
+            var uid = 0;
 
             return {
-                name: (0 !== propertyName.indexOf('is')
-                    ? 'is' + propertyName[0].toUpperCase()
-                    : '' + propertyName[0]) + propertyName.slice(1),
+                clazz_methods: {
+                    create: function() {
+                        // Dirty hack!!!! But I don't know better solution:(
+                        var a = arguments;
+                        var newEntity = new this(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]);
 
-                body: function() {
-                    var fields, value;
+                        this.emit('object.create', newEntity);
 
-                    Object.prototype.toString.call(arguments[0]) === '[object Array]'
-                        ? (fields = arguments[0], value = undefined)
-                        : (fields = [],           value = arguments[0]);
+                        return newEntity;
+                    },
+                    emit: function() {
+                        return this.__emitEvent.apply(this, _.toArray(arguments));
+                    },
+                    const: function() {
+                        return this.__executeConstant.apply(this, _.toArray(arguments));
+                    }
+                },
+                methods: {
+                    __construct: function() {
+                        this.__uid = ++uid;
 
+                        for (var method in this) {
+                            if (0 === method.indexOf('__init') && _.isFunction(method)) {
+                                this[method]();
+                            }
+                        }
+                        if (_.isFunction(this.init)) {
+                            this.init.apply(this, _.toArray(arguments));
+                        }
+                    },
 
-                    return this.__isPropertyValue(property, fields, value);
-                }
-            }
-        },
-        has: function(property) {
-            return function() {
-                var fields, value;
+                    getUID: function() {
+                        return this.__uid;
+                    },
 
-                Object.prototype.toString.call(arguments[0]) === '[object Array]'
-                    ? (fields = arguments[0], value = undefined)
-                    : (fields = [],           value = arguments[0]);
+                    init: function(data) {
+                        return this.__setData(data);
+                    },
 
-                return this.__hasPropertyValue(property, fields, value);
-            }
-        },
-        clear: function(property) {
-            return function() {
+                    parent: function(method) {
+                        var self = this;
 
-                var fields = Object.prototype.toString.call(arguments[0]) === '[object Array]'
-                    ? arguments[0]
-                    : Array.prototype.slice.call(arguments);
+                        if (!self.__parent) {
+                            throw new Error('Parent clazz does not exists for "' + this.__clazz.__name + '" clazz!');
+                        }
+                        if (!_.isFunction(self.__parent[method])) {
+                            throw new Error('Method "' + method + '" does not exists in clazz "' + this.__clazz.__name + '"!');
+                        }
 
-                return this.__clearPropertyValue(property, fields);
-            };
-        },
-        remove: function(property) {
-            return function() {
+                        method = self.__parent[method];
 
-                var fields = Object.prototype.toString.call(arguments[0]) === '[object Array]'
-                    ? arguments[0]
-                    : Array.prototype.slice.call(arguments);
+                        return function() {
+                            return method.apply(this, _.toArray(arguments));
+                        }
+                    },
 
-                return this.__removePropertyValue(property, fields)
-            }
-        }
-    }
-});
+                    emit: function() {
+                        return this.__emitEvent.apply(this, _.toArray(arguments));
+                    },
 
-
-meta.processor('Clazz.Property.Type', {
-
-    process: function(object, type, property) {
-        var self = this, params = {};
-
-        if (Object.prototype.toString.apply(type) === '[object Array]') {
-            params = type[1] || [];
-            type   = type[0];
-        }
-        if (!(type in this.TYPES)) {
-            throw new Error('Unsupported property type "' + type + '"!');
-        }
-
-        object.__setProperty(property, 'type',  type);
-
-        object.__addSetter(property, function(value) {
-            if (typeof value !== 'undefined' && value !== null) {
-                value = self.convertAndCheckValue(value, type, params, property);
-            }
-            return value;
-        });
-    },
-
-    convertAndCheckValue: function(value, type, params, property) {
-        if (!(type in this.TYPES)) {
-            throw new Error('Type "' + type + '" does not exists!');
-        }
-
-        return this.TYPES[type].call(this, value, params, property);
-    },
-
-    DEFAULT_ARRAY_DELIMITER: /\s*,\s*/g,
-
-    TYPES: {
-        "boolean": function(value) {
-            return Boolean(value);
-        },
-        "number": function(value, params, property) {
-            value = Number(value);
-
-            if ('min' in params && value < params['min']) {
-                throw new Error('Value "' + value + '" must not be less then "' + params['min'] + '"!');
-            }
-            if ('max' in params && value > params['max']) {
-                throw new Error('Value "' + value + '" of property "' + property + '" must not be greater then "' + params['max'] + '"!');
-            }
-            return value;
-        },
-        "string": function(value, params, property) {
-            value = String(value);
-
-            if ('pattern' in params && !params.pattern.test(value)) {
-                throw new Error('Value "' + value + '" of property "' + property + '" does not match pattern "' + params.pattern + '"!');
-            }
-            if ('variants' in params && -1 === params.variants.indexOf(value)) {
-                throw new Error('Value "' + value + '" of property "' + property + '" must be one of "' + params.variants.join(', ') + '"!');
-            }
-            return value;
-        },
-        "datetime": function(value, params, property) {
-            if (!isNaN(value) && (typeof value === 'number' || value instanceof Number)) {
-                value = new Date(value);
-            }
-            else if (typeof value === 'string' || value instanceof String) {
-                value = new Date(Date.parse(value));
-            }
-            if (!(value instanceof Date)) {
-                throw new Error('Value of property "' + property + '" must be compatible with datetime type!');
-            }
-            return value;
-        },
-        "array": function(value, params, property) {
-            var i, ii, type;
-
-            if (typeof value === 'string' || value instanceof String) {
-                value = value.split(params.delimiter || this.DEFAULT_ARRAY_DELIMITER);
-            }
-            if ('element' in params) {
-                type = [].concat(params.element);
-                for (i = 0, ii = value.length; i < ii; ++i) {
-                    value[i] = this.convertAndCheckValue.call(this, value[i], type[0], type[1] || {}, property + '.' + i);
-                }
-            }
-            return value;
-        },
-        "hash": function(value, params, property) {
-            var key, type;
-
-            if ({}.constructor !== value.constructor) {
-                throw new Error('Value of property "' + property +'" must be compatible with hash type!');
-            }
-
-            if ('keys' in params) {
-                for (key in value) {
-                    if (!(key in params.keys)) {
-                        throw new Error('Unsupported hash key "' + prop + '" for property "' + property + '"!');
+                    const: function() {
+                        return this.__clazz.__executeConstant.apply(this.__clazz, _.toArray(arguments));
                     }
                 }
             }
-            if ('element' in params) {
-                type = [].concat(params.element);
-                for (key in value) {
-                    value[key] = this.convertAndCheckValue.call(this, value[key], type[0], type[1] || {}, property + '.' + key);
-                }
-            }
-            return value;
-        },
-        "object": function(value, params, property) {
+        });
+    });
 
-            if ('instanceof' in params) {
-                var klass = params.instanceof;
+    clazz.getFactory()
+        .setMetaProcessor(meta('/ClazzJS/Base'))
+        .setBaseClazz(clazz('/ClazzJS/Base'));
 
-                if (typeof klass === 'string' || klass instanceof String) {
-                    klass = [String(klass)];
-                }
-                if (Object.prototype.toString.call(klass) === '[object Array]') {
-                    klass = clazz(klass[0], klass[1] || []);
-                }
-                if (!(value instanceof klass)) {
-                    value = new klass(value);
-                }
-            }
+    return {
+        Namespace: Namespace,
+        Clazz: Clazz,
+        Meta: Meta,
 
-            if (typeof value !== 'object') {
-                throw new Error('Value of property "' + property + '" must be compatible with object type!');
-            }
+        namespace: namespace,
+        clazz: clazz,
+        meta: meta
+    };
 
-            return value;
-        },
-        "function": function(value, params, property) {
-            if (typeof value !== 'function') {
-                throw new Error('Value of property "' + property + '" must be a function type');
-            }
-            return value;
-        }
-    }
-});
-meta.processor('Clazz.Proto', 'Meta.Options', {
-    options: {
-        properties: 'Clazz.Properties',
-        methods:    'Clazz.Methods'
-    }
-});
-
-var factory   = new Factory(Base, meta.processor('Clazz.Base'));
-var manager   = new Manager();
-var namespace = new Namespace(manager, factory, null, '', (new Function('return this'))(), Clazz);
-var clazz     = namespace();
-
-return {
-    Base:       Base,
-    Mangaer:    Manager,
-    Namespace:  Namespace,
-    Clazz:      Clazz,
-
-    utils:      utils,
-    namespace:  namespace,
-    clazz:      clazz
-}
-
-}))
+}));

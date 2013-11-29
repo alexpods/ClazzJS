@@ -1,0 +1,1 @@
+namespace('ClazzJS', 'clazz', 'meta', 'namespace', function(clazz, meta, namespace) {

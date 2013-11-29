@@ -1,5 +1,24 @@
 
-var factory   = new Factory(Base, meta.processor('Clazz.Base'));
-var manager   = new Manager();
-var namespace = new Namespace(manager, factory, null, '', (new Function('return this'))(), Clazz);
-var clazz     = namespace();
+var namespaceScope = new Namespace.Scope({
+    defaultInjects: ['clazz', 'namespace']
+});
+var namespace = namespaceScope.getRootNamespace();
+
+var metaManager = new Meta.Manager();
+var meta        = new Meta.Meta(metaManager, namespace);
+
+var clazzManager = new Clazz.Manager();
+var clazzFactory = new Clazz.Factory();
+var clazz        = new Clazz.Clazz(clazzManager, clazzFactory, namespace);
+
+namespaceScope.set('namespace', function() {
+    return this;
+});
+
+namespaceScope.set('meta', function() {
+    return new Meta.Meta(metaManager, this);
+});
+
+namespaceScope.set('clazz', function() {
+    return new Clazz.Clazz(clazzManager, clazzFactory, this);
+});

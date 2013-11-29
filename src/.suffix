@@ -1,13 +1,16 @@
 
+clazz.getFactory()
+    .setMetaProcessor(meta('/ClazzJS/Base'))
+    .setBaseClazz(clazz('/ClazzJS/Base'));
+
 return {
-    Base:       Base,
-    Mangaer:    Manager,
-    Namespace:  Namespace,
-    Clazz:      Clazz,
+    Namespace: Namespace,
+    Clazz:     Clazz,
+    Meta:      Meta,
 
-    utils:      utils,
-    namespace:  namespace,
-    clazz:      clazz
-}
+    namespace: namespace,
+    clazz:     clazz,
+    meta:      meta
+};
 
-}))
+}));

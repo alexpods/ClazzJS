@@ -1,0 +1,6 @@
+return {
+    Namespace: Namespace,
+    Scope:     Scope
+};
+
+})();
