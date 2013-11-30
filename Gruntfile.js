@@ -4,7 +4,7 @@ module.exports = function(grunt) {
 
     grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-contrib-uglify');
-    grunt.loadNpmTasks('grunt-jsbeautifier')
+    grunt.loadNpmTasks('grunt-jsbeautifier');
 
     grunt.initConfig({
         pkg: grunt.file.readJSON("package.json"),

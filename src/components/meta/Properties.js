@@ -37,7 +37,11 @@ meta('Properties', {
 
             for (var property in propertiesParams) {
                 if ('default' in propertiesParams[property]) {
-                    this['_' + property] = propertiesParams[property]['default'];
+                    var defaultValue = propertiesParams[property].default;
+                    if (_.isFunction(defaultValue)) {
+                        defaultValue = defaultValue.call(this);
+                    }
+                    this['_' + property] = defaultValue;
                 }
             }
         },

@@ -3,8 +3,17 @@ meta('Type', {
     SETTER_NAME: '__type__',
 
     process: function(object, type, property) {
-
         var self = this;
+
+        object.__addSetter(property, this.SETTER_NAME, function(value) {
+            return self.applyType(value, type, property);
+        });
+    },
+
+    apply: function(value, type, property) {
+        if (_.isUndefined(value) || _.isNull(value)) {
+            return value;
+        }
         var params = {};
 
         if (_.isArray(type)) {
@@ -12,15 +21,6 @@ meta('Type', {
             type   = type[0];
         }
 
-        object.__addSetter(property, this.SETTER_NAME, function(value) {
-            if (!_.isUndefined(value) && !_.isNull(value)) {
-                value = self.applyType(type, value, params, property);
-            }
-            return value;
-        });
-    },
-
-    applyType: function(type, value, params, property) {
         if (!(type in this._types)) {
             throw new Error('Property type "' + type + '" does not exists!');
         }
