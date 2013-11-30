@@ -1078,7 +1078,12 @@
 
                     for (var property in propertiesParams) {
                         if ('default' in propertiesParams[property]) {
-                            this['_' + property] = propertiesParams[property]['default'];
+                            var defaultValue = propertiesParams[property].
+                            default;
+                            if (_.isFunction(defaultValue)) {
+                                defaultValue = defaultValue.call(this);
+                            }
+                            this['_' + property] = defaultValue;
                         }
                     }
                 },
@@ -1491,14 +1496,20 @@
                 SETTER_NAME: '__constraints__',
 
                 process: function(object, constraints, property) {
+                    var self = this;
+
                     object.__addSetter(property, this.SETTER_NAME, function(value) {
-                        for (var name in constraints) {
-                            if (!constraints[name].call(this, value)) {
-                                throw new Error('Constraint "' + name + '" was failed!');
-                            }
-                        }
-                        return value;
+                        return self.apply(value, constraints, property, this);
                     });
+                },
+
+                apply: function(value, constraints, property, object) {
+                    for (var name in constraints) {
+                        if (!constraints[name].call(object, value, property)) {
+                            throw new Error('Constraint "' + name + '" was failed!');
+                        }
+                    }
+                    return value;
                 }
 
             });
@@ -1507,18 +1518,24 @@
                 SETTER_NAME: '__converters__',
 
                 process: function(object, converters, property) {
+                    var self = this;
+
                     object.__addSetter(property, this.SETTER_NAME, function(value) {
-                        for (var name in converters) {
-                            value = converters[name].call(this, value);
-                        }
-                        return value;
+                        return self.apply(value, converters, property, this);
                     });
+                },
+
+                apply: function(value, converters, property, object) {
+                    for (var name in converters) {
+                        value = converters[name].call(object, value, property);
+                    }
+                    return value;
                 }
             });
             meta('Default', {
 
                 process: function(object, defaultValue, property) {
-                    if (defaultValue) {
+                    if (_.isUndefined(defaultValue)) {
                         object.__setPropertyParam(property, 'default', defaultValue);
                     }
                 }
@@ -1648,8 +1665,17 @@
                 SETTER_NAME: '__type__',
 
                 process: function(object, type, property) {
-
                     var self = this;
+
+                    object.__addSetter(property, this.SETTER_NAME, function(value) {
+                        return self.applyType(value, type, property);
+                    });
+                },
+
+                apply: function(value, type, property) {
+                    if (_.isUndefined(value) || _.isNull(value)) {
+                        return value;
+                    }
                     var params = {};
 
                     if (_.isArray(type)) {
@@ -1657,15 +1683,6 @@
                         type = type[0];
                     }
 
-                    object.__addSetter(property, this.SETTER_NAME, function(value) {
-                        if (!_.isUndefined(value) && !_.isNull(value)) {
-                            value = self.applyType(type, value, params, property);
-                        }
-                        return value;
-                    });
-                },
-
-                applyType: function(type, value, params, property) {
                     if (!(type in this._types)) {
                         throw new Error('Property type "' + type + '" does not exists!');
                     }
