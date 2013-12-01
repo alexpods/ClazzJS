@@ -216,7 +216,7 @@ meta('Base', {
                         continue;
                     }
 
-                    if (level > 1 && _.isObject(container[name])) {
+                    if (level > 1 && Object.prototype.toString.call(container[name]) === '[object Object]') {
                         if (!(name in collector)) {
                             collector[name] = {};
                         }

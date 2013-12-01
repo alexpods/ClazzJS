@@ -1000,7 +1000,7 @@
                                 continue;
                             }
 
-                            if (level > 1 && _.isObject(container[name])) {
+                            if (level > 1 && Object.prototype.toString.call(container[name]) === '[object Object]') {
                                 if (!(name in collector)) {
                                     collector[name] = {};
                                 }
@@ -1055,13 +1055,13 @@
                         constants = self.__getConstants();
                     }
 
-                    if (_.isUndefined(name)) {
+                    if (!_.isUndefined(name)) {
                         if (!(name in constants)) {
                             throw new Error('Constant "' + name + '" does not defined!');
                         }
                         constants = constants[name];
 
-                        if (_.isObject(constants)) {
+                        if (Object.prototype.toString.call(constants) === '[object Object]') {
                             return function(name) {
                                 return self.__getConstant(name, constants)
                             }
