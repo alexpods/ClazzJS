@@ -102,6 +102,10 @@ _.extend(Clazz.prototype, {
 
         name = namespace.adjustPath(name);
 
+        if (_.isString(parent)) {
+            parent = namespace.adjustPath(parent);
+        }
+
         manager.setClazzData(name, {
             name:       name,
             parent:     parent,
