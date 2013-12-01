@@ -110,6 +110,9 @@ meta('Properties', {
             }
 
             for (var i = 0, ii = fields.length; i < ii; ++i) {
+                if (!(fields[i]) in value) {{
+                    throw new Error('Property "' + [property].concat(fields.slice(0,i)).join('.') + '" does not exists!');
+                }}
                 value = value[fields[i]];
             }
 
