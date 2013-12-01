@@ -34,34 +34,77 @@ _.extend(Factory.prototype, {
         return this;
     },
 
-    create: function(name, parent, meta) {
-        return this.processMeta(this.createClazz({ name: name, parent: parent }), meta);
+    create: function(data, clazz) {
+
+        var name         = data.name || this.generateName();
+        var parent       = data.parent;
+        var metaParent   = data.metaParent;
+        var meta         = data.meta         || {};
+        var dependencies = data.dependencies || [];
+
+        var newClazz = this.createClazz();
+
+        newClazz.__name = name;
+
+        if (_.isFunction(meta)) {
+            meta = meta.apply(newClazz, [newClazz].concat(dependencies)) || {};
+        }
+
+        if (!meta.parent && metaParent) {
+            meta.parent = metaParent;
+        }
+
+        parent = parent || meta.parent;
+
+        if (_.isString(parent)) {
+            parent = [parent];
+        }
+
+        if (_.isArray(parent)) {
+            parent = clazz.get.apply(clazz, parent);
+        }
+
+        this.applyParent(newClazz, parent);
+
+        newClazz.prototype.__clazz = newClazz;
+        newClazz.prototype.__proto = newClazz.prototype;
+
+        this.applyMeta(newClazz, meta);
+
+        return newClazz;
     },
 
-    createClazz: function(params) {
-
-        var name    = params.name   || this.generateName();
-        var parent  = params.parent || this.getBaseClazz();
-        var body    = params.body;
-
-        var clazz = body || function() {
+    createClazz: function() {
+        return function self() {
             var result;
+
+            if (!(this instanceof self)) {
+                throw new Error('Use "new" to create new "' + self.__name + '" instance!');
+            }
 
             if (_.isFunction(this.__construct)) {
                 result = this.__construct.apply(this, _.toArray(arguments));
             }
-            else if (parent) {
-                result = parent.apply(this, _.toArray(arguments));
+            else if (self.__parent) {
+                result = self.__parent.apply(this, _.toArray(arguments));
             }
 
             if (!_.isUndefined(result)) {
                 return result;
             }
         };
+    },
+
+    applyParent: function(clazz, parent) {
+
+        parent = parent || this.getBaseClazz();
 
         if (parent) {
             for (var property in parent) {
-                if (_.isFunction(parent[property])) {
+                if (property === '__name') {
+                    continue;
+                }
+                else if (_.isFunction(parent[property])) {
                     clazz[property] = parent[property];
                 }
                 else if (property[0] === '_') {
@@ -70,24 +113,16 @@ _.extend(Factory.prototype, {
             }
         }
 
-        _.extend(clazz, {
-            __name:   name,
-            __parent: parent || null
-        });
-
         clazz.prototype = Object.create(parent ? parent.prototype : {});
 
-        _.extend(clazz.prototype, {
-            constructor: clazz,
-            __parent:    parent ? parent.prototype : null,
-            __clazz:     clazz,
-            __proto:     clazz.prototype
-        });
+        clazz.__parent = parent || null;
+        clazz.prototype.constructor = clazz;
+        clazz.prototype.__parent    = parent ? parent.prototype : null;
 
         return clazz;
     },
 
-    processMeta: function(clazz, meta) {
+    applyMeta: function(clazz, meta) {
         this.getMetaProcessor().process(clazz, meta);
         return clazz;
     },

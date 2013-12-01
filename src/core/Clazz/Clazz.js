@@ -58,29 +58,13 @@ _.extend(Clazz.prototype, {
             var factory   = this.getFactory();
             var clazzData = manager.getClazzData(name);
 
-            name = clazzData.name;
-
-            var meta = clazzData.meta;
-
-            if (_.isFunction(meta)) {
-                meta = meta.apply(null, dependencies);
-            }
-
-            if (!meta.parent && clazzData.parent) {
-                meta.parent = clazzData.parent;
-            }
-
-            parent = parent || meta.parent;
-
-            if (_.isString(parent)) {
-                parent = [parent];
-            }
-
-            if (_.isArray(parent)) {
-                parent = this.get.apply(this, parent);
-            }
-
-            manager.setClazz(name, factory.create(name, parent, meta), parent, dependencies);
+            manager.setClazz(name, factory.create({
+                name:         clazzData.name,
+                parent:       parent,
+                metaParent:   clazzData.parent,
+                meta:         clazzData.meta,
+                dependencies: dependencies
+            }, this), parent, dependencies);
         }
         return manager.getClazz(name, parent, dependencies);
     },
