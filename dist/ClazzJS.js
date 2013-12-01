@@ -1063,7 +1063,7 @@
 
                         if (Object.prototype.toString.call(constants) === '[object Object]') {
                             return function(name) {
-                                return self.__getConstant(name, constants)
+                                return self.__executeConstant(name, constants)
                             }
                         }
                     }
