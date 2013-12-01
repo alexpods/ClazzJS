@@ -419,13 +419,13 @@
     var Clazz = (function() {
         var Clazz = function(manager, factory, namespace) {
 
-            var self = function(name, parentOrDependencies, meta) {
+            var self = function(name, parent, metaOrDependencies) {
                 var last = _.last(arguments);
 
-                if (!_.isFunction(last) && Object.prototype.toString.call(last) !== '[object Object]') {
-                    return self.get(name, /* dependencies */ parentOrDependencies);
+                if ((!_.isFunction(last) || last.prototype.__clazz) && Object.prototype.toString.call(last) !== '[object Object]') {
+                    return self.get(name, parent, /* dependencies */ metaOrDependencies);
                 }
-                self.set(name, /* parent */ parentOrDependencies, meta);
+                self.set(name, parent, /* meta */ metaOrDependencies);
             };
 
             _.extend(self, Clazz.prototype);
@@ -455,7 +455,12 @@
                 return !!this.resolveName(name);
             },
 
-            get: function(originalName, dependencies) {
+            get: function(originalName, parent, dependencies) {
+
+                if (_.isUndefined(dependencies) && _.isArray(parent)) {
+                    dependencies = parent;
+                    parent = undefined;
+                }
 
                 var name = this.resolvePath(originalName);
 
@@ -467,22 +472,44 @@
 
                 var manager = this.getManager();
 
-                if (!manager.hasClazz(name, dependencies)) {
+                if (!manager.hasClazz(name, parent, dependencies)) {
 
                     var factory = this.getFactory();
                     var clazzData = manager.getClazzData(name);
 
-                    manager.setClazz(name, factory.create({
-                        name: clazzData.name,
-                        parent: clazzData.parent,
-                        meta: clazzData.meta,
-                        dependencies: dependencies
-                    }), dependencies);
+                    name = clazzData.name;
+
+                    var meta = clazzData.meta;
+
+                    if (_.isFunction(meta)) {
+                        meta = meta.apply(null, dependencies);
+                    }
+
+                    if (!meta.parent && clazzData.parent) {
+                        meta.parent = clazzData.parent;
+                    }
+
+                    parent = parent || meta.parent;
+
+                    if (_.isString(parent)) {
+                        parent = [parent];
+                    }
+
+                    if (_.isArray(parent)) {
+                        parent = this.get.apply(this, parent);
+                    }
+
+                    manager.setClazz(name, factory.create(name, parent, meta), parent, dependencies);
                 }
-                return manager.getClazz(name, dependencies);
+                return manager.getClazz(name, parent, dependencies);
             },
 
             set: function(name, parent, meta) {
+
+                if (_.isUndefined(meta)) {
+                    meta = parent;
+                    parent = undefined;
+                }
 
                 var namespace = this.getNamespace();
                 var manager = this.getManager();
@@ -551,23 +578,17 @@
                 return this;
             },
 
-            create: function(params) {
-
-                var name = params.name;
-                var parent = params.parent || this.getBaseClazz() || null;
-                var meta = params.meta;
-                var dependencies = params.dependencies || [];
-
+            create: function(name, parent, meta) {
                 return this.processMeta(this.createClazz({
                     name: name,
                     parent: parent
-                }), meta, dependencies);
+                }), meta);
             },
 
             createClazz: function(params) {
 
                 var name = params.name || this.generateName();
-                var parent = params.parent;
+                var parent = params.parent || this.getBaseClazz();
                 var body = params.body;
 
                 var clazz = body || function() {
@@ -599,7 +620,9 @@
                     __parent: parent || null
                 });
 
-                clazz.prototype = _.extend(Object.create(parent ? parent.prototype : {}), {
+                clazz.prototype = Object.create(parent ? parent.prototype : {});
+
+                _.extend(clazz.prototype, {
                     constructor: clazz,
                     __parent: parent ? parent.prototype : null,
                     __clazz: clazz,
@@ -609,21 +632,8 @@
                 return clazz;
             },
 
-            processMeta: function(clazz, meta, dependencies) {
-
-                dependencies = dependencies || []
-                var metaProcessor = this.getMetaProcessor();
-
-                if (metaProcessor) {
-                    if (_.isFunction(meta)) {
-                        meta = meta.apply(clazz, dependencies);
-                    }
-
-                    if (_.isObject(meta)) {
-                        metaProcessor.process(clazz, meta);
-                    }
-                }
-
+            processMeta: function(clazz, meta) {
+                this.getMetaProcessor().process(clazz, meta);
                 return clazz;
             },
 
@@ -654,19 +664,25 @@
                 return this._clazzData[name];
             },
 
-            getClazz: function(name, dependencies) {
-                dependencies = dependencies || [];
+            getClazz: function(name, parent, dependencies) {
 
                 if (name in this._clazz) {
                     var clazzes = this._clazz[name];
 
                     for (var i = 0, ii = clazzes.length; i < ii; ++i) {
+                        if (parent) {
+                            if (clazzes[i][1] !== parent) {
+                                continue;
+                            }
+                        }
 
                         var isFound = true;
-                        for (var j = 0, jj = clazzes[i][1].length; j < jj; ++j) {
-                            if (clazzes[i][1][j] !== dependencies[j]) {
-                                isFound = false;
-                                break;
+                        if (dependencies) {
+                            for (var j = 0, jj = clazzes[i][2].length; j < jj; ++j) {
+                                if (clazzes[i][2][j] !== dependencies[j]) {
+                                    isFound = false;
+                                    break;
+                                }
                             }
                         }
 
@@ -679,20 +695,27 @@
                 throw new Error('Clazz "' + name + '" does not exists!');
             },
 
-            hasClazz: function(name, dependencies) {
-                dependencies = dependencies || [];
+            hasClazz: function(name, parent, dependencies) {
 
                 if (name in this._clazz) {
                     var clazzes = this._clazz[name];
 
                     for (var i = 0, ii = clazzes.length; i < ii; ++i) {
+                        if (parent) {
+                            if (clazzes[i][1] !== parent) {
+                                continue;
+                            }
+                        }
 
                         var isFound = true;
-                        for (var j = 0, jj = clazzes[i][1].length; j < jj; ++j) {
-                            if (clazzes[i][1][j] !== dependencies[j]) {
-                                isFound = false;
-                                break;
+                        if (dependencies) {
+                            for (var j = 0, jj = clazzes[i][2].length; j < jj; ++j) {
+                                if (clazzes[i][2][j] !== dependencies[j]) {
+                                    isFound = false;
+                                    break;
+                                }
                             }
+
                         }
 
                         if (isFound) {
@@ -704,7 +727,7 @@
                 return false;
             },
 
-            setClazz: function(name, clazz, dependencies) {
+            setClazz: function(name, clazz, parent, dependencies) {
                 if (!_.isFunction(clazz)) {
                     throw new Error('Clazz must be a function!');
                 }
@@ -713,7 +736,7 @@
                     this._clazz[name] = [];
                 }
 
-                this._clazz[name].push([clazz, dependencies || []]);
+                this._clazz[name].push([clazz, parent, dependencies || []]);
 
                 return this;
             }
@@ -763,6 +786,11 @@
             },
 
             _processors: {
+                clazz: {},
+                proto: {}
+            },
+
+            _optionProcessors: {
                 clazz: {
                     constants: 'Constants',
                     clazz_properties: 'Properties',
@@ -778,15 +806,52 @@
 
             process: function(clazz, metaData) {
 
+                if (!clazz.__isClazz) {
+                    _.extend(clazz, this.clazz_interface);
+                }
+
+                var parent = metaData.parent;
+
+                if (parent) {
+                    if (!clazz.__isSubclazzOf(parent)) {
+                        throw new Error('Clazz "' + clazz.__name + '" must be subclazz of "' + parent.__isClazz ? parent.__name : parent + '"!');
+                    }
+                }
+
+                for (var objectType in this._objectTypes) {
+                    var object = this._objectTypes[objectType](clazz);
+
+                    if (!object.__interfaces) {
+                        object.__interfaces = ['common'];
+                        _.extend(object, this.common_interface);
+                    }
+                }
+
                 for (var objectType in this._processors) {
 
                     var object = this._objectTypes[objectType](clazz);
                     var processors = this._processors[objectType];
 
-                    if (!object.__interfaces) {
-                        object.__interfaces = [this.__name];
-                        _.extend(object, this.interface);
+                    for (var name in processors) {
+                        var processor = processors[name];
+
+                        if (_.isString(processor)) {
+                            processor = meta(processor);
+                        }
+
+                        if (processor.interface && !object.__isInterfaceImplemented(processor.__name)) {
+                            object.__implementInterface(processor.__name, processor.interface);
+                        }
+
+                        processor.process(object, metaData);
                     }
+
+                }
+
+                for (var objectType in this._optionProcessors) {
+
+                    var object = this._objectTypes[objectType](clazz);
+                    var processors = this._optionProcessors[objectType];
 
                     for (var option in processors) {
                         var processor = processors[option];
@@ -808,30 +873,77 @@
                 if (!(name in this._processors)) {
                     this._processors[name] = [];
                 }
+                if (!(name in this._optionProcessors)) {
+                    this._optionProcessors[name] = {};
+                }
                 this._objectTypes[name] = getter;
                 return this;
             },
 
             removeObjectType: function(name) {
                 if (name in this._processors) {
-                    delete this._processors[name];
+                    delete this._processors;
+                }
+                if (name in this._optionProcessors) {
+                    delete this._optionProcessors[name];
                 }
                 delete this._objectTypes[name];
                 return this;
             },
 
-            addProcessor: function(objectType, option, processor) {
-                this._processors[objectType][option] = processor;
+            hasProcessor: function(objectType, name) {
+                return name in this._processors[objectType];
+            },
+
+            addProcessor: function(objectType, processor) {
+                if (processor.__name in this._processors[objectType]) {
+                    throw new Error('Processor "' + processor.__name + '" is already exists for object type "' + objectType + '"!');
+                }
+                this._processors[objectType][processor.__name] = processor;
                 return this;
             },
 
-            removeProcessor: function(objectType, option) {
-                delete this._processors[objectType][option];
+            removeProcessor: function(objectType, name) {
+                if (!(name in this._processors[objectType])) {
+                    throw new Error('Processor "' + name + '" does not exists for object type "' + objectType + '"!');
+                }
+                delete this._processors[objectType][name];
                 return this;
             },
 
+            hasOptionProcessor: function(objectType, option) {
+                return option in this._optionProcessors[objectType][option];
+            },
 
-            interface: {
+            addOptionProcessor: function(objectType, option, processor) {
+                this._optionProcessors[objectType][option] = processor;
+                return this;
+            },
+
+            removeOptionProcessor: function(objectType, option) {
+                delete this._optionProcessors[objectType][option];
+                return this;
+            },
+
+            clazz_interface: {
+
+                __isClazz: true,
+
+                __isSubclazzOf: function(parent) {
+                    var clazzParent = this;
+
+                    while (clazzParent) {
+                        if (clazzParent === parent || clazzParent.__name === parent) {
+                            return true;
+                        }
+                        clazzParent = clazzParent.__parent;
+                    }
+
+                    return false;
+                }
+            },
+
+            common_interface: {
 
                 __isInterfaceImplemented: function(interfaceName) {
                     return -1 !== this.__interfaces.indexOf(interfaceName);
@@ -1535,7 +1647,7 @@
             meta('Default', {
 
                 process: function(object, defaultValue, property) {
-                    if (_.isUndefined(defaultValue)) {
+                    if (!_.isUndefined(defaultValue)) {
                         object.__setPropertyParam(property, 'default', defaultValue);
                     }
                 }
@@ -1849,7 +1961,7 @@
                         this.__uid = ++uid;
 
                         for (var method in this) {
-                            if (0 === method.indexOf('__init') && _.isFunction(method)) {
+                            if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
                                 this[method]();
                             }
                         }

@@ -25,7 +25,7 @@ clazz('Base', function() {
                 this.__uid = ++uid;
 
                 for (var method in this) {
-                    if (0 === method.indexOf('__init') && _.isFunction(method)) {
+                    if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
                         this[method]();
                     }
                 }

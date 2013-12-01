@@ -1,12 +1,12 @@
 var Clazz = function(manager, factory, namespace) {
 
-    var self = function(name, parentOrDependencies, meta) {
+    var self = function(name, parent, metaOrDependencies) {
         var last = _.last(arguments);
 
-        if (!_.isFunction(last) && Object.prototype.toString.call(last) !== '[object Object]') {
-            return self.get(name, /* dependencies */ parentOrDependencies);
+        if ((!_.isFunction(last) || last.prototype.__clazz) && Object.prototype.toString.call(last) !== '[object Object]') {
+            return self.get(name, parent, /* dependencies */ metaOrDependencies);
         }
-        self.set(name, /* parent */ parentOrDependencies, meta);
+        self.set(name, parent, /* meta */ metaOrDependencies);
     };
 
     _.extend(self, Clazz.prototype);
@@ -36,7 +36,12 @@ _.extend(Clazz.prototype, {
         return !!this.resolveName(name);
     },
 
-    get: function(originalName, dependencies) {
+    get: function(originalName, parent, dependencies) {
+
+        if (_.isUndefined(dependencies) && _.isArray(parent)) {
+            dependencies = parent;
+            parent       = undefined;
+        }
 
         var name = this.resolvePath(originalName);
 
@@ -48,22 +53,44 @@ _.extend(Clazz.prototype, {
 
         var manager  = this.getManager();
 
-        if (!manager.hasClazz(name, dependencies)) {
+        if (!manager.hasClazz(name, parent, dependencies)) {
 
             var factory   = this.getFactory();
             var clazzData = manager.getClazzData(name);
 
-            manager.setClazz(name, factory.create({
-                name:         clazzData.name,
-                parent:       clazzData.parent,
-                meta:         clazzData.meta,
-                dependencies: dependencies
-            }), dependencies);
+            name = clazzData.name;
+
+            var meta = clazzData.meta;
+
+            if (_.isFunction(meta)) {
+                meta = meta.apply(null, dependencies);
+            }
+
+            if (!meta.parent && clazzData.parent) {
+                meta.parent = clazzData.parent;
+            }
+
+            parent = parent || meta.parent;
+
+            if (_.isString(parent)) {
+                parent = [parent];
+            }
+
+            if (_.isArray(parent)) {
+                parent = this.get.apply(this, parent);
+            }
+
+            manager.setClazz(name, factory.create(name, parent, meta), parent, dependencies);
         }
-        return manager.getClazz(name, dependencies);
+        return manager.getClazz(name, parent, dependencies);
     },
 
     set: function(name, parent, meta) {
+
+        if (_.isUndefined(meta)) {
+            meta   = parent;
+            parent = undefined;
+        }
 
         var namespace = this.getNamespace();
         var manager   = this.getManager();

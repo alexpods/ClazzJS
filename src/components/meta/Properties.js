@@ -39,9 +39,9 @@ meta('Properties', {
                 if ('default' in propertiesParams[property]) {
                     var defaultValue = propertiesParams[property].default;
                     if (_.isFunction(defaultValue)) {
-                        defaultValue = defaultValue.call(this);
+                        defaultValue = defaultValue.ca
                     }
-                    this['_' + property] = defaultValue;
+                    this['_' + property] = propertiesParams[property]['default'];
                 }
             }
         },
@@ -125,47 +125,6 @@ meta('Properties', {
             for (var i = 0, ii = fields.length; i < ii; ++i) {
                 if (!(fields[i] in value)) {
                     return false;
-                    property = this.__adjustPropertyName(property);
-
-                    if (!this.__hasProperty(property)) {
-                        throw new Error('Property "' + property + '" does not exists!');
-                    }
-                    var fields = _.toArray(arguments).slice(1, -1);
-                    var value = _.last(arguments);
-
-                    var oldValue;
-
-                    if (fields.length) {
-
-                        var container = this['_' + property];
-                        var field = fields.pop();
-
-                        for (var i = 0, ii = fields.length; i < ii; ++i) {
-                            if (!(fields[i] in container)) {
-                                container[fields[i]] = {};
-                            }
-                            container = container[fields[i]];
-                        }
-                        oldValue = container[field];
-                        container[field] = value;
-                    }
-                    else {
-                        var setters = this.__getSetters(property);
-
-                        for (var name in setters) {
-                            value = setters[name].call(this, value);
-                        }
-                        oldValue = this['_' + property];
-                        this['_' + property] = value;
-                    }
-
-                    // Event emitting
-                    if (_.isFunction(this.__emitEvent)) {
-                        this.__emitEvent('property.changed', fields.length ? [property].concat(fields) : property, value, oldValue);
-                        this.__emitEvent('property.' + fields.length ? [property].concat(fields) : property + '.changed', value, oldValue);
-                    }
-
-                    return this;
                 }
             }
 

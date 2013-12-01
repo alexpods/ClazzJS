@@ -34,20 +34,14 @@ _.extend(Factory.prototype, {
         return this;
     },
 
-    create: function(params) {
-
-        var name         = params.name;
-        var parent       = params.parent || this.getBaseClazz() || null;
-        var meta         = params.meta;
-        var dependencies = params.dependencies || [];
-
-        return this.processMeta(this.createClazz({ name: name, parent: parent }), meta, dependencies);
+    create: function(name, parent, meta) {
+        return this.processMeta(this.createClazz({ name: name, parent: parent }), meta);
     },
 
     createClazz: function(params) {
 
-        var name    = params.name || this.generateName();
-        var parent  = params.parent;
+        var name    = params.name   || this.generateName();
+        var parent  = params.parent || this.getBaseClazz();
         var body    = params.body;
 
         var clazz = body || function() {
@@ -81,7 +75,9 @@ _.extend(Factory.prototype, {
             __parent: parent || null
         });
 
-        clazz.prototype = _.extend(Object.create(parent ? parent.prototype : {}), {
+        clazz.prototype = Object.create(parent ? parent.prototype : {});
+
+        _.extend(clazz.prototype, {
             constructor: clazz,
             __parent:    parent ? parent.prototype : null,
             __clazz:     clazz,
@@ -91,21 +87,8 @@ _.extend(Factory.prototype, {
         return clazz;
     },
 
-    processMeta: function(clazz, meta, dependencies) {
-
-        dependencies = dependencies || []
-        var metaProcessor = this.getMetaProcessor();
-
-        if (metaProcessor) {
-            if (_.isFunction(meta)) {
-                meta = meta.apply(clazz, dependencies);
-            }
-
-            if (_.isObject(meta)) {
-                metaProcessor.process(clazz, meta);
-            }
-        }
-
+    processMeta: function(clazz, meta) {
+        this.getMetaProcessor().process(clazz, meta);
         return clazz;
     },
 

@@ -6,6 +6,11 @@ meta('Base', {
     },
 
     _processors: {
+        clazz: {},
+        proto: {}
+    },
+
+    _optionProcessors: {
         clazz: {
             constants:        'Constants',
             clazz_properties: 'Properties',
@@ -21,15 +26,52 @@ meta('Base', {
 
     process: function(clazz, metaData) {
 
+        if (!clazz.__isClazz) {
+            _.extend(clazz, this.clazz_interface);
+        }
+
+        var parent = metaData.parent;
+
+        if (parent) {
+            if (!clazz.__isSubclazzOf(parent)) {
+                throw new Error('Clazz "' + clazz.__name + '" must be subclazz of "' + parent.__isClazz ? parent.__name : parent + '"!');
+            }
+        }
+
+        for (var objectType in this._objectTypes) {
+            var object = this._objectTypes[objectType](clazz);
+
+            if (!object.__interfaces) {
+                object.__interfaces = ['common'];
+                _.extend(object, this.common_interface);
+            }
+        }
+
         for (var objectType in this._processors) {
 
             var object     = this._objectTypes[objectType](clazz);
             var processors = this._processors[objectType];
 
-            if (!object.__interfaces) {
-                object.__interfaces = [this.__name];
-                _.extend(object, this.interface);
+            for (var name in processors) {
+                var processor = processors[name];
+
+                if (_.isString(processor)) {
+                    processor = meta(processor);
+                }
+
+                if (processor.interface && !object.__isInterfaceImplemented(processor.__name)) {
+                    object.__implementInterface(processor.__name, processor.interface);
+                }
+
+                processor.process(object, metaData);
             }
+
+        }
+
+        for (var objectType in this._optionProcessors) {
+
+            var object     = this._objectTypes[objectType](clazz);
+            var processors = this._optionProcessors[objectType];
 
             for (var option in processors) {
                 var processor = processors[option];
@@ -51,30 +93,77 @@ meta('Base', {
         if (!(name in this._processors)) {
             this._processors[name] = [];
         }
+        if (!(name in this._optionProcessors)) {
+            this._optionProcessors[name] = {};
+        }
         this._objectTypes[name] = getter;
         return this;
     },
 
     removeObjectType: function(name) {
         if (name in this._processors) {
-            delete this._processors[name];
+            delete this._processors;
+        }
+        if (name in this._optionProcessors) {
+            delete this._optionProcessors[name];
         }
         delete this._objectTypes[name];
         return this;
     },
 
-    addProcessor: function(objectType, option, processor) {
-        this._processors[objectType][option] = processor;
+    hasProcessor: function(objectType, name) {
+        return name in this._processors[objectType];
+    },
+
+    addProcessor: function(objectType, processor) {
+        if (processor.__name in this._processors[objectType]) {
+            throw new Error('Processor "' + processor.__name + '" is already exists for object type "' + objectType + '"!');
+        }
+        this._processors[objectType][processor.__name] = processor;
         return this;
     },
 
-    removeProcessor: function(objectType, option) {
-        delete this._processors[objectType][option];
+    removeProcessor: function(objectType, name) {
+        if (!(name in this._processors[objectType])) {
+            throw new Error('Processor "' + name + '" does not exists for object type "' + objectType + '"!');
+        }
+        delete this._processors[objectType][name];
         return this;
     },
 
+    hasOptionProcessor: function(objectType, option) {
+        return option in this._optionProcessors[objectType][option];
+    },
 
-    interface: {
+    addOptionProcessor: function(objectType, option, processor) {
+        this._optionProcessors[objectType][option] = processor;
+        return this;
+    },
+
+    removeOptionProcessor: function(objectType, option) {
+        delete this._optionProcessors[objectType][option];
+        return this;
+    },
+
+    clazz_interface: {
+
+        __isClazz: true,
+
+        __isSubclazzOf: function(parent) {
+            var clazzParent = this;
+
+            while (clazzParent) {
+                if (clazzParent === parent || clazzParent.__name === parent) {
+                    return true;
+                }
+                clazzParent = clazzParent.__parent;
+            }
+
+            return false;
+        }
+    },
+
+    common_interface: {
 
         __isInterfaceImplemented: function(interfaceName) {
             return -1 !== this.__interfaces.indexOf(interfaceName);

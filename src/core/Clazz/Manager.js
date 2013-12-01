@@ -21,19 +21,25 @@ _.extend(Manager.prototype, {
         return this._clazzData[name];
     },
 
-    getClazz: function(name, dependencies) {
-        dependencies = dependencies || [];
+    getClazz: function(name, parent, dependencies) {
 
         if (name in this._clazz) {
             var clazzes = this._clazz[name];
 
             for (var i = 0, ii = clazzes.length; i < ii; ++i) {
+                if (parent) {
+                    if (clazzes[i][1] !== parent) {
+                        continue;
+                    }
+                }
 
                 var isFound = true;
-                for (var j = 0, jj = clazzes[i][1].length; j < jj; ++j) {
-                    if (clazzes[i][1][j] !== dependencies[j]) {
-                        isFound = false;
-                        break;
+                if (dependencies) {
+                    for (var j = 0, jj = clazzes[i][2].length; j < jj; ++j) {
+                        if (clazzes[i][2][j] !== dependencies[j]) {
+                            isFound = false;
+                            break;
+                        }
                     }
                 }
 
@@ -46,20 +52,27 @@ _.extend(Manager.prototype, {
         throw new Error('Clazz "' + name + '" does not exists!');
     },
 
-    hasClazz: function(name, dependencies) {
-        dependencies = dependencies || [];
+    hasClazz: function(name, parent, dependencies) {
 
         if (name in this._clazz) {
             var clazzes = this._clazz[name];
 
             for (var i = 0, ii = clazzes.length; i < ii; ++i) {
+                if (parent) {
+                    if (clazzes[i][1] !== parent) {
+                        continue;
+                    }
+                }
 
                 var isFound = true;
-                for (var j = 0, jj = clazzes[i][1].length; j < jj; ++j) {
-                    if (clazzes[i][1][j] !== dependencies[j]) {
-                        isFound = false;
-                        break;
+                if (dependencies) {
+                    for (var j = 0, jj = clazzes[i][2].length; j < jj; ++j) {
+                        if (clazzes[i][2][j] !== dependencies[j]) {
+                            isFound = false;
+                            break;
+                        }
                     }
+
                 }
 
                 if (isFound) {
@@ -71,7 +84,7 @@ _.extend(Manager.prototype, {
         return false;
     },
 
-    setClazz: function(name, clazz, dependencies) {
+    setClazz: function(name, clazz, parent, dependencies) {
         if (!_.isFunction(clazz)) {
             throw new Error('Clazz must be a function!');
         }
@@ -80,7 +93,7 @@ _.extend(Manager.prototype, {
             this._clazz[name] = [];
         }
 
-        this._clazz[name].push([clazz, dependencies || []]);
+        this._clazz[name].push([clazz, parent, dependencies || []]);
 
         return this;
     }
