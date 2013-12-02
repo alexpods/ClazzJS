@@ -79,7 +79,7 @@ meta('Properties', {
         },
 
         __getPropertyParam: function(property, param) {
-            var params = this.__collectAllPropertyValues.apply(null, ['__properties', 2, property].concat(param || []));
+            var params = this.__collectAllPropertyValues.apply(this, ['__properties', 2, property].concat(param || []));
             return param ? params[param] : params;
         },
 
@@ -277,7 +277,7 @@ meta('Properties', {
         },
 
         __getSetters: function(property) {
-            var setters = this.__collectAllPropertyValues.apply(null, ['__setters', 1].concat(property || []));
+            var setters = this.__collectAllPropertyValues.apply(this, ['__setters', 1].concat(property || []));
             return property ? (setters[property] || {}) : setters;
         },
 
@@ -294,7 +294,7 @@ meta('Properties', {
         },
 
         __getGetters: function(property) {
-            var getters = this.__collectAllPropertyValues.apply(null, ['__getters', 1].concat(property || []));
+            var getters = this.__collectAllPropertyValues.apply(this, ['__getters', 1].concat(property || []));
             return property ? (getters[property] || {}) : getters;
         },
 

@@ -65,7 +65,7 @@ meta('Events', {
         },
 
         __getEventListeners: function(event) {
-            return this.__collectAllPropertyValues.apply(null, ['__events', 2].concat(event || []));
+            return this.__collectAllPropertyValues.apply(this, ['__events', 2].concat(event || []));
         }
     }
 });

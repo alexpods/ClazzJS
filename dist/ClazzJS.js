@@ -1051,7 +1051,7 @@
                 __getConstant: function( /* fields */ ) {
 
                     var fields = _.toArray(arguments)
-                    var constant = this.__collectAllPropertyValues.apply(null, ['__constants', 99].concat(fields));
+                    var constant = this.__collectAllPropertyValues.apply(this, ['__constants', 99].concat(fields));
 
                     for (var i = 0, ii = fields.length; i < ii; ++i) {
                         if (!(fields[i] in constant)) {
@@ -1154,7 +1154,7 @@
                 },
 
                 __getEventListeners: function(event) {
-                    return this.__collectAllPropertyValues.apply(null, ['__events', 2].concat(event || []));
+                    return this.__collectAllPropertyValues.apply(this, ['__events', 2].concat(event || []));
                 }
             }
         });
@@ -1251,7 +1251,7 @@
                 },
 
                 __getPropertyParam: function(property, param) {
-                    var params = this.__collectAllPropertyValues.apply(null, ['__properties', 2, property].concat(param || []));
+                    var params = this.__collectAllPropertyValues.apply(this, ['__properties', 2, property].concat(param || []));
                     return param ? params[param] : params;
                 },
 
@@ -1450,7 +1450,7 @@
                 },
 
                 __getSetters: function(property) {
-                    var setters = this.__collectAllPropertyValues.apply(null, ['__setters', 1].concat(property || []));
+                    var setters = this.__collectAllPropertyValues.apply(this, ['__setters', 1].concat(property || []));
                     return property ? (setters[property] || {}) : setters;
                 },
 
@@ -1467,7 +1467,7 @@
                 },
 
                 __getGetters: function(property) {
-                    var getters = this.__collectAllPropertyValues.apply(null, ['__getters', 1].concat(property || []));
+                    var getters = this.__collectAllPropertyValues.apply(this, ['__getters', 1].concat(property || []));
                     return property ? (getters[property] || {}) : getters;
                 },
 
