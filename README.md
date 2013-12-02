@@ -26,7 +26,7 @@ Documentation
 Example
 --------
 
-Main goal of this example is to give you common idea about ClazzJS. It's not discover all features of the library. Online working version of this example is available on plnkr: [http://plnkr.co/edit/c5Xveb](http://plnkr.co/edit/c5Xveb). Feel free to play around with it!
+Main goal of this example is to give you a common idea about ClazzJS. It's not discover all features of the library. Online working version of this example is available on plnkr: [http://plnkr.co/edit/c5Xveb](http://plnkr.co/edit/c5Xveb). Feel free to play around with it!
 
 
 Declaring of common Person clazz:
@@ -74,7 +74,7 @@ clazz("Person", {
     },
     methods: {
         getAge: function() {
-          return (new Date()).getFullYear() - this.getBirthday().getFullYear();
+            return (new Date()).getFullYear() - this.getBirthday().getFullYear();
         }
     }
 });
@@ -91,7 +91,7 @@ clazz('Teacher', 'Person', {
             type: 'string',
             constraints: {
                 existedSubject: function(subject) {
-                  return -1 !== this.const('SUBJECT').indexOf(subject);
+                    return -1 !== this.const('SUBJECT').indexOf(subject);
                 }
             }
         }
