@@ -153,7 +153,7 @@ meta('Type', {
             return value;
         },
         function: function(value, params, property) {
-            if (!_.isFunction('function')) {
+            if (!_.isFunction(value)) {
                 throw new Error('Value of property "' + property + '" must have function type');
             }
             return value;
