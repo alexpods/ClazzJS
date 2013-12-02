@@ -1868,7 +1868,7 @@
                         if ('element' in params) {
                             type = [].concat(params.element);
                             for (i = 0, ii = value.length; i < ii; ++i) {
-                                value[i] = this.applyType.call(this, value[i], type[0], type[1] || {}, property + '.' + i);
+                                value[i] = this.apply.call(this, value[i], type, property + '.' + i);
                             }
                         }
                         return value;
@@ -1890,7 +1890,7 @@
                         if ('element' in params) {
                             type = [].concat(params.element);
                             for (key in value) {
-                                value[key] = this.applyType.call(this, value[key], type[0], type[1] || {}, property + '.' + key);
+                                value[key] = this.apply.call(this, value[key], type, property + '.' + key);
                             }
                         }
                         return value;
