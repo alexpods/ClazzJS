@@ -6,7 +6,7 @@ meta('Type', {
         var self = this;
 
         object.__addSetter(property, this.SETTER_NAME, function(value) {
-            return self.applyType(value, type, property);
+            return self.apply(value, type, property);
         });
     },
 
