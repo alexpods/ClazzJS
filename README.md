@@ -25,6 +25,7 @@ Documentation
 Examples
 --------
 
+Declaring of common Person clazz:
 ```js
 clazz("Person", {
     constants: {
@@ -38,12 +39,10 @@ clazz("Person", {
         phone: {
             type: ['string', {
                 pattern: /\d{1,2}-\d{3}-\d{5,7}/
-            }],
-            methods: ['get', 'set']
+            }]
         },
         birthday: {
             type: 'datetime',
-            methods: ['get', 'set'],
             constratins: {
                 inPast: function(birthday) {
                     return birthday.getTime() < Date.now();
@@ -76,6 +75,8 @@ clazz("Person", {
     }
 });
 ```
+
+Declaring of Teacher clazz inherited from Person:
 ```js
 clazz('Teacher', 'Person', {
     constants: {
@@ -88,11 +89,59 @@ clazz('Teacher', 'Person', {
                 existedSubject: function(subject) {
                   return -1 !== this.clazz.const('SUBJECT').indexOf(subject);
                 }
-            },
-            methods: ['get', 'set']
+            }
         }
     }
 });
+```
+
+Creation and manipulation of instances:
+```js
+
+// Create just common person - John
+var john = clazz('Person').create({
+    name: 'John Stewart',
+    sex: 'M',
+    phone: '1-925-123567',
+    birthday: "1989-12-13"
+});
+
+john instanceof clazz("Person"); // true 
+
+john.getName();  // 'John Stewart'
+john.getAge();   // 24
+john.getSex();   // 'male'
+john.getPhone(); // 7-925-123567
+
+john.setPhone('7-925-1'); // Throw phone pattern fail error with message: 'Value "7-925-1" does not match pattern "/\d{1,2}-\d{3}-\d{5,7}/"'
+
+john.isSex("male");   // true
+john.isSex("female"); // false
+
+john.setSex('unsupportedSex'); // Throw existedSex constraint fail error
+
+john.setSex('female'); // Successfully change sex of John
+
+john.getSex();        // 'female'
+john.isSex("male");   // false
+john.isSex("female"); // true
+
+john.getBirthday() instanceof Date; // true
+john.getBirthday().getMonth();      // 12
+john.getBirthday().getFullYear();   // 189
+
+// Create math teacher - Mr. George Smith
+var mathTeacher = clazz('Teacher').create({
+    name: 'George Smith',
+    sex: 'male',
+    birthday: '1973-12-34',
+    subject: 'mathematics'
+});
+
+mathTeacher instanceof clazz('Person');    // true
+mathTeacher instanceof clazz('Teacher'));  // true
+
+mathTeacher.getName(); // John Smith
 ```
 
 License
