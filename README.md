@@ -67,7 +67,7 @@ clazz("Person", {
             },
             constraints: {
                 existedSex: function(sex) {
-                    return -1 !== this.clazz.const('SEX').indexOf(sex);
+                    return -1 !== this.const('SEX').indexOf(sex);
                 }
             }
         }
@@ -91,7 +91,7 @@ clazz('Teacher', 'Person', {
             type: 'string',
             constraints: {
                 existedSubject: function(subject) {
-                  return -1 !== this.clazz.const('SUBJECT').indexOf(subject);
+                  return -1 !== this.const('SUBJECT').indexOf(subject);
                 }
             }
         }
@@ -118,7 +118,8 @@ john.getSex();   // 'male'
 john.getPhone(); // 1-925-123567
 
 john.setPhone('7-925-1'); // Throw phone pattern fail error with message: 
-                          // 'Value "7-925-1" does not match pattern "/\d{1,2}-\d{3}-\d{5,7}/"'
+                          // 'Value "7-925-1" does not match
+                          // pattern "/\d{1,2}-\d{3}-\d{5,7}/"'
 
 john.isSex("male");   // true
 john.isSex("female"); // false
