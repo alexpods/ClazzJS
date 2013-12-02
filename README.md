@@ -14,7 +14,8 @@ Features include:
 
 You'll find some examples bellow to have a common idea what i'm talking about.
 
-**Caution:** This library is still under development. I don't think that it's API will be changed much. But you must take this into considiration.
+**Caution:** 
+> This library is still under development. I don't think that it's API will be changed much. But you must take this into considiration.
 
 Documentation
 -------------
