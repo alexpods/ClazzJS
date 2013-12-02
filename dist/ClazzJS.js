@@ -1853,7 +1853,7 @@
                             value = new Date(Date.parse(value));
                         }
 
-                        if (value instanceof Date) {
+                        if (!(value instanceof Date)) {
                             throw new Error('Value of property "' + property + '" must have datetime type!');
                         }
 
