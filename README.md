@@ -25,7 +25,75 @@ Documentation
 Examples
 --------
 
-// some examples
+```js
+clazz("Person", {
+    constants: {
+        SEX: ['male', 'female']
+    },
+    properties: {
+        name: {
+            type: 'string',
+            methods: ['get']
+        },
+        phone: {
+            type: ['string', {
+                pattern: /\d{1,2}-\d{3}-\d{5,7}/
+            }],
+            methods: ['get', 'set']
+        },
+        birthday: {
+            type: 'datetime',
+            methods: ['get', 'set'],
+            constratins: {
+                inPast: function(birthday) {
+                    return birthday.getTime() < Date.now();
+                }
+            }
+        },
+        sex: {
+            type: 'string',
+            methods: ['get', 'set', 'is'],
+            converters: {
+                toFull: function(sex) {
+                  switch(sex.toLowerCase()) {
+                      case 'm': sex = 'male'; break;
+                      case 'f': sex = 'female'; break;
+                  }
+                  return sex;
+                }
+            },
+            constraints: {
+                existedSex: function(sex) {
+                    return -1 !== this.clazz.const('SEX').indexOf(sex);
+                }
+            }
+        }
+    },
+    methods: {
+        getAge: function() {
+          return (new Date()).getFullYear() - this.getBirthday().getFullYear();
+        }
+    }
+});
+```
+```js
+clazz('Teacher', 'Person', {
+    constants: {
+        SUBJECT: ['physics', 'literature', 'mathematics']
+    },
+    properties: {
+        subject: {
+            type: 'string',
+            constraints: {
+                existedSubject: function(subject) {
+                  return -1 !== this.clazz.const('SUBJECT').indexOf(subject);
+                }
+            },
+            methods: ['get', 'set']
+        }
+    }
+});
+```
 
 License
 -------
