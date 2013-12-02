@@ -19,7 +19,7 @@ You'll find some examples bellow to have a common idea what i'm talking about.
 Documentation
 -------------
 
-[1.Installation](https://github.com/alexpods/ClazzJS/tree/master/1_Installation.md)
+1. [Installation](docs/1_Installation.md)
 
 Examples
 --------
