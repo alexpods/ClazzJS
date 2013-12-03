@@ -1,4 +1,4 @@
-_ = (function() {
+var _ = (function() {
     var _;
 
     var toString    = Object.prototype.toString;

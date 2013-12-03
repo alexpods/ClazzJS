@@ -35,7 +35,7 @@
         global[name] = factory.apply(global, dependencies);
     }
 }((new Function('return this'))(), 'ClazzJS', [], function(undefined) {
-    _ = (function() {
+    var _ = (function() {
         var _;
 
         var toString = Object.prototype.toString;
