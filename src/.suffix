@@ -10,7 +10,8 @@ return {
 
     namespace: namespace,
     clazz:     clazz,
-    meta:      meta
+    meta:      meta,
+    _:         _
 };
 
 }));
