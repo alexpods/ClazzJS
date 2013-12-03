@@ -32,7 +32,7 @@ var _ = (function() {
     _.extend = function(obj) {
         var sources = slice.call(arguments, 1);
 
-        for (var i = 1, ii = sources.length; i < ii; ++i) {
+        for (var i = 0, ii = sources.length; i < ii; ++i) {
             var source = sources[i];
 
             if (source) {
