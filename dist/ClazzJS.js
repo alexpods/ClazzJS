@@ -67,7 +67,7 @@
         };
 
         _.extend = function(obj) {
-            var sources = slice(arguments, 1);
+            var sources = slice.call(arguments, 1);
 
             for (var i = 1, ii = sources.length; i < ii; ++i) {
                 var source = sources[i];
