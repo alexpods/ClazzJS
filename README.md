@@ -7,12 +7,13 @@ well both on client and server sides.
 
 Features include:
 - Single inheritance
-- Expressive, extensible DSL for declaring your class with constants, methods, properties, events and so on.
-- Event emitting
+- Expressive, extensible DSL for declaring of your class
+- Methods generation
+- Events emitting
 - Object properties changes observing
 - Namespaces
 
-You'll find some examples bellow to have a common idea what i'm talking about.
+You'll find the example bellow to have a common idea what I'm talking about.
 
 **Caution:** 
 > This library is still under development. I don't think that it's API will be changed much. But you must take this into considiration.
@@ -22,8 +23,11 @@ Documentation
 
 1. [Installation](docs/1_Installation.md)
 
-Examples
+Example
 --------
+
+Main goal of this example is to give you a common idea about ClazzJS. It's not discover all features of the library. Online working version of this example is available on plnkr: [http://plnkr.co/edit/c5Xveb](http://plnkr.co/edit/c5Xveb). Feel free to play around with it!
+
 
 Declaring of common Person clazz:
 ```js
@@ -63,14 +67,14 @@ clazz("Person", {
             },
             constraints: {
                 existedSex: function(sex) {
-                    return -1 !== this.clazz.const('SEX').indexOf(sex);
+                    return -1 !== this.const('SEX').indexOf(sex);
                 }
             }
         }
     },
     methods: {
         getAge: function() {
-          return (new Date()).getFullYear() - this.getBirthday().getFullYear();
+            return (new Date()).getFullYear() - this.getBirthday().getFullYear();
         }
     }
 });
@@ -87,7 +91,7 @@ clazz('Teacher', 'Person', {
             type: 'string',
             constraints: {
                 existedSubject: function(subject) {
-                  return -1 !== this.clazz.const('SUBJECT').indexOf(subject);
+                    return -1 !== this.const('SUBJECT').indexOf(subject);
                 }
             }
         }
@@ -98,7 +102,7 @@ clazz('Teacher', 'Person', {
 Creation and manipulation of instances:
 ```js
 
-// Create just common person - John
+// Create just common person - John (without 'new' operator)
 var john = clazz('Person').create({
     name: 'John Stewart',
     sex: 'M',
@@ -111,14 +115,17 @@ john instanceof clazz("Person"); // true
 john.getName();  // 'John Stewart'
 john.getAge();   // 24
 john.getSex();   // 'male'
-john.getPhone(); // 7-925-123567
+john.getPhone(); // 1-925-123567
 
-john.setPhone('7-925-1'); // Throw phone pattern fail error with message: 'Value "7-925-1" does not match pattern "/\d{1,2}-\d{3}-\d{5,7}/"'
+john.setPhone('7-925-1'); // Throw phone pattern fail error with message: 
+                          // 'Value "7-925-1" does not match
+                          // pattern "/\d{1,2}-\d{3}-\d{5,7}/"'
 
 john.isSex("male");   // true
 john.isSex("female"); // false
 
-john.setSex('unsupportedSex'); // Throw existedSex constraint fail error
+john.setSex('unsupportedSex'); // Throw existedSex constraint fail error with message:
+                               // 'Constraint "existedSex" was failed!'
 
 john.setSex('female'); // Successfully change sex of John
 
@@ -130,8 +137,8 @@ john.getBirthday() instanceof Date; // true
 john.getBirthday().getMonth();      // 12
 john.getBirthday().getFullYear();   // 189
 
-// Create math teacher - Mr. George Smith
-var mathTeacher = clazz('Teacher').create({
+// Create math teacher - Mr. George Smith. (with 'new' operator)
+var mathTeacher = new clazz('Teacher')({
     name: 'George Smith',
     sex: 'male',
     birthday: '1973-12-34',
