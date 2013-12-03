@@ -16,7 +16,7 @@ var _ = (function() {
         return obj === null;
     };
 
-    var isFunctions = ['Function', 'String', 'Number', 'Date', 'RegExp'];
+    var isFunctions = ['Function', 'String', 'Number', 'Date', 'RegExp', 'Array'];
     for (var i = 0, ii = isFunctions.length; i < ii; ++i) {
         (function(name) {
             _['is' + name] = function(obj) {
