@@ -63,8 +63,9 @@ _.extend(Clazz.prototype, {
                 parent:       parent,
                 metaParent:   clazzData.parent,
                 meta:         clazzData.meta,
-                dependencies: dependencies
-            }, this), parent, dependencies);
+                dependencies: dependencies,
+                clazz:        clazzData.clazz
+            }), parent, dependencies);
         }
         return manager.getClazz(name, parent, dependencies);
     },
@@ -93,7 +94,8 @@ _.extend(Clazz.prototype, {
         manager.setClazzData(name, {
             name:       name,
             parent:     parent,
-            meta:       meta
+            meta:       meta,
+            clazz:      this
         });
 
         return this;

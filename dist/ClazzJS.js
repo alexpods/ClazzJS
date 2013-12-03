@@ -482,8 +482,9 @@
                         parent: parent,
                         metaParent: clazzData.parent,
                         meta: clazzData.meta,
-                        dependencies: dependencies
-                    }, this), parent, dependencies);
+                        dependencies: dependencies,
+                        clazz: clazzData.clazz
+                    }), parent, dependencies);
                 }
                 return manager.getClazz(name, parent, dependencies);
             },
@@ -512,7 +513,8 @@
                 manager.setClazzData(name, {
                     name: name,
                     parent: parent,
-                    meta: meta
+                    meta: meta,
+                    clazz: this
                 });
 
                 return this;
@@ -566,17 +568,19 @@
                 return this;
             },
 
-            create: function(data, clazz) {
+            create: function(data) {
 
                 var name = data.name || this.generateName();
                 var parent = data.parent;
                 var metaParent = data.metaParent;
                 var meta = data.meta || {};
                 var dependencies = data.dependencies || [];
+                var clazz = data.clazz;
 
                 var newClazz = this.createClazz();
 
                 newClazz.__name = name;
+                newClazz.__clazz = clazz;
 
                 if (_.isFunction(meta)) {
                     meta = meta.apply(newClazz, [newClazz].concat(dependencies)) || {};
@@ -632,7 +636,7 @@
 
                 if (parent) {
                     for (var property in parent) {
-                        if (property === '__name') {
+                        if (-1 !== ['__name', '__clazz'].indexOf(property)) {
                             continue;
                         } else if (_.isFunction(parent[property])) {
                             clazz[property] = parent[property];
@@ -1764,11 +1768,11 @@
                     var self = this;
 
                     object.__addSetter(property, this.SETTER_NAME, function(value) {
-                        return self.apply(value, type, property);
+                        return self.apply(value, type, property, object);
                     });
                 },
 
-                apply: function(value, type, property) {
+                apply: function(value, type, property, object) {
                     if (_.isUndefined(value) || _.isNull(value)) {
                         return value;
                     }
@@ -1783,7 +1787,7 @@
                         throw new Error('Property type "' + type + '" does not exists!');
                     }
 
-                    return this._types[type].call(this, value, params, property);
+                    return this._types[type].call(this, value, params, property, object);
                 },
 
                 addType: function(name, callback) {
@@ -1895,16 +1899,32 @@
                         }
                         return value;
                     },
-                    object: function(value, params, property) {
-
-                        if ('instanceof' in params) {
-                            if (!(value instanceof params.instanceof)) {
-                                value = new klass(value);
-                            }
-                        }
+                    object: function(value, params, property, object) {
 
                         if (!_.isObject(value)) {
-                            throw new Error('Value of property "' + property + '" must have object type!');
+                            throw new Error('Value of property "' + property + '" must have an object type!');
+                        }
+
+                        if ('instanceOf' in params) {
+
+                            var instanceOf = params.instanceOf;
+                            var clazzClazz = object.__isClazz ? object.__clazz : object.__clazz.__clazz;
+
+                            if (_.isString(instanceOf)) {
+                                instanceOf = clazzClazz.getNamespace().adjustPath(instanceOf);
+
+                                if (!value.__clazz) {
+                                    instanceOf = clazzClazz(instanceOf);
+                                }
+                            }
+
+                            if (value.__clazz ? !value.__clazz.__isSubclazzOf(instanceOf) : !(value instanceof instanceOf)) {
+
+                                var className = instanceOf.__isClazz ? instanceOf.__name : (_.isString(instanceOf) ? instanceOf : 'another');
+
+
+                                throw new Error('Value of property "' + property + '" must be instance of ' + className + ' clazz!');
+                            }
                         }
 
                         return value;

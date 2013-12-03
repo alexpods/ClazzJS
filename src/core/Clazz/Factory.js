@@ -34,17 +34,19 @@ _.extend(Factory.prototype, {
         return this;
     },
 
-    create: function(data, clazz) {
+    create: function(data) {
 
         var name         = data.name || this.generateName();
         var parent       = data.parent;
         var metaParent   = data.metaParent;
         var meta         = data.meta         || {};
         var dependencies = data.dependencies || [];
+        var clazz        = data.clazz;
 
         var newClazz = this.createClazz();
 
-        newClazz.__name = name;
+        newClazz.__name  = name;
+        newClazz.__clazz = clazz;
 
         if (_.isFunction(meta)) {
             meta = meta.apply(newClazz, [newClazz].concat(dependencies)) || {};
@@ -101,7 +103,7 @@ _.extend(Factory.prototype, {
 
         if (parent) {
             for (var property in parent) {
-                if (property === '__name') {
+                if (-1 !== ['__name', '__clazz'].indexOf(property)) {
                     continue;
                 }
                 else if (_.isFunction(parent[property])) {
