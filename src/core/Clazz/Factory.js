@@ -103,7 +103,7 @@ _.extend(Factory.prototype, {
 
         if (parent) {
             for (var property in parent) {
-                if (-1 !== ['__name', '__clazz'].indexOf(property)) {
+                if (property in clazz) {
                     continue;
                 }
                 else if (_.isFunction(parent[property])) {
@@ -115,7 +115,7 @@ _.extend(Factory.prototype, {
             }
         }
 
-        clazz.prototype = Object.create(parent ? parent.prototype : {});
+        clazz.prototype = _.extend(Object.create(parent ? parent.prototype : {}), clazz.prototype);
 
         clazz.__parent = parent || null;
         clazz.prototype.constructor = clazz;
