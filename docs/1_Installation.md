@@ -1,7 +1,7 @@
 Installation
 ============
 
-ClazzJS available both for client and server (NodeJS) sides. Follow next instractions to install it.
+ClazzJS is available both on client and server (NodeJS) sides. Follow next instractions to install it.
 
 NodeJS
 ------
@@ -28,7 +28,7 @@ Enjoy!
 Browser
 -------
 
-To install ClazzJS you can you [bower](http://bower.io/) or just manually download library from [repository](../dist).
+To install ClazzJS you can use [bower](http://bower.io/) or can just manually download library from [repository](../dist).
 
 ####Bower####
 Run next command from your project directory:
