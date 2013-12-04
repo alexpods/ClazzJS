@@ -1,6 +1,8 @@
 Installation
 ============
 
+ClazzJS available both for client and server (NodeJS) sides. Follow next instractions to install it.
+
 NodeJS
 ------
 
