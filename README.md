@@ -30,7 +30,7 @@ Example
 Main goal of this example is to give you a common idea about ClazzJS. It's not discover all features of the library. Online working version of this example is available on plnkr: [http://plnkr.co/edit/c5Xveb](http://plnkr.co/edit/c5Xveb). Feel free to play around with it!
 
 
-Declare of common 'Person' clazz:
+Declaration of common 'Person' clazz:
 ```js
 clazz("Person", {
     constants: {
