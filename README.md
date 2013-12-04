@@ -1,27 +1,27 @@
 ClazzJS
 =======
 
-ClazzJS is portable JavaScript library for class-style OOP programming. It's main goal to provide expressive DSL to
-write your JavaScript programs in easy-to-understand, well-known, convenient and flexible clazz base manner. It's works
+ClazzJS is portable JavaScript library for class-style OOP programming. Its main goal to provide expressive DSL to
+write your JavaScript programs in easy-to-understand, well-known, convenient and flexible class base manner. It's works
 well both on client and server sides.
 
 Features include:
-- Single inheritance
-- Expressive, extensible DSL for declaring of your class
-- Methods generation
-- Events emitting
-- Object properties changes observing
-- Namespaces
+* Single inheritance
+* Expressive, extensible DSL for declaring of your class
+* Methods generation
+* Events emitting
+* Object properties changes observing
+* Namespaces
 
 You'll find the example bellow to have a common idea what I'm talking about.
 
 **Caution:** 
-> This library is still under development. I don't think that it's API will be changed much. But you must take this into considiration.
+> This library is still under development. I don't think that it's API will be changed much. But you must take into considiration.
 
 Documentation
 -------------
 
-1. [Installation](docs/1_Installation.md)
+1. [Installation](./docs/1_Installation.md)
 
 Example
 --------
@@ -29,7 +29,7 @@ Example
 Main goal of this example is to give you a common idea about ClazzJS. It's not discover all features of the library. Online working version of this example is available on plnkr: [http://plnkr.co/edit/c5Xveb](http://plnkr.co/edit/c5Xveb). Feel free to play around with it!
 
 
-Declaring of common Person clazz:
+Declare of common 'Person' clazz:
 ```js
 clazz("Person", {
     constants: {
@@ -58,11 +58,11 @@ clazz("Person", {
             methods: ['get', 'set', 'is'],
             converters: {
                 toFull: function(sex) {
-                  switch(sex.toLowerCase()) {
-                      case 'm': sex = 'male'; break;
-                      case 'f': sex = 'female'; break;
-                  }
-                  return sex;
+                    switch(sex.toLowerCase()) {
+                        case 'm': sex = 'male'; break;
+                        case 'f': sex = 'female'; break;
+                    }
+                    return sex;
                 }
             },
             constraints: {
@@ -80,7 +80,7 @@ clazz("Person", {
 });
 ```
 
-Declaring of Teacher clazz inherited from Person:
+Declaration of 'Teacher' clazz inherited from 'Person':
 ```js
 clazz('Teacher', 'Person', {
     constants: {
@@ -135,7 +135,7 @@ john.isSex("female"); // true
 
 john.getBirthday() instanceof Date; // true
 john.getBirthday().getMonth();      // 12
-john.getBirthday().getFullYear();   // 189
+john.getBirthday().getFullYear();   // 1989
 
 // Create math teacher - Mr. George Smith. (with 'new' operator)
 var mathTeacher = new clazz('Teacher')({
