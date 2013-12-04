@@ -21,7 +21,8 @@ You'll find the example bellow to have a common idea what I'm talking about.
 Documentation
 -------------
 
-1. [Installation](./docs/1_Installation.md)
+1. [Installation](./docs/1.installation.md)
+2. [Clazz declaration](./docs/2.clazz_declaration.md)
 
 Example
 --------
