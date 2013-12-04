@@ -1,3 +1,61 @@
 Installation
 ============
 
+NodeJS
+------
+
+Using [npm](https://npmjs.org/) run next command:
+```sh
+$ npm install clazz-js
+```
+or if you want to install it globally:
+```sh
+$ npm install -g clazz-js
+```
+
+Then use its API to get necessary functionality:
+```js
+var clazz     = require('clazz-js').clazz;
+var namespace = require('clazz-js').namespace;
+var meta      = require('clazz-js').meta;
+```
+
+Enjoy!
+
+
+Browser
+-------
+
+To install ClazzJS you can you [bower](http://bower.io/) or just manually download library from [repository](../dist).
+
+####Bower####
+Run next command from your project directory:
+```sh
+$ bower install ClazzJS
+```
+
+Then add next tag to html header:
+```html
+<script type="text/javascript" src="bower_components/ClazzJS/dist/ClazzJS.js"></script>
+```
+or if you want minified version:
+```html
+<script type="text/javascript" src="bower_components/ClazzJS/dist/ClazzJS.min.js"></script>
+```
+
+####Manually downloading###
+Download [full](../dist/ClazzJS.js) or [minified](../dist/ClazzJS.min.js) version of the library. Than put library into your project and add next tag to html header:
+```html
+<script type="text/javascript" src="path/to/clazz-js-library.js"></script>
+```
+
+This add ClazzJS variable to your global scope. Use its API to get necessary functionality:
+```html
+<script type="text/javascript">
+  var clazz     = ClazzJS.clazz;
+  var namespace = ClazzJS.namespace;
+  var meta      = ClazzJS.meta;
+</script>
+```
+
+Enjoy!
