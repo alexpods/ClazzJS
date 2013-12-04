@@ -1489,8 +1489,10 @@
 
                     // Event emitting
                     if (_.isFunction(this.__emitEvent)) {
-                        this.__emitEvent('property.changed', fields.length ? [property].concat(fields) : property, value, oldValue);
-                        this.__emitEvent('property.' + fields.length ? [property].concat(fields) : property + '.changed', value, oldValue);
+                        property = [property].concat(fields).join('.');
+
+                        this.__emitEvent('property.changed', property, value, oldValue);
+                        this.__emitEvent('property.' + property + '.changed', value, oldValue);
                     }
 
                     return this;
