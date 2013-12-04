@@ -14,7 +14,7 @@ module.exports = function(grunt) {
                 src: [
                     "src/.prefix",
 
-                    "src/miniunderscore.js",
+                    "src/_.js",
 
                     "src/core/Namespace/.prefix",
                     "src/core/Namespace/*.js",

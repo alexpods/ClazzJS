@@ -49,6 +49,14 @@ var _ = (function() {
         return arr[arr.length - 1];
     };
 
+    _.construct = function (klass, params) {
+        var K = function() {
+            return klass.apply(this, params);
+        };
+        K.prototype = klass.prototype;
+
+        return new K();
+    };
 
     return _;
 })();

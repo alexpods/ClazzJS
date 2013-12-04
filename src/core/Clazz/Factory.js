@@ -80,6 +80,10 @@ _.extend(Factory.prototype, {
         return function self() {
             var result;
 
+            if (!(this instanceof self)) {
+                return _.construct(self, _.toArray(arguments));
+            }
+
             if (_.isFunction(this.__construct)) {
                 result = this.__construct.apply(this, _.toArray(arguments));
             }

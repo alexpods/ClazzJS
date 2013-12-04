@@ -86,6 +86,14 @@
             return arr[arr.length - 1];
         };
 
+        _.construct = function(klass, params) {
+            var K = function() {
+                return klass.apply(this, params);
+            };
+            K.prototype = klass.prototype;
+
+            return new K();
+        };
 
         return _;
     })();
@@ -668,6 +676,10 @@
             createClazz: function() {
                 return function self() {
                     var result;
+
+                    if (!(this instanceof self)) {
+                        return _.construct(self, _.toArray(arguments));
+                    }
 
                     if (_.isFunction(this.__construct)) {
                         result = this.__construct.apply(this, _.toArray(arguments));
@@ -1998,9 +2010,7 @@
             return {
                 clazz_methods: {
                     create: function() {
-                        // Dirty hack!!!! But I don't know better solution:(
-                        var a = arguments;
-                        var newEntity = new this(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9], a[10]);
+                        var newEntity = _.construct(this, _.toArray(arguments));
 
                         this.emit('object.create', newEntity);
 
