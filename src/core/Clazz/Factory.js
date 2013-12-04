@@ -80,10 +80,6 @@ _.extend(Factory.prototype, {
         return function self() {
             var result;
 
-            if (!(this instanceof self)) {
-                throw new Error('Use "new" to create new "' + self.__name + '" instance!');
-            }
-
             if (_.isFunction(this.__construct)) {
                 result = this.__construct.apply(this, _.toArray(arguments));
             }
