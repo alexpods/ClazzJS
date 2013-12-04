@@ -156,3 +156,7 @@ License
 Copyright (c) 2013 Aleksey Podskrebyshev. Licensed under the MIT license.
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/c6ca18dcee6db766b9db6ba80dd4ac59 "githalytics.com")](http://githalytics.com/alexpods/ClazzJS)
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/alexpods/clazzjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
