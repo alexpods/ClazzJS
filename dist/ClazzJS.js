@@ -1657,7 +1657,12 @@
                     var setters = this.__getSetters(property, true);
 
                     for (var i = 0, ii = setters.length; i < ii; ++i) {
-                        value = setters[i].call(this, value, fields);
+
+                        var result = setters[i].call(this, value, fields);
+
+                        if (!_.isUndefined(result)) {
+                            value = result;
+                        }
                     }
 
                     return value;
@@ -1717,7 +1722,11 @@
                     var getters = this.__getGetters(property, true);
 
                     for (var i = 0, ii = getters.length; i < ii; ++i) {
-                        value = getters[i].call(this, value, fields);
+                        var result = getters[i].call(this, value, fields);
+
+                        if (!_.isUndefined(result)) {
+                            value = result;
+                        }
                     }
 
                     return value;
