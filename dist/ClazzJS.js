@@ -1486,13 +1486,14 @@
                         container = this;
                     }
 
+                    var wasExisted = field in container;
                     var oldValue = container[field];
                     var newValue = this.__applySetters(property, value, fields);
 
                     container[field] = newValue;
 
                     if (this.__checkEmitEvent()) {
-                        this.__emitPropertySetted([property].concat(fields), oldValue, newValue);
+                        this.__emitPropertySetted([property].concat(fields), oldValue, newValue, wasExisted);
                     }
 
                     return this;
@@ -1550,7 +1551,7 @@
                     return this;
                 },
 
-                __emitPropertySetted: function(fields, newValue, oldValue) {
+                __emitPropertySetted: function(fields, newValue, oldValue, wasExisted) {
                     var prop, event, key, i, ii;
 
                     this.__checkEmitEvent(true);
@@ -1585,6 +1586,14 @@
 
                         this.__emitEvent('property.' + prop + '.' + event, newValue, oldValue);
                         this.__emitEvent('property.' + event, prop, newValue, oldValue);
+
+                        if (fields.length && !wasExisted) {
+                            prop = fields.slice(0, -1).join('.');
+                            key = _.last(fields);
+
+                            this.__emitEvent('property.' + prop + '.item_added', key, newValue);
+                            this.__emitEvent('property.item_added', prop, key, newValue);
+                        }
                     }
 
                     return this;
