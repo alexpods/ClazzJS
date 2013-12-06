@@ -23,6 +23,7 @@ Documentation
 
 1. [Installation](./docs/1.installation.md)
 2. [Clazz declaration](./docs/2.clazz_declaration.md)
+3. [Properties](./docs/3.properties.md)
 
 Example
 --------
