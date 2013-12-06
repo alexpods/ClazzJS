@@ -7,14 +7,14 @@ meta('Constraints', {
     process: function(object, constraints, property) {
         var self = this;
 
-        object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
-            return self.apply(value, constraints, property, this);
+        object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value, fields) {
+            return self.apply(value, constraints, property, fields, this);
         });
     },
 
-    apply: function(value, constraints, property, object) {
+    apply: function(value, constraints, property, fields, object) {
         for (var name in constraints) {
-            if (!constraints[name].call(object, value, property)) {
+            if (!constraints[name].call(object, value, property, fields)) {
                 throw new Error('Constraint "' + name + '" was failed!');
             }
         }

@@ -51,7 +51,6 @@ meta('Property', {
     _options: {
         type:        'Property/Type',
         default:     'Property/Default',
-        alias:       'Property/Alias',
         methods:     'Property/Methods',
         constraints: 'Property/Constraints',
         converters:  'Property/Converters',

@@ -1839,7 +1839,6 @@
             _options: {
                 type: 'Property/Type',
                 default: 'Property/Default',
-                alias: 'Property/Alias',
                 methods: 'Property/Methods',
                 constraints: 'Property/Constraints',
                 converters: 'Property/Converters',
@@ -1848,15 +1847,6 @@
             }
         });
         namespace('Property', 'meta', function(meta) {
-            meta('Alias', {
-
-                process: function(object, aliases, property) {
-                    if (aliases) {
-                        object.__setPropertyParam(property, 'aliases', [].concat(aliases));
-                    }
-                }
-
-            });
             meta('Constraints', {
 
                 SETTER_NAME: '__constraints__',
@@ -1866,14 +1856,14 @@
                 process: function(object, constraints, property) {
                     var self = this;
 
-                    object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
-                        return self.apply(value, constraints, property, this);
+                    object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value, fields) {
+                        return self.apply(value, constraints, property, fields, this);
                     });
                 },
 
-                apply: function(value, constraints, property, object) {
+                apply: function(value, constraints, property, fields, object) {
                     for (var name in constraints) {
-                        if (!constraints[name].call(object, value, property)) {
+                        if (!constraints[name].call(object, value, property, fields)) {
                             throw new Error('Constraint "' + name + '" was failed!');
                         }
                     }
@@ -1890,14 +1880,14 @@
                 process: function(object, converters, property) {
                     var self = this;
 
-                    object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
-                        return self.apply(value, converters, property, this);
+                    object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value, fields) {
+                        return self.apply(value, converters, property, fields, this);
                     });
                 },
 
-                apply: function(value, converters, property, object) {
+                apply: function(value, converters, property, fields, object) {
                     for (var name in converters) {
-                        value = converters[name].call(object, value, property);
+                        value = converters[name].call(object, value, property, fields);
                     }
                     return value;
                 }
@@ -1922,35 +1912,27 @@
             });
             meta('Methods', {
 
-                process: function(object, methods, property, aliases) {
+                process: function(object, methods, property) {
 
                     for (var i = 0, ii = methods.length; i < ii; ++i) {
                         this.addMethodToObject(methods[i], object, property);
                     }
-
-                    var aliases = object.__getPropertyParam(property, 'aliases') || [];
-
-                    for (var j = 0, jj = aliases.length; j < jj; ++j) {
-                        for (var i = 0, ii = methods.length; i < ii; ++i) {
-                            this.addMethodToObject(methods[i], object, property, aliases[j]);
-                        }
-                    }
                 },
 
-                addMethodToObject: function(name, object, property, alias) {
-                    var method = this.createMethod(name, property, alias);
+                addMethodToObject: function(name, object, property) {
+                    var method = this.createMethod(name, property);
                     object[method.name] = method.body;
                 },
 
-                createMethod: function(name, property, alias) {
+                createMethod: function(name, property) {
                     if (!(name in this._methods)) {
                         throw new Error('Method "' + name + '" does not exists!');
                     }
-                    var method = this._methods[name](property, alias);
+                    var method = this._methods[name](property);
 
                     if (_.isFunction(method)) {
                         method = {
-                            name: this.getMethodName(alias || property, name),
+                            name: this.getMethodName(property, name),
                             body: method
                         }
                     }
