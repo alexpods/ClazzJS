@@ -1,6 +1,9 @@
 meta('Events', {
 
-    process: function(object, events) {
+    process: function(object, metaData) {
+        var option = object.__isClazz ? 'clazz_events' : 'events';
+        var events = metaData[option] || {};
+
         object.__events = {};
 
         for (var event in events) {

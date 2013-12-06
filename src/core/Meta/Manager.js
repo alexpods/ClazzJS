@@ -19,10 +19,6 @@ _.extend(Manager.prototype, {
             processor = { process: processor }
         }
 
-        if (!('__name' in processor)) {
-            processor.__name = name;
-        }
-
         this._processors[name] = processor;
         return this;
     },

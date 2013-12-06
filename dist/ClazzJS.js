@@ -384,10 +384,6 @@
                     }
                 }
 
-                if (!('__name' in processor)) {
-                    processor.__name = name;
-                }
-
                 this._processors[name] = processor;
                 return this;
             },
@@ -876,11 +872,6 @@
             },
 
             _processors: {
-                clazz: {},
-                proto: {}
-            },
-
-            _optionProcessors: {
                 clazz: {
                     constants: 'Constants',
                     clazz_properties: 'Properties',
@@ -900,14 +891,6 @@
                     _.extend(clazz, this.clazz_interface);
                 }
 
-                var parent = metaData.parent;
-
-                if (parent) {
-                    if (!clazz.__isSubclazzOf(parent)) {
-                        throw new Error('Clazz "' + clazz.__name + '" must be subclazz of "' + parent.__isClazz ? parent.__name : parent + '"!');
-                    }
-                }
-
                 for (var objectType in this._objectTypes) {
                     var object = this._objectTypes[objectType](clazz);
 
@@ -917,44 +900,30 @@
                     }
                 }
 
-                for (var objectType in this._processors) {
+                clazz.__metaProcessors = metaData.meta_processors || {};
 
-                    var object = this._objectTypes[objectType](clazz);
-                    var processors = this._processors[objectType];
+                var parent = metaData.parent;
 
-                    for (var name in processors) {
-                        var processor = processors[name];
+                if (parent) {
+                    if (!clazz.__isSubclazzOf(parent)) {
+                        throw new Error('Clazz "' + clazz.__name + '" must be subclazz of "' + parent.__isClazz ? parent.__name : parent + '"!');
+                    }
+                }
 
-                        if (_.isString(processor)) {
-                            processor = meta(processor);
-                        }
+                var processors = clazz.__getMetaProcessors();
 
-                        if (processor.interface && !object.__isInterfaceImplemented(processor.__name)) {
-                            object.__implementInterface(processor.__name, processor.interface);
+                for (var type in processors) {
+
+                    var object = this._objectTypes[type](clazz);
+
+                    for (var name in processors[type]) {
+                        var processor = processors[type][name];
+
+                        if (processor.interface && !object.__isInterfaceImplemented(name)) {
+                            object.__implementInterface(name, processor.interface);
                         }
 
                         processor.process(object, metaData);
-                    }
-
-                }
-
-                for (var objectType in this._optionProcessors) {
-
-                    var object = this._objectTypes[objectType](clazz);
-                    var processors = this._optionProcessors[objectType];
-
-                    for (var option in processors) {
-                        var processor = processors[option];
-
-                        if (_.isString(processor)) {
-                            processor = meta(processor);
-                        }
-
-                        if (processor.interface && !object.__isInterfaceImplemented(processor.__name)) {
-                            object.__implementInterface(processor.__name, processor.interface);
-                        }
-
-                        processor.process(object, metaData[option] || {}, option);
                     }
                 }
             },
@@ -981,15 +950,41 @@
                 return this;
             },
 
+            getProcessors: function(objectType) {
+                var processors = this._processors;
+
+                for (var type in processors) {
+                    if (objectType && objectType !== type) {
+                        continue;
+                    }
+                    for (var name in processors[type]) {
+                        if (_.isString(processors[type][name])) {
+                            processors[type][name] = meta(processors[type][name]);
+                        }
+                    }
+                }
+
+                return !_.isUndefined(objectType) ? processors[objectType] : processors;
+            },
+
+            setProcessors: function(processors) {
+                for (var type in processors) {
+                    for (var name in processors[type]) {
+                        this.setProcessor(type, name, processors[type][name]);
+                    }
+                }
+                return this;
+            },
+
             hasProcessor: function(objectType, name) {
                 return name in this._processors[objectType];
             },
 
-            addProcessor: function(objectType, processor) {
-                if (processor.__name in this._processors[objectType]) {
-                    throw new Error('Processor "' + processor.__name + '" is already exists for object type "' + objectType + '"!');
+            setProcessor: function(objectType, name, processor) {
+                if (name in this._processors[objectType]) {
+                    throw new Error('Processor "' + name + '" is already exists for object type "' + objectType + '"!');
                 }
-                this._processors[objectType][processor.__name] = processor;
+                this._processors[objectType][name] = processor;
                 return this;
             },
 
@@ -998,20 +993,6 @@
                     throw new Error('Processor "' + name + '" does not exists for object type "' + objectType + '"!');
                 }
                 delete this._processors[objectType][name];
-                return this;
-            },
-
-            hasOptionProcessor: function(objectType, option) {
-                return option in this._optionProcessors[objectType][option];
-            },
-
-            addOptionProcessor: function(objectType, option, processor) {
-                this._optionProcessors[objectType][option] = processor;
-                return this;
-            },
-
-            removeOptionProcessor: function(objectType, option) {
-                delete this._optionProcessors[objectType][option];
                 return this;
             },
 
@@ -1073,35 +1054,43 @@
                     var propertyValues = {};
 
                     for (var i = 0, ii = propertyContainers.length; i < ii; ++i) {
-                        collectValues(propertyValues, propertyContainers[i], level || 1, fields);
+                        this.__collectValues(propertyValues, propertyContainers[i], level || 1, fields);
                     }
 
                     return propertyValues;
+                },
 
-                    function collectValues(collector, container, level, fields) {
-                        fields = [].concat(fields);
+                __collectValues: function self(collector, container, level, fields, reverse) {
+                    fields = [].concat(fields || []);
 
-                        for (var name in container) {
-                            if (fields[0] && (name !== fields[0])) {
-                                continue;
+                    for (var name in container) {
+                        if (fields[0] && (name !== fields[0])) {
+                            continue;
+                        }
+
+                        if (level > 1 && Object.prototype.toString.call(container[name]) === '[object Object]') {
+                            if (!(name in collector)) {
+                                collector[name] = {};
                             }
-
-                            if (level > 1 && Object.prototype.toString.call(container[name]) === '[object Object]') {
-                                if (!(name in collector)) {
-                                    collector[name] = {};
-                                }
-                                collectValues(collector[name], container[name], level - 1, fields.slice(1));
-                            } else if (!(name in collector)) {
-                                collector[name] = container[name];
-                            }
+                            self(collector[name], container[name], level - 1, fields.slice(1));
+                        } else if (reverse || (!(name in collector))) {
+                            collector[name] = container[name];
                         }
                     }
+                    return collector;
+                },
+
+                __getMetaProcessors: function() {
+                    var object = this.__isClazz ? this : this.__clazz;
+                    return this.__collectValues(object.__collectAllPropertyValues('__metaProcessors', 2), meta('Base').getProcessors());
                 }
             }
         });
         meta('Constants', {
 
-            process: function(object, constants) {
+            process: function(object, metaData) {
+                var constants = metaData.constants || {};
+
                 object.__constants = {};
 
                 for (var constant in constants) {
@@ -1160,7 +1149,10 @@
         });
         meta('Events', {
 
-            process: function(object, events) {
+            process: function(object, metaData) {
+                var option = object.__isClazz ? 'clazz_events' : 'events';
+                var events = metaData[option] || {};
+
                 object.__events = {};
 
                 for (var event in events) {
@@ -1231,7 +1223,10 @@
         });
         meta('Methods', {
 
-            process: function(object, methods) {
+            process: function(object, metaData) {
+                var option = object.__isClazz ? 'clazz_methods' : 'methods';
+                var methods = metaData[option] || {};
+
                 for (var method in methods) {
                     if (!_.isFunction(methods[method])) {
                         throw new Error('Method "' + method + '" must be a function!');
@@ -1245,7 +1240,10 @@
 
             _propertyMetaProcessor: 'Property',
 
-            process: function(object, properties) {
+            process: function(object, metaData) {
+                var option = object.__isClazz ? 'clazz_properties' : 'properties';
+                var properties = metaData[option] || {};
+
                 object.__properties = {};
                 object.__setters = {};
                 object.__getters = {};

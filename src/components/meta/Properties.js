@@ -2,7 +2,10 @@ meta('Properties', {
 
     _propertyMetaProcessor: 'Property',
 
-    process: function(object, properties) {
+    process: function(object, metaData) {
+        var option     = object.__isClazz ? 'clazz_properties' : 'properties';
+        var properties = metaData[option] || {};
+
         object.__properties = {};
         object.__setters    = {};
         object.__getters    = {};

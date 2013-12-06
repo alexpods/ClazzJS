@@ -1,6 +1,8 @@
 meta('Constants', {
 
-    process: function(object, constants) {
+    process: function(object, metaData) {
+        var constants = metaData.constants || {};
+
         object.__constants = {};
 
         for (var constant in constants) {
