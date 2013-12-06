@@ -1927,16 +1927,28 @@
                     var method = this._methods[name](property, alias);
 
                     if (_.isFunction(method)) {
-
-                        var propertyName = typeof alias !== 'undefined' ? alias : property;
-
                         method = {
-                            name: name + propertyName[0].toUpperCase() + propertyName.slice(1),
+                            name: this.getMethodName(alias || property, name),
                             body: method
                         }
                     }
-
                     return method;
+                },
+
+                getMethodName: function(propertyName, method) {
+
+                    var prefix = '';
+
+                    propertyName = propertyName.replace(/^(_+)/g, function(str) {
+                        prefix = str;
+                        return '';
+                    });
+
+                    var methodName = 'is' === method && 0 === propertyName.indexOf('is') ? propertyName : method + propertyName[0].toUpperCase() + propertyName.slice(1);
+
+
+                    return prefix + methodName;
+
                 },
 
                 addMethod: function(name, callback) {
@@ -1974,18 +1986,13 @@
                             return this.__setPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []), value);;
                         };
                     },
-                    is: function(property, alias) {
-                        var propertyName = !_.isUndefined(alias) ? alias : property;
-
-                        return {
-                            name: 0 !== propertyName.indexOf('is') ? 'is' + propertyName[0].toUpperCase() + propertyName.slice(1) : propertyName,
-                            body: function(fields, value) {
-                                if (_.isUndefined(value)) {
-                                    value = fields;
-                                    fields = undefined;
-                                }
-                                return this.__isPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []), value);
+                    is: function(property) {
+                        return function(fields, value) {
+                            if (_.isUndefined(value)) {
+                                value = fields;
+                                fields = undefined;
                             }
+                            return this.__isPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []), value);
                         }
                     },
                     has: function(property) {
