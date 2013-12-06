@@ -30,7 +30,7 @@ Example
 Main goal of this example is to give you a common idea about ClazzJS. It's not discover all features of the library. Online working version of this example is available on plnkr: [http://plnkr.co/edit/c5Xveb](http://plnkr.co/edit/c5Xveb). Feel free to play around with it!
 
 
-Declare of common 'Person' clazz:
+Declaration of common 'Person' clazz:
 ```js
 clazz("Person", {
     constants: {
@@ -157,6 +157,8 @@ License
 Copyright (c) 2013 Aleksey Podskrebyshev. Licensed under the MIT license.
 
 [![githalytics.com alpha](https://cruel-carlota.pagodabox.com/5d748264f9d97780c4564ce024981317 "githalytics.com")](http://githalytics.com/alexpods/clazzjs)
+
+[![githalytics.com alpha](https://cruel-carlota.pagodabox.com/b9767ce02bfc69631cb8ffc6e089473c "githalytics.com")](http://githalytics.com/alexpods/clazzjs)
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/alexpods/clazzjs/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
 
