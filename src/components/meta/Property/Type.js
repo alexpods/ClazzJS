@@ -7,12 +7,25 @@ meta('Type', {
     process: function(object, type, property) {
         var self = this;
 
-        object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
-            return self.apply(value, type, property, object);
+        object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value, fields) {
+
+            var fieldsType = type || {};
+
+            for (var i = 0, ii = fields.length; i < ii; ++i) {
+
+                var params = fieldsType[1] || {};
+
+                if (!('element' in params)) {
+                    return value;
+                }
+                fieldsType = params.element;
+            }
+
+            return self.apply(value, fieldsType, property, fields, object);
         });
     },
 
-    apply: function(value, type, property, object) {
+    apply: function(value, type, property, fields, object) {
         if (_.isUndefined(value) || _.isNull(value)) {
             return value;
         }
@@ -27,7 +40,7 @@ meta('Type', {
             throw new Error('Property type "' + type + '" does not exists!');
         }
 
-        return this._types[type].call(this, value, params, property, object);
+        return this._types[type].call(this, value, params, property, fields, object);
     },
 
     addType: function(name, callback) {
@@ -104,43 +117,41 @@ meta('Type', {
 
             return value;
         },
-        array: function(value, params, property) {
-            var i, ii, type;
+        array: function(value, params, property, fields, object) {
 
             if (_.isString(value)) {
                 value = value.split(params.delimiter || this._defaultArrayDelimiter);
             }
+
             if ('element' in params) {
-                type = [].concat(params.element);
-                for (i = 0, ii = value.length; i < ii; ++i) {
-                    value[i] = this.apply.call(this, value[i], type, property + '.' + i);
+                for (var i = 0, ii = value.length; i < ii; ++i) {
+                    value[i] = this.apply(value[i], params.element, property, fields.concat(i), object);
                 }
             }
+
             return value;
         },
-        hash: function(value, params, property) {
-            var key, type;
+        hash: function(value, params, property, fields, object) {
 
             if (!_.isObject(value)) {
-                throw new Error('Value of property "' + property +'" must have object type!');
+                throw new Error('Value of property "' + [property].concat(fields).join('.') +'" must have object type!');
             }
 
             if ('keys' in params) {
-                for (key in value) {
+                for (var key in value) {
                     if (!(key in params.keys)) {
-                        throw new Error('Unsupported hash key "' + key + '" for property "' + property + '"!');
+                        throw new Error('Unsupported hash key "' + key + '" for property "' + [property].concat(fields).join('.') + '"!');
                     }
                 }
             }
             if ('element' in params) {
-                type = [].concat(params.element);
-                for (key in value) {
-                    value[key] = this.apply.call(this, value[key], type, property + '.' + key);
+                for (var key in value) {
+                    value[key] = this.apply.call(this, value[key], params.element, property, fields.concat(key), object);
                 }
             }
             return value;
         },
-        object: function(value, params, property, object) {
+        object: function(value, params, property, fields, object) {
 
             if (!_.isObject(value)) {
                 throw new Error('Value of property "' + property + '" must have an object type!');

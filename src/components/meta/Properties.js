@@ -106,21 +106,13 @@ meta('Properties', {
 
             for (var i = 0, ii = fields.length; i < ii; ++i) {
 
-                var field        = fields[i];
-                var fullProperty = [property].concat(fields.slice(0, i+1));
-                var getter       = 'get' + field[0].toUpperCase() + field.slice(1);
+                var field = fields[i];
 
-                if ((getter in value) && _.isFunction(value[getter])) {
-                    value = value[getter]();
-                }
-                else if (field in value) {
-                    value = value[field];
-                }
-                else {
-                    throw new Error('Property "' + fullProperty.join('.') + '" does not exists!');
+                if (!(field in value)) {
+                    throw new Error('Property "' + [property].concat(fields.slice(0, i+1)).join('.') + '" does not exists!');
                 }
 
-                value = this.__applyGetters(fullProperty, value);
+                value = this.__applyGetters(property, value[field], fields.slice(0, i+1));
             }
 
             return value;
@@ -143,11 +135,12 @@ meta('Properties', {
             for (var i = 0, ii = fields.length; i < ii; ++i) {
 
                 var field = fields[i];
+
                 if (!(field in value)) {
                     return false;
                 }
 
-                value = this.__applyGetters([property].concat(fields.slice(0, i+1)), value[field]);
+                value = this.__applyGetters(property, value[field], fields.slice(0, i+1));
             }
 
             return !_.isUndefined(value) && !_.isNull(value);
@@ -260,7 +253,7 @@ meta('Properties', {
             }
 
             var oldValue = container[field];
-            var newValue = this.__applySetters([property].concat(fields), value);
+            var newValue = this.__applySetters(property, value, fields);
 
             container[field] = newValue;
 
@@ -383,7 +376,11 @@ meta('Properties', {
                 callback = weight;
                 weight   = 0;
             }
-            if (!_.isFunction(callback)) {
+            if (_.isArray(callback)) {
+                weight   = callback[0];
+                callback = callback[1];
+            }
+            else if (!_.isFunction(callback)) {
                 throw new Error('Setter callback must be a function!');
             }
             if (!(property in this.__setters)) {
@@ -422,11 +419,13 @@ meta('Properties', {
             return sortedSetters;
         },
 
-        __applySetters: function(property, value) {
+        __applySetters: function(property, value, fields) {
+            fields = fields || [];
+
             var setters = this.__getSetters(property, true);
 
             for (var i = 0, ii = setters.length; i < ii; ++i) {
-                value = setters[i].call(this, value);
+                value = setters[i].call(this, value, fields);
             }
 
             return value;
@@ -437,7 +436,11 @@ meta('Properties', {
                 callback = weight;
                 weight   = 0;
             }
-            if (!_.isFunction(callback)) {
+            if (_.isArray(callback)) {
+                weight   = callback[0];
+                callback = callback[1];
+            }
+            else if (!_.isFunction(callback)) {
                 throw new Error('Getter callback must be a function!');
             }
             if (!(property in this.__getters)) {
@@ -476,11 +479,12 @@ meta('Properties', {
             return sortedGetters;
         },
 
-        __applyGetters: function(property, value) {
+        __applyGetters: function(property, value, fields) {
+            fields = fields || [];
             var getters = this.__getGetters(property, true);
 
             for (var i = 0, ii = getters.length; i < ii; ++i) {
-                value = getters[i].call(this, value);
+                value = getters[i].call(this, value, fields);
             }
 
             return value;

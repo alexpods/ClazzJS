@@ -1345,18 +1345,12 @@
                     for (var i = 0, ii = fields.length; i < ii; ++i) {
 
                         var field = fields[i];
-                        var fullProperty = [property].concat(fields.slice(0, i + 1));
-                        var getter = 'get' + field[0].toUpperCase() + field.slice(1);
 
-                        if ((getter in value) && _.isFunction(value[getter])) {
-                            value = value[getter]();
-                        } else if (field in value) {
-                            value = value[field];
-                        } else {
-                            throw new Error('Property "' + fullProperty.join('.') + '" does not exists!');
+                        if (!(field in value)) {
+                            throw new Error('Property "' + [property].concat(fields.slice(0, i + 1)).join('.') + '" does not exists!');
                         }
 
-                        value = this.__applyGetters(fullProperty, value);
+                        value = this.__applyGetters(property, value[field], fields.slice(0, i + 1));
                     }
 
                     return value;
@@ -1379,11 +1373,12 @@
                     for (var i = 0, ii = fields.length; i < ii; ++i) {
 
                         var field = fields[i];
+
                         if (!(field in value)) {
                             return false;
                         }
 
-                        value = this.__applyGetters([property].concat(fields.slice(0, i + 1)), value[field]);
+                        value = this.__applyGetters(property, value[field], fields.slice(0, i + 1));
                     }
 
                     return !_.isUndefined(value) && !_.isNull(value);
@@ -1492,7 +1487,7 @@
                     }
 
                     var oldValue = container[field];
-                    var newValue = this.__applySetters([property].concat(fields), value);
+                    var newValue = this.__applySetters(property, value, fields);
 
                     container[field] = newValue;
 
@@ -1612,7 +1607,10 @@
                         callback = weight;
                         weight = 0;
                     }
-                    if (!_.isFunction(callback)) {
+                    if (_.isArray(callback)) {
+                        weight = callback[0];
+                        callback = callback[1];
+                    } else if (!_.isFunction(callback)) {
                         throw new Error('Setter callback must be a function!');
                     }
                     if (!(property in this.__setters)) {
@@ -1653,11 +1651,13 @@
                     return sortedSetters;
                 },
 
-                __applySetters: function(property, value) {
+                __applySetters: function(property, value, fields) {
+                    fields = fields || [];
+
                     var setters = this.__getSetters(property, true);
 
                     for (var i = 0, ii = setters.length; i < ii; ++i) {
-                        value = setters[i].call(this, value);
+                        value = setters[i].call(this, value, fields);
                     }
 
                     return value;
@@ -1668,7 +1668,10 @@
                         callback = weight;
                         weight = 0;
                     }
-                    if (!_.isFunction(callback)) {
+                    if (_.isArray(callback)) {
+                        weight = callback[0];
+                        callback = callback[1];
+                    } else if (!_.isFunction(callback)) {
                         throw new Error('Getter callback must be a function!');
                     }
                     if (!(property in this.__getters)) {
@@ -1709,11 +1712,12 @@
                     return sortedGetters;
                 },
 
-                __applyGetters: function(property, value) {
+                __applyGetters: function(property, value, fields) {
+                    fields = fields || [];
                     var getters = this.__getGetters(property, true);
 
                     for (var i = 0, ii = getters.length; i < ii; ++i) {
-                        value = getters[i].call(this, value);
+                        value = getters[i].call(this, value, fields);
                     }
 
                     return value;
@@ -2032,12 +2036,25 @@
                 process: function(object, type, property) {
                     var self = this;
 
-                    object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
-                        return self.apply(value, type, property, object);
+                    object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value, fields) {
+
+                        var fieldsType = type || {};
+
+                        for (var i = 0, ii = fields.length; i < ii; ++i) {
+
+                            var params = fieldsType[1] || {};
+
+                            if (!('element' in params)) {
+                                return value;
+                            }
+                            fieldsType = params.element;
+                        }
+
+                        return self.apply(value, fieldsType, property, fields, object);
                     });
                 },
 
-                apply: function(value, type, property, object) {
+                apply: function(value, type, property, fields, object) {
                     if (_.isUndefined(value) || _.isNull(value)) {
                         return value;
                     }
@@ -2052,7 +2069,7 @@
                         throw new Error('Property type "' + type + '" does not exists!');
                     }
 
-                    return this._types[type].call(this, value, params, property, object);
+                    return this._types[type].call(this, value, params, property, fields, object);
                 },
 
                 addType: function(name, callback) {
@@ -2128,43 +2145,41 @@
 
                         return value;
                     },
-                    array: function(value, params, property) {
-                        var i, ii, type;
+                    array: function(value, params, property, fields, object) {
 
                         if (_.isString(value)) {
                             value = value.split(params.delimiter || this._defaultArrayDelimiter);
                         }
+
                         if ('element' in params) {
-                            type = [].concat(params.element);
-                            for (i = 0, ii = value.length; i < ii; ++i) {
-                                value[i] = this.apply.call(this, value[i], type, property + '.' + i);
+                            for (var i = 0, ii = value.length; i < ii; ++i) {
+                                value[i] = this.apply(value[i], params.element, property, fields.concat(i), object);
                             }
                         }
+
                         return value;
                     },
-                    hash: function(value, params, property) {
-                        var key, type;
+                    hash: function(value, params, property, fields, object) {
 
                         if (!_.isObject(value)) {
-                            throw new Error('Value of property "' + property + '" must have object type!');
+                            throw new Error('Value of property "' + [property].concat(fields).join('.') + '" must have object type!');
                         }
 
                         if ('keys' in params) {
-                            for (key in value) {
+                            for (var key in value) {
                                 if (!(key in params.keys)) {
-                                    throw new Error('Unsupported hash key "' + key + '" for property "' + property + '"!');
+                                    throw new Error('Unsupported hash key "' + key + '" for property "' + [property].concat(fields).join('.') + '"!');
                                 }
                             }
                         }
                         if ('element' in params) {
-                            type = [].concat(params.element);
-                            for (key in value) {
-                                value[key] = this.apply.call(this, value[key], type, property + '.' + key);
+                            for (var key in value) {
+                                value[key] = this.apply.call(this, value[key], params.element, property, fields.concat(key), object);
                             }
                         }
                         return value;
                     },
-                    object: function(value, params, property, object) {
+                    object: function(value, params, property, fields, object) {
 
                         if (!_.isObject(value)) {
                             throw new Error('Value of property "' + property + '" must have an object type!');
