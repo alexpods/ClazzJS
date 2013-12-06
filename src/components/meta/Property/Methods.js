@@ -61,13 +61,17 @@ meta('Methods', {
 
     _methods: {
         get: function(property) {
-            return function(/* fields */) {
-                return this.__getPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+            return function(fields) {
+                return this.__getPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []));
             };
         },
         set: function(property) {
-            return function(/* fields, value */) {
-                return this.__setPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+            return function(fields, value) {
+                if (_.isUndefined(value)) {
+                    value  = fields;
+                    fields = undefined;
+                }
+                return this.__setPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []), value);;
             };
         },
         is: function(property, alias) {
@@ -75,24 +79,28 @@ meta('Methods', {
 
             return {
                 name: 0 !== propertyName.indexOf('is') ? 'is' + propertyName[0].toUpperCase() + propertyName.slice(1) : propertyName,
-                body: function(/* fields, value */) {
-                    return this.__isPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                body: function(fields, value) {
+                    if (_.isUndefined(value)) {
+                        value  = fields;
+                        fields = undefined;
+                    }
+                    return this.__isPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []), value);
                 }
             }
         },
         has: function(property) {
-            return function(/* fields */) {
-                return this.__hasPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+            return function(fields) {
+                return this.__hasPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []));
             }
         },
         clear: function(property) {
-            return function(/* fields */) {
-                return this.__clearPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+            return function(fields) {
+                return this.__clearPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []));
             };
         },
         remove: function(property) {
-            return function(/* fields */) {
-                return this.__removePropertyValue.apply(this , [property].concat(_.toArray(arguments)));
+            return function(fields) {
+                return this.__removePropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []));
             }
         }
     }

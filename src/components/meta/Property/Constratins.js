@@ -2,10 +2,12 @@ meta('Constraints', {
 
     SETTER_NAME: '__constraints__',
 
+    SETTER_WEIGHT: -100,
+
     process: function(object, constraints, property) {
         var self = this;
 
-        object.__addSetter(property, this.SETTER_NAME, function(value) {
+        object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
             return self.apply(value, constraints, property, this);
         });
     },

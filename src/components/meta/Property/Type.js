@@ -2,10 +2,12 @@ meta('Type', {
 
     SETTER_NAME: '__type__',
 
+    SETTER_WEIGHT: -1000,
+
     process: function(object, type, property) {
         var self = this;
 
-        object.__addSetter(property, this.SETTER_NAME, function(value) {
+        object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
             return self.apply(value, type, property, object);
         });
     },

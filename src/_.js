@@ -12,6 +12,10 @@ var _ = (function() {
         return obj === Object(obj);
     };
 
+    _.isSimpleObject = function(obj) {
+        return toString.call(obj) === '[object Object]';
+    };
+
     _.isNull = function(obj) {
         return obj === null;
     };
@@ -23,7 +27,7 @@ var _ = (function() {
                 return toString.call(obj) === '[object ' + name + ']';
             }
         })(isFunctions[i]);
-    };
+    }
 
     _.toArray = function(obj) {
         return slice.call(obj);

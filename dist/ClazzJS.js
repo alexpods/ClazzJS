@@ -49,6 +49,10 @@
             return obj === Object(obj);
         };
 
+        _.isSimpleObject = function(obj) {
+            return toString.call(obj) === '[object Object]';
+        };
+
         _.isNull = function(obj) {
             return obj === null;
         };
@@ -60,7 +64,7 @@
                     return toString.call(obj) === '[object ' + name + ']';
                 }
             })(isFunctions[i]);
-        };
+        }
 
         _.toArray = function(obj) {
             return slice.call(obj);
@@ -1254,10 +1258,12 @@
             },
 
             getPropertyMetaProcessor: function() {
-                if (_.isString(this._propertyMetaProcessor)) {
-                    this._propertyMetaProcessor = meta(this._propertyMetaProcessor);
+                var processor = this._propertyMetaProcessor;
+
+                if (_.isString(processor)) {
+                    this._propertyMetaProcessor = meta(processor);
                 }
-                return this._propertyMetaProcessor;
+                return processor;
             },
 
             setPropertyMetaProcessor: function(metaProcessor) {
@@ -1306,8 +1312,6 @@
                         _.extend(params, param);
                     }
 
-                    property = this.__adjustPropertyName(property);
-
                     if (!(property in this.__properties)) {
                         this.__properties[property] = {};
                     }
@@ -1323,221 +1327,398 @@
                 },
 
                 __hasProperty: function(property) {
-                    property = this.__adjustPropertyName(property);
                     return ('_' + property) in this;
                 },
 
-                __adjustPropertyName: function(name) {
-                    return name.replace(/(?:_)\w/, function(match) {
-                        return match[1].toUpperCase();
-                    });
-                },
+                __getPropertyValue: function(fields) {
 
-                __getPropertyValue: function(property /* fields.. */ ) {
+                    if (_.isString(fields)) {
+                        fields = fields.split('.');
+                    }
 
-                    property = this.__adjustPropertyName(property);
-                    var fields = _.toArray(arguments).slice(1);
+                    var property = fields.shift();
 
-                    if (!(('_' + property) in this)) {
+                    if (!this.__hasProperty(property)) {
                         throw new Error('Property "' + property + '" does not exists!');
                     }
 
-                    var value = this['_' + property];
-
-                    var getters = this.__getGetters(property);
-
-                    for (var name in getters) {
-                        value = getters[name].call(this, value);
-                    }
+                    var value = this.__applyGetters(property, this['_' + property]);
 
                     for (var i = 0, ii = fields.length; i < ii; ++i) {
-                        if (!(fields[i]) in value) {
-                            {
-                                throw new Error('Property "' + [property].concat(fields.slice(0, i)).join('.') + '" does not exists!');
-                            }
+
+                        var field = fields[i];
+                        var fullProperty = [property].concat(fields.slice(0, i + 1));
+                        var getter = 'get' + field[0].toUpperCase() + field.slice(1);
+
+                        if ((getter in value) && _.isFunction(value[getter])) {
+                            value = value[getter]();
+                        } else if (field in value) {
+                            value = value[field];
+                        } else {
+                            throw new Error('Property "' + fullProperty.join('.') + '" does not exists!');
                         }
-                        value = value[fields[i]];
+
+                        value = this.__applyGetters(fullProperty, value);
                     }
 
                     return value;
                 },
 
-                __hasPropertyValue: function(property /* fields... */ ) {
+                __hasPropertyValue: function(fields) {
 
-                    property = this.__adjustPropertyName(property);
-                    var fields = _.toArray(arguments).slice(1);
+                    if (_.isString(fields)) {
+                        fields = fields.split('.');
+                    }
 
-                    var value = this.__getPropertyValue(property);
+                    var property = fields.shift();
+
+                    if (!this.__hasProperty(property)) {
+                        throw new Error('Property "' + property + '" does not exists!');
+                    }
+
+                    var value = this.__applyGetters(property, this['_' + property]);
+
                     for (var i = 0, ii = fields.length; i < ii; ++i) {
-                        if (!(fields[i] in value)) {
+
+                        var field = fields[i];
+                        if (!(field in value)) {
                             return false;
                         }
+
+                        value = this.__applyGetters([property].concat(fields.slice(0, i + 1)), value[field]);
                     }
 
                     return !_.isUndefined(value) && !_.isNull(value);
                 },
 
 
-                __isPropertyValue: function(property /* fields.. , compareValue */ ) {
-
-                    var fields = _.toArray(arguments).slice(1, -1);
-                    var compareValue = arguments.length > 1 ? _.last(arguments) : undefined;
-                    var value = this.__getPropertyValue.apply(this, [property].concat(fields));
-
+                __isPropertyValue: function(fields, compareValue) {
+                    var value = this.__getPropertyValue(fields);
                     return !_.isUndefined(compareValue) ? value === compareValue : !! value;
                 },
 
-                __clearPropertyValue: function(property /* fields */ ) {
-
-                    property = this.__adjustPropertyName(property);
-                    var fields = _.toArray(arguments).slice(1);
-
-                    var container = fields.length ? this.__getPropertyValue.apply(this, [property].concat(fields.slice(0, -1))) : this;
-                    var field = fields.length ? _.last(fields) : '_' + property;
-
-                    if (!(field in container)) {
-                        throw new Error('Property "' + [property].concat(fields) + '" does not exists!');
+                __clearPropertyValue: function(fields) {
+                    if (_.isString(fields)) {
+                        fields = fields.split('.');
                     }
 
-                    var oldValue = container[field];
-                    var newValue = undefined;
-
-                    if (oldValue.constructor === {}.constructor) {
-                        newValue = {};
-                    } else if (_.isArray(oldValue)) {
-                        newValue = [];
-                    }
-
-                    container[field] = newValue;
-
-                    // Event emitting
-                    if (_.isFunction(this.__emitEvent)) {
-
-                        if (oldValue.constructor === {}.constructor) {
-                            for (var key in oldValue) {
-                                this.__emitEvent('property.' + [property].concat(fields).join('.') + '.item_removed', key, oldValue[key]);
-                                this.__emitEvent('property.' + [property].concat(fields, key).join('.') + '.removed', oldValue[key]);
-                            }
-                        } else if (_.isArray(oldValue)) {
-                            for (var i = 0, ii = oldValue.length; i < ii; ++i) {
-                                this.__emitEvent('property.' + [property].concat(fields).join('.') + '.item_removed', i, oldValue[i]);
-                                this.__emitEvent('property.' + [property].concat(fields, i).join('.') + '.removed', oldValue[i]);
-                            }
-                        }
-
-                        this.__emitEvent('property.cleared', fields.length ? [property].concat(fields) : property, oldValue);
-                        this.__emitEvent('property.' + [property].concat(fields).join('.') + '.cleared', oldValue);
-                    }
-
-                    return this;
-                },
-
-                __removePropertyValue: function(property /* fields */ ) {
-
-                    property = this.__adjustPropertyName(property);
-                    var fields = _.toArray(arguments).slice(1);
-
-                    var container = fields.length ? this.__getPropertyValue.apply(this, [property].concat(fields.slice(0, -1))) : this;
-                    var field = fields.length ? _.last(fields) : '_' + property;
-
-                    if (!(field in container)) {
-                        throw new Error('Property "' + [property].concat(fields) + '" does not exists!');
-                    }
-
-                    var oldValue = container[field];
-                    delete container[field];
-
-                    // Event emitting
-                    if (_.isFunction(this.__emitEvent)) {
-                        this.__emitEvent('property.removed', fields.length ? [property].concat(fields) : property, oldValue);
-                        this.__emitEvent('property.' + [property].concat(fields).join('.') + '.removed', oldValue);
-                    }
-
-                    return this;
-                },
-
-                __setPropertyValue: function(property /* fields.. , value */ ) {
-
-                    property = this.__adjustPropertyName(property);
+                    var property = fields.shift();
 
                     if (!this.__hasProperty(property)) {
                         throw new Error('Property "' + property + '" does not exists!');
                     }
-                    var fields = _.toArray(arguments).slice(1, -1);
-                    var value = _.last(arguments);
 
-                    var oldValue;
+                    var field, container;
 
                     if (fields.length) {
+                        field = _.last(fields);
+                        container = this.__getPropertyValue([property].concat(fields).slice(0, -1));
 
-                        var container = this;
-
-                        fields.unshift('_' + property);
-                        var field = fields.pop();
-
-                        for (var i = 0, ii = fields.length; i < ii; ++i) {
-                            if (_.isUndefined(container[fields[i]])) {
-                                container[fields[i]] = {};
-                            }
-                            container = container[fields[i]];
+                        if (!(field in container)) {
+                            throw new Error('Property "' + [property].concat(fields).join('.') + '" does not exists!');
                         }
-
-                        oldValue = container[field];
-                        container[field] = value;
-
                     } else {
-                        var setters = this.__getSetters(property);
-
-                        for (var name in setters) {
-                            value = setters[name].call(this, value);
-                        }
-                        oldValue = this['_' + property];
-                        this['_' + property] = value;
+                        field = '_' + property;
+                        container = this;
                     }
 
-                    // Event emitting
-                    if (_.isFunction(this.__emitEvent)) {
-                        property = [property].concat(fields).join('.');
+                    var oldValue = container[field];
 
-                        this.__emitEvent('property.changed', property, value, oldValue);
-                        this.__emitEvent('property.' + property + '.changed', value, oldValue);
+                    container[field] = (_.isSimpleObject(oldValue) && {}) || (_.isArray && []) || undefined;
+
+                    if (this.__checkEmitEvent()) {
+                        this.__emitPropertyCleared([property].concat(fields), oldValue);
                     }
 
                     return this;
                 },
 
-                __addSetter: function(property, name, callback) {
+                __removePropertyValue: function(fields) {
+                    if (_.isString(fields)) {
+                        fields = fields.split('.');
+                    }
+
+                    var property = fields.shift();
+
+                    if (!this.__hasProperty(property)) {
+                        throw new Error('Property "' + property + '" does not exists!');
+                    }
+
+                    var field, container;
+
+                    if (fields.length) {
+                        field = _.last(fields);
+                        container = this.__getPropertyValue([property].concat(fields).slice(0, -1));
+
+                        if (!(field in container)) {
+                            throw new Error('Property "' + [property].concat(fields).join('.') + '" does not exists!');
+                        }
+                    } else {
+                        field = '_' + property;
+                        container = this;
+                    }
+
+                    var oldValue = container[field];
+
+                    if (fields.length) {
+                        delete container[field]
+                    } else {
+                        container[field] = undefined;
+                    }
+
+                    if (this.__checkEmitEvent()) {
+                        this.__emitPropertyRemoved([property].concat(fields), oldValue);
+                    }
+                    return this;
+                },
+
+                __setPropertyValue: function(fields, value) {
+                    if (_.isString(fields)) {
+                        fields = fields.split('.');
+                    }
+
+                    var property = fields.shift();
+
+                    if (!this.__hasProperty(property)) {
+                        throw new Error('Property "' + property + '" does not exists!');
+                    }
+
+                    var field, container;
+
+                    if (fields.length) {
+                        field = _.last(fields);
+                        container = this.__getPropertyValue([property].concat(fields).slice(0, -1));
+                    } else {
+                        field = '_' + property;
+                        container = this;
+                    }
+
+                    var oldValue = container[field];
+                    var newValue = this.__applySetters([property].concat(fields), value);
+
+                    container[field] = newValue;
+
+                    if (this.__checkEmitEvent()) {
+                        this.__emitPropertySetted([property].concat(fields), oldValue, newValue);
+                    }
+
+                    return this;
+                },
+
+                __emitPropertyRemoved: function(fields, oldValue) {
+                    var prop, key;
+
+                    this.__checkEmitEvent(true);
+
+                    if (_.isString(fields)) {
+                        fields = fields.split('.');
+                    }
+
+                    if (fields.length) {
+                        prop = fields.slice(0, -1).join('.');
+                        key = _.last(fields);
+
+                        this.__emitEvent('property.' + prop + '.item_removed', key, oldValue);
+                        this.__emitEvent('property.item_removed', prop, key, oldValue);
+                    }
+
+                    prop = fields.join('.');
+
+                    this.__emitEvent('property.' + prop + '.removed', oldValue);
+                    this.__emitEvent('property.removed', prop, oldValue);
+
+                    return this;
+                },
+
+                __emitPropertyCleared: function(fields, oldValue) {
+                    var prop, key, i, ii;
+
+                    this.__checkEmitEvent(true);
+
+                    if (_.isString(fields)) {
+                        fields = fields.split('.');
+                    }
+
+                    if (_.isSimpleObject(oldValue)) {
+                        for (key in oldValue) {
+                            this.__emitPropertyRemoved(fields.concat(key), oldValue[key]);
+                        }
+                    } else if (_.isArray(oldValue)) {
+                        for (i = 0, ii = oldValue.length; i < ii; ++i) {
+                            this.__emitPropertyRemoved(fields.concat(i), oldValue[i]);
+                        }
+                    }
+
+                    prop = fields.join('.');
+
+                    this.__emitEvent('property.' + prop + '.cleared', oldValue);
+                    this.__emitEvent('property.cleared', prop, oldValue);
+
+                    return this;
+                },
+
+                __emitPropertySetted: function(fields, newValue, oldValue) {
+                    var prop, event, key, i, ii;
+
+                    this.__checkEmitEvent(true);
+
+                    if (_.isString(fields)) {
+                        fields = fields.split('.');
+                    }
+
+                    var isEqual = true;
+
+                    if (_.isSimpleObject(newValue) && _.isSimpleObject(oldValue)) {
+                        for (key in oldValue) {
+                            if (newValue[key] !== oldValue[key]) {
+                                isEqual = false;
+                                break;
+                            }
+                        }
+                    } else if (_.isArray(newValue) && _.isArray(oldValue)) {
+                        for (i = 0, ii = oldValue.length; i < ii; ++i) {
+                            if (newValue[i] !== oldValue[i]) {
+                                isEqual = false;
+                                break;
+                            }
+                        }
+                    } else if (newValue !== oldValue) {
+                        isEqual = false;
+                    }
+
+                    if (!isEqual) {
+                        prop = fields.join('.');
+                        event = _.isUndefined(oldValue) || _.isNull(oldValue) ? 'setted' : 'changed';
+
+                        this.__emitEvent('property.' + prop + '.' + event, newValue, oldValue);
+                        this.__emitEvent('property.' + event, prop, newValue, oldValue);
+                    }
+
+                    return this;
+                },
+
+                __checkEmitEvent: function(throwError) {
+                    throwError = !_.isUndefined(throwError) ? throwError : false;
+
+                    var check = _.isFunction(this.__emitEvent)
+
+                    if (throwError && !check) {
+                        throw new Error('__emitEvent method does not realized!');
+                    }
+
+                    return check;
+                },
+
+                __addSetter: function(property, name, weight, callback) {
+                    if (_.isUndefined(callback)) {
+                        callback = weight;
+                        weight = 0;
+                    }
                     if (!_.isFunction(callback)) {
                         throw new Error('Setter callback must be a function!');
                     }
                     if (!(property in this.__setters)) {
                         this.__setters[property] = {};
                     }
-                    this.__setters[property][name] = callback;
+                    this.__setters[property][name] = [weight, callback];
 
                     return this;
                 },
 
-                __getSetters: function(property) {
+                __getSetters: function(property, sorted) {
                     var setters = this.__collectAllPropertyValues.apply(this, ['__setters', 1].concat(property || []));
-                    return property ? (setters[property] || {}) : setters;
+
+                    if (!property) {
+                        return setters;
+                    }
+
+                    setters = setters[property];
+
+                    if (!sorted) {
+                        return setters[property];
+                    }
+
+                    var sortedSetters = [];
+
+                    for (var name in setters) {
+                        sortedSetters.push(setters[name]);
+                    }
+
+                    sortedSetters = sortedSetters.sort(function(s1, s2) {
+                        return s2[0] - s1[1];
+                    });
+
+                    for (var i = 0, ii = sortedSetters.length; i < ii; ++i) {
+                        sortedSetters[i] = sortedSetters[i][1];
+                    }
+
+                    return sortedSetters;
                 },
 
-                __addGetter: function(property, callback) {
+                __applySetters: function(property, value) {
+                    var setters = this.__getSetters(property, true);
+
+                    for (var i = 0, ii = setters.length; i < ii; ++i) {
+                        value = setters[i].call(this, value);
+                    }
+
+                    return value;
+                },
+
+                __addGetter: function(property, name, weight, callback) {
+                    if (_.isUndefined(callback)) {
+                        callback = weight;
+                        weight = 0;
+                    }
                     if (!_.isFunction(callback)) {
                         throw new Error('Getter callback must be a function!');
                     }
                     if (!(property in this.__getters)) {
-                        this.__getters[property] = [];
+                        this.__getters[property] = {};
                     }
-                    this.__getters[property].push([weight, callback]);
+                    this.__getters[property][name] = [weight, callback];
 
                     return this;
                 },
 
-                __getGetters: function(property) {
+                __getGetters: function(property, sorted) {
                     var getters = this.__collectAllPropertyValues.apply(this, ['__getters', 1].concat(property || []));
-                    return property ? (getters[property] || {}) : getters;
+
+                    if (!property) {
+                        return getters;
+                    }
+
+                    getters = getters[property];
+
+                    if (!sorted) {
+                        return getters[property];
+                    }
+
+                    var sortedGetters = [];
+
+                    for (var name in getters) {
+                        sortedGetters.push(getters[name]);
+                    }
+
+                    sortedGetters = sortedGetters.sort(function(s1, s2) {
+                        return s2[0] - s1[1];
+                    });
+
+                    for (var i = 0, ii = sortedGetters.length; i < ii; ++i) {
+                        sortedGetters[i] = sortedGetters[i][1];
+                    }
+
+                    return sortedGetters;
+                },
+
+                __applyGetters: function(property, value) {
+                    var getters = this.__getGetters(property, true);
+
+                    for (var i = 0, ii = getters.length; i < ii; ++i) {
+                        value = getters[i].call(this, value);
+                    }
+
+                    return value;
                 },
 
                 __setData: function(data) {
@@ -1660,10 +1841,12 @@
 
                 SETTER_NAME: '__constraints__',
 
+                SETTER_WEIGHT: -100,
+
                 process: function(object, constraints, property) {
                     var self = this;
 
-                    object.__addSetter(property, this.SETTER_NAME, function(value) {
+                    object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
                         return self.apply(value, constraints, property, this);
                     });
                 },
@@ -1682,10 +1865,12 @@
 
                 SETTER_NAME: '__converters__',
 
+                SETTER_WEIGHT: 100,
+
                 process: function(object, converters, property) {
                     var self = this;
 
-                    object.__addSetter(property, this.SETTER_NAME, function(value) {
+                    object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
                         return self.apply(value, converters, property, this);
                     });
                 },
@@ -1778,13 +1963,17 @@
 
                 _methods: {
                     get: function(property) {
-                        return function( /* fields */ ) {
-                            return this.__getPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                        return function(fields) {
+                            return this.__getPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []));
                         };
                     },
                     set: function(property) {
-                        return function( /* fields, value */ ) {
-                            return this.__setPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                        return function(fields, value) {
+                            if (_.isUndefined(value)) {
+                                value = fields;
+                                fields = undefined;
+                            }
+                            return this.__setPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []), value);;
                         };
                     },
                     is: function(property, alias) {
@@ -1792,24 +1981,28 @@
 
                         return {
                             name: 0 !== propertyName.indexOf('is') ? 'is' + propertyName[0].toUpperCase() + propertyName.slice(1) : propertyName,
-                            body: function( /* fields, value */ ) {
-                                return this.__isPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                            body: function(fields, value) {
+                                if (_.isUndefined(value)) {
+                                    value = fields;
+                                    fields = undefined;
+                                }
+                                return this.__isPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []), value);
                             }
                         }
                     },
                     has: function(property) {
-                        return function( /* fields */ ) {
-                            return this.__hasPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                        return function(fields) {
+                            return this.__hasPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []));
                         }
                     },
                     clear: function(property) {
-                        return function( /* fields */ ) {
-                            return this.__clearPropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                        return function(fields) {
+                            return this.__clearPropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []));
                         };
                     },
                     remove: function(property) {
-                        return function( /* fields */ ) {
-                            return this.__removePropertyValue.apply(this, [property].concat(_.toArray(arguments)));
+                        return function(fields) {
+                            return this.__removePropertyValue([property].concat(_.isString(fields) ? fields.split('.') : fields || []));
                         }
                     }
                 }
@@ -1829,10 +2022,12 @@
 
                 SETTER_NAME: '__type__',
 
+                SETTER_WEIGHT: -1000,
+
                 process: function(object, type, property) {
                     var self = this;
 
-                    object.__addSetter(property, this.SETTER_NAME, function(value) {
+                    object.__addSetter(property, this.SETTER_NAME, this.SETTER_WEIGHT, function(value) {
                         return self.apply(value, type, property, object);
                     });
                 },
