@@ -2248,6 +2248,21 @@
                     },
                     const: function() {
                         return this.__executeConstant.apply(this, _.toArray(arguments));
+                    },
+                    parent: function(context, property, params) {
+                        context = context || this;
+
+                        var parent = context.__isClazz ? this.__parent : this.__parent.prototype;
+
+                        if (!property) {
+                            return parent;
+                        }
+
+                        if (!(property in parent)) {
+                            throw new Error('Parent does not have property "' + property + '"!');
+                        }
+
+                        return _.isFunction(parent[property]) ? parent[property].apply(context, params || []) : parent[property];
                     }
                 },
                 methods: {
