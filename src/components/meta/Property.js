@@ -4,8 +4,8 @@ meta('Property', {
         object['_' + property] = undefined;
 
         if (_.isArray(propertyMeta)) {
-            propertyMeta = propertyMeta.length === 3
-                ? { type: [propertyMeta[0], propertyMeta[2]], default: propertyMeta[1] }
+            propertyMeta = propertyMeta.length === 3 || !_.isSimpleObject(propertyMeta[1])
+                ? { type: [propertyMeta[0], propertyMeta[2] || {}], default: propertyMeta[1] }
                 : { type: propertyMeta }
         }
         else if (!_.isSimpleObject(propertyMeta)) {
