@@ -139,7 +139,7 @@ meta('Type', {
 
             if ('keys' in params) {
                 for (var key in value) {
-                    if (!(key in params.keys)) {
+                    if (-1 === params.keys.indexOf(key)) {
                         throw new Error('Unsupported hash key "' + key + '" for property "' + [property].concat(fields).join('.') + '"!');
                     }
                 }
