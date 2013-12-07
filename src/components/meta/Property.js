@@ -8,7 +8,7 @@ meta('Property', {
                 ? { type: [propertyMeta[0], propertyMeta[2]], default: propertyMeta[1] }
                 : { type: propertyMeta }
         }
-        else if (!_.isObject(propertyMeta)) {
+        else if (!_.isSimpleObject(propertyMeta)) {
             propertyMeta = { default: propertyMeta }
         }
 

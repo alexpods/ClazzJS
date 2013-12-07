@@ -84,8 +84,8 @@ _.extend(Factory.prototype, {
                 return _.construct(self, _.toArray(arguments));
             }
 
-            if (_.isFunction(this.__construct)) {
-                result = this.__construct.apply(this, _.toArray(arguments));
+            if (_.isFunction(self.__construct)) {
+                result = self.__construct.apply(this, _.toArray(arguments));
             }
             else if (self.__parent) {
                 result = self.__parent.apply(this, _.toArray(arguments));
@@ -93,6 +93,15 @@ _.extend(Factory.prototype, {
 
             if (!_.isUndefined(result)) {
                 return result;
+            }
+
+            for (var method in this) {
+                if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
+                    this[method]();
+                }
+            }
+            if (_.isFunction(this.init)) {
+                this.init.apply(this, _.toArray(arguments));
             }
         };
     },

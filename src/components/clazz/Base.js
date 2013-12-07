@@ -19,24 +19,13 @@ clazz('Base', function() {
             }
         },
         methods: {
-            __construct: function() {
-                this.__uid = ++uid;
-
-                for (var method in this) {
-                    if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
-                        this[method]();
-                    }
-                }
-                if (_.isFunction(this.init)) {
-                    this.init.apply(this, _.toArray(arguments));
-                }
-            },
 
             getUID: function() {
                 return this.__uid;
             },
 
             init: function(data) {
+                this.__uid = ++uid;
                 return this.__setData(data);
             },
 

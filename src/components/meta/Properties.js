@@ -15,6 +15,21 @@ meta('Properties', {
         for (var property in properties) {
             propertyMetaProcessor.process(object, properties[property], property);
         }
+
+        var propertiesParams = object.__getPropertiesParam();
+
+        for (var property in propertiesParams) {
+
+            if ('default' in propertiesParams[property]) {
+                var defaultValue = propertiesParams[property].default;
+
+                if (_.isFunction(defaultValue)) {
+                    defaultValue = defaultValue.call(object);
+                }
+
+                object['_' + property] = defaultValue;
+            }
+        }
     },
 
     getPropertyMetaProcessor: function() {
@@ -37,18 +52,6 @@ meta('Properties', {
             this.__properties     = {};
             this.__setters        = {};
             this.__getters        = {};
-
-            var propertiesParams = this.__getPropertiesParam();
-
-            for (var property in propertiesParams) {
-                if ('default' in propertiesParams[property]) {
-                    var defaultValue = propertiesParams[property].default;
-                    if (_.isFunction(defaultValue)) {
-                        defaultValue = defaultValue.ca
-                    }
-                    this['_' + property] = propertiesParams[property]['default'];
-                }
-            }
         },
 
         __setPropertiesParam: function(parameters) {
@@ -259,7 +262,7 @@ meta('Properties', {
             container[field] = newValue;
 
             if (this.__checkEmitEvent()) {
-                this.__emitPropertySetted([property].concat(fields), oldValue, newValue,  wasExisted);
+                this.__emitPropertySetted([property].concat(fields), oldValue, newValue);
             }
 
             return this;
@@ -318,7 +321,7 @@ meta('Properties', {
             return this;
         },
 
-        __emitPropertySetted: function(fields, newValue, oldValue, wasExisted) {
+        __emitPropertySetted: function(fields, newValue, oldValue, wasExists) {
             var prop, event, key, i, ii;
 
             this.__checkEmitEvent(true);
@@ -356,7 +359,7 @@ meta('Properties', {
                 this.__emitEvent('property.' + prop + '.' + event, newValue, oldValue);
                 this.__emitEvent('property.' + event, prop, newValue, oldValue);
 
-                if (fields.length && !wasExisted) {
+                if (fields.length && !wasExists) {
                     prop  = fields.slice(0,-1).join('.');
                     key   = _.last(fields);
 

@@ -681,14 +681,23 @@
                         return _.construct(self, _.toArray(arguments));
                     }
 
-                    if (_.isFunction(this.__construct)) {
-                        result = this.__construct.apply(this, _.toArray(arguments));
+                    if (_.isFunction(self.__construct)) {
+                        result = self.__construct.apply(this, _.toArray(arguments));
                     } else if (self.__parent) {
                         result = self.__parent.apply(this, _.toArray(arguments));
                     }
 
                     if (!_.isUndefined(result)) {
                         return result;
+                    }
+
+                    for (var method in this) {
+                        if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
+                            this[method]();
+                        }
+                    }
+                    if (_.isFunction(this.init)) {
+                        this.init.apply(this, _.toArray(arguments));
                     }
                 };
             },
@@ -1253,6 +1262,22 @@
                 for (var property in properties) {
                     propertyMetaProcessor.process(object, properties[property], property);
                 }
+
+                var propertiesParams = object.__getPropertiesParam();
+
+                for (var property in propertiesParams) {
+
+                    if ('default' in propertiesParams[property]) {
+                        var defaultValue = propertiesParams[property].
+                        default;
+
+                        if (_.isFunction(defaultValue)) {
+                            defaultValue = defaultValue.call(object);
+                        }
+
+                        object['_' + property] = defaultValue;
+                    }
+                }
             },
 
             getPropertyMetaProcessor: function() {
@@ -1275,19 +1300,6 @@
                     this.__properties = {};
                     this.__setters = {};
                     this.__getters = {};
-
-                    var propertiesParams = this.__getPropertiesParam();
-
-                    for (var property in propertiesParams) {
-                        if ('default' in propertiesParams[property]) {
-                            var defaultValue = propertiesParams[property].
-                            default;
-                            if (_.isFunction(defaultValue)) {
-                                defaultValue = defaultValue.ca
-                            }
-                            this['_' + property] = propertiesParams[property]['default'];
-                        }
-                    }
                 },
 
                 __setPropertiesParam: function(parameters) {
@@ -1493,7 +1505,7 @@
                     container[field] = newValue;
 
                     if (this.__checkEmitEvent()) {
-                        this.__emitPropertySetted([property].concat(fields), oldValue, newValue, wasExisted);
+                        this.__emitPropertySetted([property].concat(fields), oldValue, newValue);
                     }
 
                     return this;
@@ -1551,7 +1563,7 @@
                     return this;
                 },
 
-                __emitPropertySetted: function(fields, newValue, oldValue, wasExisted) {
+                __emitPropertySetted: function(fields, newValue, oldValue, wasExists) {
                     var prop, event, key, i, ii;
 
                     this.__checkEmitEvent(true);
@@ -1587,7 +1599,7 @@
                         this.__emitEvent('property.' + prop + '.' + event, newValue, oldValue);
                         this.__emitEvent('property.' + event, prop, newValue, oldValue);
 
-                        if (fields.length && !wasExisted) {
+                        if (fields.length && !wasExists) {
                             prop = fields.slice(0, -1).join('.');
                             key = _.last(fields);
 
@@ -1794,7 +1806,7 @@
                     } : {
                         type: propertyMeta
                     }
-                } else if (!_.isObject(propertyMeta)) {
+                } else if (!_.isSimpleObject(propertyMeta)) {
                     propertyMeta = {
                         default: propertyMeta
                     }
@@ -2167,7 +2179,7 @@
 
                         if ('keys' in params) {
                             for (var key in value) {
-                                if (!(key in params.keys)) {
+                                if (-1 === params.keys.indexOf(key)) {
                                     throw new Error('Unsupported hash key "' + key + '" for property "' + [property].concat(fields).join('.') + '"!');
                                 }
                             }
@@ -2239,24 +2251,13 @@
                     }
                 },
                 methods: {
-                    __construct: function() {
-                        this.__uid = ++uid;
-
-                        for (var method in this) {
-                            if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
-                                this[method]();
-                            }
-                        }
-                        if (_.isFunction(this.init)) {
-                            this.init.apply(this, _.toArray(arguments));
-                        }
-                    },
 
                     getUID: function() {
                         return this.__uid;
                     },
 
                     init: function(data) {
+                        this.__uid = ++uid;
                         return this.__setData(data);
                     },
 
