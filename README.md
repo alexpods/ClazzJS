@@ -21,9 +21,9 @@ You'll find the example bellow to have a common idea what I'm talking about.
 Documentation
 -------------
 
-1. [Installation](./docs/1.installation.md)
-2. [Clazz declaration](./docs/2.clazz_declaration.md)
-3. [Properties](./docs/3.properties.md)
+1. [Installation](https://github.com/alexpods/ClazzJS/blob/master/docs/1.installation.md)
+2. [Clazz declaration](https://github.com/alexpods/ClazzJS/blob/master/docs/2.clazz_declaration.md)
+3. [Properties](https://github.com/alexpods/ClazzJS/blob/master/docs/3.properties.md)
 
 Example
 --------
