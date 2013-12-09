@@ -14,8 +14,8 @@ clazz('Base', function() {
             emit: function() {
                 return this.__emitEvent.apply(this, _.toArray(arguments));
             },
-            const: function() {
-                return this.__executeConstant.apply(this, _.toArray(arguments));
+            const: function(/* fields */) {
+                return this.__getConstant.apply(this, _.toArray(arguments));
             },
             parent: function(context, property, params) {
                 context = context || this;
@@ -65,8 +65,8 @@ clazz('Base', function() {
                 return this.__emitEvent.apply(this, _.toArray(arguments));
             },
 
-            const: function() {
-                return this.__clazz.__executeConstant.apply(this.__clazz, _.toArray(arguments));
+            const: function(/* fields */) {
+                return this.__clazz.const.apply(this.__clazz, _.toArray(arguments));
             }
         }
     }

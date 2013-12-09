@@ -39,29 +39,6 @@ meta('Constants', {
             }
 
             return constant;
-        },
-
-        __executeConstant: function(name, constants) {
-            var self = this;
-
-            if (_.isUndefined(constants)) {
-                constants = self.__getConstants();
-            }
-
-            if (!_.isUndefined(name)) {
-                if (!(name in constants)) {
-                    throw new Error('Constant "' + name + '" does not defined!');
-                }
-                constants = constants[name];
-
-                if (Object.prototype.toString.call(constants) === '[object Object]') {
-                    return function(name) {
-                        return self.__executeConstant(name, constants)
-                    }
-                }
-            }
-
-            return constants;
         }
     }
 });

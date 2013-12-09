@@ -1079,29 +1079,6 @@
                     }
 
                     return constant;
-                },
-
-                __executeConstant: function(name, constants) {
-                    var self = this;
-
-                    if (_.isUndefined(constants)) {
-                        constants = self.__getConstants();
-                    }
-
-                    if (!_.isUndefined(name)) {
-                        if (!(name in constants)) {
-                            throw new Error('Constant "' + name + '" does not defined!');
-                        }
-                        constants = constants[name];
-
-                        if (Object.prototype.toString.call(constants) === '[object Object]') {
-                            return function(name) {
-                                return self.__executeConstant(name, constants)
-                            }
-                        }
-                    }
-
-                    return constants;
                 }
             }
         });
@@ -2209,8 +2186,8 @@
                     emit: function() {
                         return this.__emitEvent.apply(this, _.toArray(arguments));
                     },
-                    const: function() {
-                        return this.__executeConstant.apply(this, _.toArray(arguments));
+                    const: function( /* fields */ ) {
+                        return this.__getConstant.apply(this, _.toArray(arguments));
                     },
                     parent: function(context, property, params) {
                         context = context || this;
@@ -2260,8 +2237,8 @@
                         return this.__emitEvent.apply(this, _.toArray(arguments));
                     },
 
-                    const: function() {
-                        return this.__clazz.__executeConstant.apply(this.__clazz, _.toArray(arguments));
+                    const: function( /* fields */ ) {
+                        return this.__clazz.const.apply(this.__clazz, _.toArray(arguments));
                     }
                 }
             }
