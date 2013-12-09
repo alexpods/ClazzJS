@@ -1158,7 +1158,8 @@
                 },
 
                 __getEventListeners: function(event) {
-                    return this.__collectAllPropertyValues.apply(this, ['__events', 2].concat(event || []));
+                    var eventListeners = this.__collectAllPropertyValues.apply(this, ['__events', 2].concat(event || []));
+                    return event ? eventListeners[event] || {} : eventListeners;
                 }
             }
         });
