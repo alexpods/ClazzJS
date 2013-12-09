@@ -2,9 +2,15 @@ meta('Properties', {
 
     _propertyMetaProcessor: 'Property',
 
-    process: function(object, metaData) {
-        var option     = object.__isClazz ? 'clazz_properties' : 'properties';
-        var properties = metaData[option] || {};
+    process: function(clazz, metaData) {
+        this.applyProperties(clazz, metaData.clazz_properties || {});
+        this.applyProperties(clazz.prototype, metaData.properties || {});
+    },
+
+    applyProperties: function(object, properties) {
+        if (!object.__isInterfaceImplemented('properties')) {
+            object.__implementInterface('properties', this.interface);
+        }
 
         object.__properties = {};
         object.__setters    = {};

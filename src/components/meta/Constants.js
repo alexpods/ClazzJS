@@ -1,7 +1,13 @@
 meta('Constants', {
 
-    process: function(object, metaData) {
-        var constants = metaData.constants || {};
+    process: function(clazz, metaData) {
+        this.applyConstants(clazz, metaData.constants || {});
+    },
+
+    applyConstants: function(object, constants) {
+        if (!object.__isInterfaceImplemented('constants')) {
+            object.__implementInterface('constants', this.interface);
+        }
 
         object.__constants = {};
 

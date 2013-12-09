@@ -871,27 +871,11 @@
     namespace('ClazzJS', 'clazz', 'meta', 'namespace', function(clazz, meta, namespace) {
         meta('Base', {
 
-            _objectTypes: {
-                clazz: function(clazz) {
-                    return clazz;
-                },
-                proto: function(clazz) {
-                    return clazz.prototype;
-                }
-            },
-
             _processors: {
-                clazz: {
-                    constants: 'Constants',
-                    clazz_properties: 'Properties',
-                    clazz_methods: 'Methods',
-                    clazz_events: 'Events'
-                },
-                proto: {
-                    properties: 'Properties',
-                    methods: 'Methods',
-                    events: 'Events'
-                }
+                constants: 'Constants',
+                properties: 'Properties',
+                methods: 'Methods',
+                events: 'Events'
             },
 
             process: function(clazz, metaData) {
@@ -900,13 +884,12 @@
                     _.extend(clazz, this.clazz_interface);
                 }
 
-                for (var objectType in this._objectTypes) {
-                    var object = this._objectTypes[objectType](clazz);
+                if (!clazz.__interfaces) {
+                    clazz.__interfaces = [];
+                    clazz.prototype.__interfaces = [];
 
-                    if (!object.__interfaces) {
-                        object.__interfaces = ['common'];
-                        _.extend(object, this.common_interface);
-                    }
+                    _.extend(clazz, this.common_interface);
+                    _.extend(clazz.prototype, this.common_interface);
                 }
 
                 clazz.__metaProcessors = metaData.meta_processors || {};
@@ -921,87 +904,47 @@
 
                 var processors = clazz.__getMetaProcessors();
 
-                for (var type in processors) {
-
-                    var object = this._objectTypes[type](clazz);
-
-                    for (var name in processors[type]) {
-                        var processor = processors[type][name];
-
-                        if (processor.interface && !object.__isInterfaceImplemented(name)) {
-                            object.__implementInterface(name, processor.interface);
-                        }
-
-                        processor.process(object, metaData);
-                    }
+                for (var name in processors) {
+                    processors[name].process(clazz, metaData);
                 }
             },
 
-            addObjectType: function(name, getter) {
-                if (!(name in this._processors)) {
-                    this._processors[name] = [];
-                }
-                if (!(name in this._optionProcessors)) {
-                    this._optionProcessors[name] = {};
-                }
-                this._objectTypes[name] = getter;
-                return this;
-            },
-
-            removeObjectType: function(name) {
-                if (name in this._processors) {
-                    delete this._processors;
-                }
-                if (name in this._optionProcessors) {
-                    delete this._optionProcessors[name];
-                }
-                delete this._objectTypes[name];
-                return this;
-            },
-
-            getProcessors: function(objectType) {
+            getProcessors: function() {
                 var processors = this._processors;
 
-                for (var type in processors) {
-                    if (objectType && objectType !== type) {
-                        continue;
-                    }
-                    for (var name in processors[type]) {
-                        if (_.isString(processors[type][name])) {
-                            processors[type][name] = meta(processors[type][name]);
-                        }
+                for (var name in processors) {
+                    if (_.isString(processors[name])) {
+                        processors[name] = meta(processors[name]);
                     }
                 }
 
-                return !_.isUndefined(objectType) ? processors[objectType] : processors;
+                return processors;
             },
 
             setProcessors: function(processors) {
-                for (var type in processors) {
-                    for (var name in processors[type]) {
-                        this.setProcessor(type, name, processors[type][name]);
-                    }
+                for (var name in processors) {
+                    this.setProcessor(type, name, processors[name]);
                 }
                 return this;
             },
 
-            hasProcessor: function(objectType, name) {
-                return name in this._processors[objectType];
+            hasProcessor: function(name) {
+                return name in this._processors;
             },
 
-            setProcessor: function(objectType, name, processor) {
-                if (name in this._processors[objectType]) {
-                    throw new Error('Processor "' + name + '" is already exists for object type "' + objectType + '"!');
+            setProcessor: function(name, processor) {
+                if (name in this._processors) {
+                    throw new Error('Processor "' + name + '" is already exists!');
                 }
-                this._processors[objectType][name] = processor;
+                this._processors[name] = processor;
                 return this;
             },
 
-            removeProcessor: function(objectType, name) {
-                if (!(name in this._processors[objectType])) {
-                    throw new Error('Processor "' + name + '" does not exists for object type "' + objectType + '"!');
+            removeProcessor: function(name) {
+                if (!(name in this._processors)) {
+                    throw new Error('Processor "' + name + '" does not exists!');
                 }
-                delete this._processors[objectType][name];
+                delete this._processors[name];
                 return this;
             },
 
@@ -1091,14 +1034,20 @@
 
                 __getMetaProcessors: function() {
                     var object = this.__isClazz ? this : this.__clazz;
-                    return this.__collectValues(object.__collectAllPropertyValues('__metaProcessors', 2), meta('Base').getProcessors());
+                    return this.__collectValues(object.__collectAllPropertyValues('__metaProcessors', 1), meta('Base').getProcessors());
                 }
             }
         });
         meta('Constants', {
 
-            process: function(object, metaData) {
-                var constants = metaData.constants || {};
+            process: function(clazz, metaData) {
+                this.applyConstants(clazz, metaData.constants || {});
+            },
+
+            applyConstants: function(object, constants) {
+                if (!object.__isInterfaceImplemented('constants')) {
+                    object.__implementInterface('constants', this.interface);
+                }
 
                 object.__constants = {};
 
@@ -1158,9 +1107,15 @@
         });
         meta('Events', {
 
-            process: function(object, metaData) {
-                var option = object.__isClazz ? 'clazz_events' : 'events';
-                var events = metaData[option] || {};
+            process: function(clazz, metaData) {
+                this.applyEvents(clazz, metaData.clazz_events || {});
+                this.applyEvents(clazz.prototype, metaData.events || {});
+            },
+
+            applyEvents: function(object, events) {
+                if (!object.__isInterfaceImplemented('events')) {
+                    object.__implementInterface('events', this.interface);
+                }
 
                 object.__events = {};
 
@@ -1232,10 +1187,12 @@
         });
         meta('Methods', {
 
-            process: function(object, metaData) {
-                var option = object.__isClazz ? 'clazz_methods' : 'methods';
-                var methods = metaData[option] || {};
+            process: function(clazz, metaData) {
+                this.applyMethods(clazz, metaData.clazz_methods || {});
+                this.applyMethods(clazz.prototype, metaData.methods || {});
+            },
 
+            applyMethods: function(object, methods) {
                 for (var method in methods) {
                     if (!_.isFunction(methods[method])) {
                         throw new Error('Method "' + method + '" must be a function!');
@@ -1249,9 +1206,15 @@
 
             _propertyMetaProcessor: 'Property',
 
-            process: function(object, metaData) {
-                var option = object.__isClazz ? 'clazz_properties' : 'properties';
-                var properties = metaData[option] || {};
+            process: function(clazz, metaData) {
+                this.applyProperties(clazz, metaData.clazz_properties || {});
+                this.applyProperties(clazz.prototype, metaData.properties || {});
+            },
+
+            applyProperties: function(object, properties) {
+                if (!object.__isInterfaceImplemented('properties')) {
+                    object.__implementInterface('properties', this.interface);
+                }
 
                 object.__properties = {};
                 object.__setters = {};

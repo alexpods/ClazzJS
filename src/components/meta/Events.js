@@ -1,8 +1,14 @@
 meta('Events', {
 
-    process: function(object, metaData) {
-        var option = object.__isClazz ? 'clazz_events' : 'events';
-        var events = metaData[option] || {};
+    process: function(clazz, metaData) {
+        this.applyEvents(clazz, metaData.clazz_events || {});
+        this.applyEvents(clazz.prototype, metaData.events || {});
+    },
+
+    applyEvents: function(object, events) {
+        if (!object.__isInterfaceImplemented('events')) {
+            object.__implementInterface('events', this.interface);
+        }
 
         object.__events = {};
 

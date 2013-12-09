@@ -1,9 +1,11 @@
 meta('Methods', {
 
-    process: function(object, metaData) {
-        var option  = object.__isClazz ? 'clazz_methods' : 'methods';
-        var methods = metaData[option] || {};
+    process: function(clazz, metaData) {
+        this.applyMethods(clazz, metaData.clazz_methods || {});
+        this.applyMethods(clazz.prototype, metaData.methods || {});
+    },
 
+    applyMethods: function(object, methods) {
         for (var method in methods) {
             if (!_.isFunction(methods[method])) {
                 throw new Error('Method "' + method + '" must be a function!');
