@@ -35,7 +35,7 @@ meta('Constants', {
                 if (!(fields[i] in constant)) {
                     throw new Error('Constant "' + fields.splice(0, i).join('.') + '" does not exists!');
                 }
-                constant = fields[i];
+                constant = constant[fields[i]];
             }
 
             return constant;
