@@ -16,7 +16,7 @@ Features include:
 You'll find the example bellow to have a common idea what I'm talking about.
 
 **Caution:** 
-> This library is still under development. I don't think that it's API will be changed much. But you must take into considiration.
+> This library is still under development. I don't think that its API will be changed much. But you must take into considiration.
 
 Documentation
 -------------
