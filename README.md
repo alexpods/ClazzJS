@@ -26,7 +26,7 @@ Documentation
 3. [Properties](https://github.com/alexpods/ClazzJS/blob/master/docs/3.properties.md)
 4. [Methods](https://github.com/alexpods/ClazzJS/blob/master/docs/4.methods.md)
 5. [Constants](https://github.com/alexpods/ClazzJS/blob/master/docs/5.constants.md)
-6. [Events](https://github.com/alexpods/ClazzJS/blob/masger/docs/6.events.md)
+6. [Events](https://github.com/alexpods/ClazzJS/blob/master/docs/6.events.md)
 
 Example
 --------
