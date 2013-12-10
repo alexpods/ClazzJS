@@ -97,7 +97,7 @@ meta('Events', {
                     }
                 }
             }
-            
+
             return event ? eventListeners[event] || {} : eventListeners;
         }
     }
