@@ -16,10 +16,12 @@ Features include:
 You'll find the example bellow to have a common idea what I'm talking about.
 
 **Caution:** 
-> This library is still under development. I don't think that its API will be changed much. But you must take into considiration.
+> This library is still under development. I don't think that its API will be changed much. But you must take it into considiration.
 
 Documentation
 -------------
+
+> This docs doesn't describe most features of the library, but not all. Use source to learn ClazzJS better. In every doc chapter there are links on respective source files.
 
 1. [Installation](https://github.com/alexpods/ClazzJS/blob/master/docs/1.installation.md)
 2. [Clazz declaration](https://github.com/alexpods/ClazzJS/blob/master/docs/2.clazz_declaration.md)
@@ -32,10 +34,10 @@ Documentation
 Example
 --------
 
-Main goal of this example is to give you a common idea about ClazzJS. It's not discover all features of the library. Online working version of this example is available on plnkr: [http://plnkr.co/edit/c5Xveb](http://plnkr.co/edit/c5Xveb). Feel free to play around with it!
+> Main goal of this example is to give you a common idea about ClazzJS. It's not discover all features of the library. Online working version of this example is available on plunker: [http://plnkr.co/edit/c5Xveb](http://plnkr.co/edit/c5Xveb). Feel free to play around with it!
 
 
-Declaration of common 'Person' clazz:
+`Person` clazz declaration:
 ```js
 clazz("Person", {
     constants: {
@@ -86,7 +88,7 @@ clazz("Person", {
 });
 ```
 
-Declaration of 'Teacher' clazz inherited from 'Person':
+`Teacher` clazz inherited from `Person`:
 ```js
 clazz('Teacher', 'Person', {
     constants: {
