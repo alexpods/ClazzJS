@@ -7,7 +7,7 @@ clazz('Person', {
     },
     clazz_methods: {
         cryToAll: function(crying) {
-            document.write('Crying to all: "' + crying + '"!');
+            document.write('Crying to all: "' + crying + '"!<br>');
             this.emit('crying', crying);
         }
     },
@@ -66,15 +66,6 @@ clazz('Person', {
                             'to "' + newValue + '"!<br>'
                     );
                 }
-            }
-        },
-        "property.name.changed": {
-            nameChanged: function(newName, oldName) {
-                document.write(
-                    'Person "'+this.getUID()+'" '+
-                        'just change his name from "'+oldName+'" '+
-                        'to "' + newName +'"!<br>'
-                )
             }
         },
         "property.address.removed": {

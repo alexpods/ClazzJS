@@ -6,9 +6,20 @@ var john = Person.create({
 });
 
 john.setAddress('Moscow, Lomonosova st., 16');
-john.setName('Gerry');
 john.removeAddress();
 
-john.say('Hey there! I am here!!!');
+john.on("property.name.changed", 'nameChanged', function(newName, oldName) {
+    document.write(
+        'Person "'+this.getUID()+'" '+
+            'just change his name from "'+oldName+'" '+
+            'to "' + newName +'"!<br>'
+    )
+});
+john.setName('Gerry');
+
+john.off('property.changed', 'birthdayChanged');
+john.setBirthday('1970-06-08');
+
 
 Person.cryToAll('Here we are!');
+john.say('Hey there! I am here!!!');

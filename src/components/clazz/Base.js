@@ -7,12 +7,6 @@ clazz('Base', function() {
             create: function() {
                 return  _.construct(this, _.toArray(arguments));
             },
-            emit: function() {
-                return this.__emitEvent.apply(this, _.toArray(arguments));
-            },
-            const: function(/* fields */) {
-                return this.__getConstant.apply(this, _.toArray(arguments));
-            },
             parent: function(context, property, params) {
                 context = context || this;
 
@@ -27,6 +21,18 @@ clazz('Base', function() {
                 }
 
                 return _.isFunction(parent[property]) ? parent[property].apply(context, params || []) : parent[property];
+            },
+            emit: function() {
+                return this.__emitEvent.apply(this, _.toArray(arguments));
+            },
+            on: function(event, name, callback) {
+                return this.__addEventListener(event, name, callback);
+            },
+            off: function(event, name) {
+                return this.__removeEventListener(event, name);
+            },
+            const: function(/* fields */) {
+                return this.__getConstant.apply(this, _.toArray(arguments));
             }
         },
         methods: {
@@ -38,28 +44,15 @@ clazz('Base', function() {
                 this.__uid = ++uid;
                 return this.__setData(data);
             },
-
-            parent: function(method) {
-                var self = this;
-
-                if (!self.__parent) {
-                    throw new Error('Parent clazz does not exists for "' + this.__clazz.__name + '" clazz!');
-                }
-                if (!_.isFunction(self.__parent[method])) {
-                    throw new Error('Method "' + method + '" does not exists in clazz "' + this.__clazz.__name + '"!');
-                }
-
-                method = self.__parent[method];
-
-                return function() {
-                    return method.apply(this, _.toArray(arguments));
-                }
-            },
-
             emit: function() {
                 return this.__emitEvent.apply(this, _.toArray(arguments));
             },
-
+            on: function(event, name, callback) {
+                return this.__addEventListener(event, name, callback);
+            },
+            off: function(event, name) {
+                return this.__removeEventListener(event, name);
+            },
             const: function(/* fields */) {
                 return this.__clazz.const.apply(this.__clazz, _.toArray(arguments));
             }
