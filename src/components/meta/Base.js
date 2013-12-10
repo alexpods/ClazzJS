@@ -1,7 +1,7 @@
 meta('Base', {
 
     _processors: {
-        constants:        'Constants',
+        constants:  'Constants',
         properties: 'Properties',
         methods:    'Methods',
         events:     'Events'
@@ -92,7 +92,23 @@ meta('Base', {
             }
 
             return false;
+        },
+
+        __construct: function() {
+            for (var method in this) {
+                if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
+                    this[method]();
+                }
+            }
+            if (_.isFunction(this.init)) {
+                this.init.apply(this, _.toArray(arguments));
+            }
+
+            if (_.isFunction(this.__clazz.__emitEvent)) {
+                this.__clazz.__emitEvent('instance.created', this);
+            }
         }
+
     },
 
     common_interface: {

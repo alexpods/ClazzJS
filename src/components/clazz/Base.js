@@ -4,22 +4,8 @@ clazz('Base', function() {
 
     return {
         clazz_methods: {
-            __construct: function() {
-                for (var method in this) {
-                    if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
-                        this[method]();
-                    }
-                }
-                if (_.isFunction(this.init)) {
-                    this.init.apply(this, _.toArray(arguments));
-                }
-            },
             create: function() {
-                var newEntity = _.construct(this, _.toArray(arguments));
-
-                this.emit('object.create', newEntity);
-
-                return newEntity;
+                return  _.construct(this, _.toArray(arguments));
             },
             emit: function() {
                 return this.__emitEvent.apply(this, _.toArray(arguments));

@@ -27,7 +27,7 @@ clazz('Person', {
                 );
             }
         },
-        "object.create": {
+        "instance.created": {
             newObjectCreated: function(object) {
                 document.write(
                     'Person "'+object.getUID()+'" '+
