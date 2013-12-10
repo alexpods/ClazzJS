@@ -268,7 +268,7 @@ meta('Properties', {
             container[field] = newValue;
 
             if (this.__checkEmitEvent()) {
-                this.__emitPropertySetted([property].concat(fields), oldValue, newValue, wasExisted);
+                this.__emitPropertySetted([property].concat(fields), newValue, oldValue, wasExisted);
             }
 
             return this;

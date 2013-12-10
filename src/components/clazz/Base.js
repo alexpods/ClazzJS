@@ -4,6 +4,16 @@ clazz('Base', function() {
 
     return {
         clazz_methods: {
+            __construct: function() {
+                for (var method in this) {
+                    if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
+                        this[method]();
+                    }
+                }
+                if (_.isFunction(this.init)) {
+                    this.init.apply(this, _.toArray(arguments));
+                }
+            },
             create: function() {
                 var newEntity = _.construct(this, _.toArray(arguments));
 
@@ -34,7 +44,6 @@ clazz('Base', function() {
             }
         },
         methods: {
-
             getUID: function() {
                 return this.__uid;
             },

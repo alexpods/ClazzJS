@@ -683,21 +683,10 @@
 
                     if (_.isFunction(self.__construct)) {
                         result = self.__construct.apply(this, _.toArray(arguments));
-                    } else if (self.__parent) {
-                        result = self.__parent.apply(this, _.toArray(arguments));
                     }
 
                     if (!_.isUndefined(result)) {
                         return result;
-                    }
-
-                    for (var method in this) {
-                        if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
-                            this[method]();
-                        }
-                    }
-                    if (_.isFunction(this.init)) {
-                        this.init.apply(this, _.toArray(arguments));
                     }
                 };
             },
@@ -1446,7 +1435,7 @@
                     container[field] = newValue;
 
                     if (this.__checkEmitEvent()) {
-                        this.__emitPropertySetted([property].concat(fields), oldValue, newValue, wasExisted);
+                        this.__emitPropertySetted([property].concat(fields), newValue, oldValue, wasExisted);
                     }
 
                     return this;
@@ -2177,6 +2166,16 @@
 
             return {
                 clazz_methods: {
+                    __construct: function() {
+                        for (var method in this) {
+                            if (0 === method.indexOf('__init') && _.isFunction(this[method])) {
+                                this[method]();
+                            }
+                        }
+                        if (_.isFunction(this.init)) {
+                            this.init.apply(this, _.toArray(arguments));
+                        }
+                    },
                     create: function() {
                         var newEntity = _.construct(this, _.toArray(arguments));
 
@@ -2207,7 +2206,6 @@
                     }
                 },
                 methods: {
-
                     getUID: function() {
                         return this.__uid;
                     },
