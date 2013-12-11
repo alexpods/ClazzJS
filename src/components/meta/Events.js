@@ -10,7 +10,7 @@ meta('Events', {
             object.__implementInterface('events', this.interface);
         }
 
-        object.__events = {};
+        object.__initEventsCallbacks();
 
         for (var event in events) {
             for (var name in events[event]) {

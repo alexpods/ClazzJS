@@ -12,29 +12,12 @@ meta('Properties', {
             object.__implementInterface('properties', this.interface);
         }
 
-        object.__properties = {};
-        object.__setters    = {};
-        object.__getters    = {};
+        object.__initProperties();
 
         var propertyMetaProcessor = this.getPropertyMetaProcessor();
 
         for (var property in properties) {
             propertyMetaProcessor.process(object, properties[property], property);
-        }
-
-        var propertiesParams = object.__getPropertiesParam();
-
-        for (var property in propertiesParams) {
-
-            if ('default' in propertiesParams[property]) {
-                var defaultValue = propertiesParams[property].default;
-
-                if (_.isFunction(defaultValue)) {
-                    defaultValue = defaultValue.call(object);
-                }
-
-                object['_' + property] = defaultValue;
-            }
         }
     },
 
@@ -58,6 +41,23 @@ meta('Properties', {
             this.__properties     = {};
             this.__setters        = {};
             this.__getters        = {};
+        },
+
+        __setDefaults: function() {
+            var propertiesParams = this.__getPropertiesParam();
+
+            for (var property in propertiesParams) {
+
+                if ('default' in propertiesParams[property]) {
+                    var defaultValue = propertiesParams[property].default;
+
+                    if (_.isFunction(defaultValue)) {
+                        defaultValue = defaultValue.call(this);
+                    }
+
+                    this['_' + property] = defaultValue;
+                }
+            }
         },
 
         __setPropertiesParam: function(parameters) {

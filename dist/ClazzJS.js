@@ -896,6 +896,10 @@
                 for (var name in processors) {
                     processors[name].process(clazz, metaData);
                 }
+
+                if (_.isFunction(this.__setDefaults)) {
+                    this.__setDefaults();
+                }
             },
 
             getProcessors: function() {
@@ -962,6 +966,10 @@
                     }
                     if (_.isFunction(this.init)) {
                         this.init.apply(this, _.toArray(arguments));
+                    }
+
+                    if (_.isFunction(this.__setDefaults)) {
+                        this.__setDefaults();
                     }
 
                     if (_.isFunction(this.__clazz.__emitEvent)) {
@@ -1054,7 +1062,7 @@
                     object.__implementInterface('constants', this.interface);
                 }
 
-                object.__constants = {};
+                object.__initConstants();
 
                 for (var constant in constants) {
                     object.__constants[constant] = constants[constant];
@@ -1099,7 +1107,7 @@
                     object.__implementInterface('events', this.interface);
                 }
 
-                object.__events = {};
+                object.__initEventsCallbacks();
 
                 for (var event in events) {
                     for (var name in events[event]) {
@@ -1221,30 +1229,12 @@
                     object.__implementInterface('properties', this.interface);
                 }
 
-                object.__properties = {};
-                object.__setters = {};
-                object.__getters = {};
+                object.__initProperties();
 
                 var propertyMetaProcessor = this.getPropertyMetaProcessor();
 
                 for (var property in properties) {
                     propertyMetaProcessor.process(object, properties[property], property);
-                }
-
-                var propertiesParams = object.__getPropertiesParam();
-
-                for (var property in propertiesParams) {
-
-                    if ('default' in propertiesParams[property]) {
-                        var defaultValue = propertiesParams[property].
-                        default;
-
-                        if (_.isFunction(defaultValue)) {
-                            defaultValue = defaultValue.call(object);
-                        }
-
-                        object['_' + property] = defaultValue;
-                    }
                 }
             },
 
@@ -1268,6 +1258,24 @@
                     this.__properties = {};
                     this.__setters = {};
                     this.__getters = {};
+                },
+
+                __setDefaults: function() {
+                    var propertiesParams = this.__getPropertiesParam();
+
+                    for (var property in propertiesParams) {
+
+                        if ('default' in propertiesParams[property]) {
+                            var defaultValue = propertiesParams[property].
+                            default;
+
+                            if (_.isFunction(defaultValue)) {
+                                defaultValue = defaultValue.call(this);
+                            }
+
+                            this['_' + property] = defaultValue;
+                        }
+                    }
                 },
 
                 __setPropertiesParam: function(parameters) {

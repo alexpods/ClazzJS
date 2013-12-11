@@ -9,7 +9,7 @@ meta('Constants', {
             object.__implementInterface('constants', this.interface);
         }
 
-        object.__constants = {};
+        object.__initConstants();
 
         for (var constant in constants) {
             object.__constants[constant] = constants[constant];

@@ -36,6 +36,10 @@ meta('Base', {
         for (var name in processors) {
              processors[name].process(clazz, metaData);
         }
+
+        if (_.isFunction(this.__setDefaults)) {
+            this.__setDefaults();
+        }
     },
 
     getProcessors: function() {
@@ -102,6 +106,10 @@ meta('Base', {
             }
             if (_.isFunction(this.init)) {
                 this.init.apply(this, _.toArray(arguments));
+            }
+
+            if (_.isFunction(this.__setDefaults)) {
+                this.__setDefaults();
             }
 
             if (_.isFunction(this.__clazz.__emitEvent)) {
