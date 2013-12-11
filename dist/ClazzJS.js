@@ -1742,7 +1742,7 @@
                 __getData: function() {
 
                     var data = {};
-                    var properties = this.__getPropertiesMeta();
+                    var properties = this.__getPropertiesParam();
 
                     for (var property in properties) {
                         var value = this.__getPropertyValue(property);
