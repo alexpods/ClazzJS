@@ -995,18 +995,18 @@
                 },
 
                 __collectAllPropertyValue: function(property) {
-                    if (this.hasOwnProperty(property)) {
+                    if (this.hasOwnProperty(property) && !_.isUndefined(this[property])) {
                         return this[property];
                     }
 
-                    if (this.__proto && this.__proto.hasOwnProperty(property)) {
+                    if (this.__proto && this.__proto.hasOwnProperty(property) && !_.isUndefined(this.__proto[property])) {
                         return this.__proto[property];
                     }
 
                     var parent = this.__parent;
 
                     while (parent) {
-                        if (parent.hasOwnProperty(property)) {
+                        if (parent.hasOwnProperty(property) && !_.isUndefined(parent[property])) {
                             return parent[property];
                         }
                         parent = parent.__parent;
