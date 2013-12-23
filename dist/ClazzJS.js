@@ -1016,10 +1016,17 @@
                     }
 
                     var fields = _.toArray(arguments).slice(2);
-                    var propertyValues = {};
+                    var propertyValues = null;
 
                     for (var i = 0, ii = propertyContainers.length; i < ii; ++i) {
-                        this.__collectValues(propertyValues, propertyContainers[i], level || 1, fields);
+
+                        var container = propertyContainers[i];
+
+                        if (Object.prototype.toString.call(container) === '[object Object]') {
+                            this.__collectValues(propertyValues || {}, container, level || 1, fields);
+                        } else {
+                            propertyValues = container;
+                        }
                     }
 
                     return propertyValues;
