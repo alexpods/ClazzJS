@@ -1811,6 +1811,8 @@
                     propertyMeta.methods = ['get', 'set', 'has', 'is', 'clear', 'remove']
                 }
 
+                object.__setPropertyParam(property, {});
+
                 for (var option in propertyMeta) {
                     if (option in this._options) {
                         var processor = this._options[option];
