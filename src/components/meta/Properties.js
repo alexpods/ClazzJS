@@ -542,14 +542,14 @@ meta('Properties', {
                         }
                     }
                 }
-                else if (value.constructor === {}.constructor) {
+                else if (value && value.constructor === {}.constructor) {
                     for (var key in value) {
                         if (_.isFunction(value[key].__getData)) {
                             value[key] = value[key].__getData();
                         }
                     }
                 }
-                else if (_.isFunction(value.__getData)) {
+                else if (value && _.isFunction(value.__getData)) {
                     value = value.__getData();
                 }
                 data[property] = value;
