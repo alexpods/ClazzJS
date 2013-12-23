@@ -91,7 +91,7 @@ meta('Properties', {
         },
 
         __getPropertyParam: function(property, param) {
-            var params = this.__collectAllPropertyValues.apply(this, ['__properties', 2, property].concat(param || []));
+            var params = this.__collectAllPropertyValues.apply(this, ['__properties', 2, property].concat(param || []))[property];
             return param ? params[param] : params;
         },
 
