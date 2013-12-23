@@ -23,13 +23,13 @@ meta('Constants', {
         },
 
         __getConstants: function() {
-            return this.__collectAllPropertyValue('__constants', 99);
+            return this.__collectAllPropertyValues('__constants', 99);
         },
 
         __getConstant: function(/* fields */) {
 
             var fields   = _.toArray(arguments)
-            var constant = this.__collectAllPropertyValue.apply(this, ['__constants', 99].concat(fields));
+            var constant = this.__collectAllPropertyValues.apply(this, ['__constants', 99].concat(fields));
 
             for (var i = 0, ii = fields.length; i < ii; ++i) {
                 if (!(fields[i] in constant)) {

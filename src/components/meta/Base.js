@@ -134,7 +134,26 @@ meta('Base', {
             return this;
         },
 
-        __collectAllPropertyValue: function(property, level /* fields */) {
+        __collectAllPropertyValue: function(property) {
+            if (this.hasOwnProperty(property)) {
+                return this[property];
+            }
+
+            if (this.__proto && this.__proto.hasOwnProperty(property)) {
+                return this.__proto[property];
+            }
+
+            var parent = this.__parent;
+
+            while (parent) {
+                if (parent.hasOwnProperty(property)) {
+                    return parent[property];
+                }
+                parent = parent.__parent;
+            }
+        },
+
+        __collectAllPropertyValues: function(property, level /* fields */) {
 
             var propertyContainers = [];
 
@@ -156,18 +175,10 @@ meta('Base', {
             }
 
             var fields = _.toArray(arguments).slice(2);
-            var propertyValues = null;
+            var propertyValues = {};
 
             for (var i = 0, ii = propertyContainers.length; i < ii; ++i) {
-
-                var container = propertyContainers[i];
-
-                if (Object.prototype.toString.call(container) === '[object Object]') {
-                    this.__collectValues(propertyValues || {}, container, level || 1, fields);
-                }
-                else {
-                    propertyValues = container;
-                }
+                this.__collectValues(propertyValues, propertyContainers[i], level || 1, fields);
             }
 
             return propertyValues;
@@ -196,7 +207,7 @@ meta('Base', {
 
         __getMetaProcessors: function() {
             var object = this.__isClazz ? this : this.__clazz;
-            return this.__collectValues(object.__collectAllPropertyValue('__metaProcessors', 1), meta('Base').getProcessors());
+            return this.__collectValues(object.__collectAllPropertyValues('__metaProcessors', 1), meta('Base').getProcessors());
         }
     }
 });
