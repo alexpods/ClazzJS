@@ -88,7 +88,7 @@ meta('Events', {
         },
 
         __getEventListeners: function(event) {
-            var eventListeners = this.__collectAllPropertyValues.apply(this, ['__events', 2].concat(event || []));
+            var eventListeners = this.__collectAllPropertyValue.apply(this, ['__events', 2].concat(event || []));
 
             for (var e in eventListeners) {
                 for (var n in eventListeners[e]) {

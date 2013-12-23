@@ -994,7 +994,7 @@
                     return this;
                 },
 
-                __collectAllPropertyValues: function(property, level /* fields */ ) {
+                __collectAllPropertyValue: function(property, level /* fields */ ) {
 
                     var propertyContainers = [];
 
@@ -1047,7 +1047,7 @@
 
                 __getMetaProcessors: function() {
                     var object = this.__isClazz ? this : this.__clazz;
-                    return this.__collectValues(object.__collectAllPropertyValues('__metaProcessors', 1), meta('Base').getProcessors());
+                    return this.__collectValues(object.__collectAllPropertyValue('__metaProcessors', 1), meta('Base').getProcessors());
                 }
             }
         });
@@ -1076,13 +1076,13 @@
                 },
 
                 __getConstants: function() {
-                    return this.__collectAllPropertyValues('__constants', 99);
+                    return this.__collectAllPropertyValue('__constants', 99);
                 },
 
                 __getConstant: function( /* fields */ ) {
 
                     var fields = _.toArray(arguments)
-                    var constant = this.__collectAllPropertyValues.apply(this, ['__constants', 99].concat(fields));
+                    var constant = this.__collectAllPropertyValue.apply(this, ['__constants', 99].concat(fields));
 
                     for (var i = 0, ii = fields.length; i < ii; ++i) {
                         if (!(fields[i] in constant)) {
@@ -1184,7 +1184,7 @@
                 },
 
                 __getEventListeners: function(event) {
-                    var eventListeners = this.__collectAllPropertyValues.apply(this, ['__events', 2].concat(event || []));
+                    var eventListeners = this.__collectAllPropertyValue.apply(this, ['__events', 2].concat(event || []));
 
                     for (var e in eventListeners) {
                         for (var n in eventListeners[e]) {
@@ -1286,7 +1286,7 @@
                 },
 
                 __getPropertiesParam: function() {
-                    return this.__collectAllPropertyValues('__properties', 2);
+                    return this.__collectAllPropertyValue('__properties', 2);
                 },
 
                 __setPropertyParam: function(property, param, value) {
@@ -1308,7 +1308,7 @@
                 },
 
                 __getPropertyParam: function(property, param) {
-                    var params = this.__collectAllPropertyValues.apply(this, ['__properties', 2, property].concat(param || []));
+                    var params = this.__collectAllPropertyValue.apply(this, ['__properties', 2, property].concat(param || []));
                     return param ? params[param] : params;
                 },
 
@@ -1619,7 +1619,7 @@
                 },
 
                 __getSetters: function(property, sorted) {
-                    var setters = this.__collectAllPropertyValues.apply(this, ['__setters', 1].concat(property || []));
+                    var setters = this.__collectAllPropertyValue.apply(this, ['__setters', 1].concat(property || []));
 
                     if (!property) {
                         return setters;
@@ -1685,7 +1685,7 @@
                 },
 
                 __getGetters: function(property, sorted) {
-                    var getters = this.__collectAllPropertyValues.apply(this, ['__getters', 1].concat(property || []));
+                    var getters = this.__collectAllPropertyValue.apply(this, ['__getters', 1].concat(property || []));
 
                     if (!property) {
                         return getters;

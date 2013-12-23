@@ -134,7 +134,7 @@ meta('Base', {
             return this;
         },
 
-        __collectAllPropertyValues: function(property, level /* fields */) {
+        __collectAllPropertyValue: function(property, level /* fields */) {
 
             var propertyContainers = [];
 
@@ -188,7 +188,7 @@ meta('Base', {
 
         __getMetaProcessors: function() {
             var object = this.__isClazz ? this : this.__clazz;
-            return this.__collectValues(object.__collectAllPropertyValues('__metaProcessors', 1), meta('Base').getProcessors());
+            return this.__collectValues(object.__collectAllPropertyValue('__metaProcessors', 1), meta('Base').getProcessors());
         }
     }
 });
