@@ -14,7 +14,7 @@ meta('Converters', {
 
     apply: function(value, converters, property, fields, object) {
         for (var name in converters) {
-            value = converters[name].call(object, value, property, fields);
+            value = converters[name].call(object, value, fields, property);
         }
         return value;
     }
