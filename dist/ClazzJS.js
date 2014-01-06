@@ -1872,7 +1872,7 @@
 
                 apply: function(value, constraints, property, fields, object) {
                     for (var name in constraints) {
-                        if (!constraints[name].call(object, value, property, fields)) {
+                        if (!constraints[name].call(object, value, fields, property)) {
                             throw new Error('Constraint "' + name + '" was failed!');
                         }
                     }
@@ -1896,7 +1896,7 @@
 
                 apply: function(value, converters, property, fields, object) {
                     for (var name in converters) {
-                        value = converters[name].call(object, value, property, fields);
+                        value = converters[name].call(object, value, fields, property);
                     }
                     return value;
                 }
