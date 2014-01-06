@@ -428,7 +428,7 @@ meta('Properties', {
                 sortedSetters.push(setters[name]);
             }
 
-            sortedSetters = sortedSetters.sort(function(s1, s2) { return s2[0] - s1[1]; });
+            sortedSetters = sortedSetters.sort(function(s1, s2) { return s2[0] - s1[0]; });
 
             for (var i = 0, ii = sortedSetters.length; i < ii; ++i) {
                 sortedSetters[i] = sortedSetters[i][1];
@@ -493,7 +493,7 @@ meta('Properties', {
                 sortedGetters.push(getters[name]);
             }
 
-            sortedGetters = sortedGetters.sort(function(s1, s2) { return s2[0] - s1[1]; });
+            sortedGetters = sortedGetters.sort(function(s1, s2) { return s2[0] - s1[0]; });
 
             for (var i = 0, ii = sortedGetters.length; i < ii; ++i) {
                 sortedGetters[i] = sortedGetters[i][1];

@@ -1657,7 +1657,7 @@
                     }
 
                     sortedSetters = sortedSetters.sort(function(s1, s2) {
-                        return s2[0] - s1[1];
+                        return s2[0] - s1[0];
                     });
 
                     for (var i = 0, ii = sortedSetters.length; i < ii; ++i) {
@@ -1723,7 +1723,7 @@
                     }
 
                     sortedGetters = sortedGetters.sort(function(s1, s2) {
-                        return s2[0] - s1[1];
+                        return s2[0] - s1[0];
                     });
 
                     for (var i = 0, ii = sortedGetters.length; i < ii; ++i) {
