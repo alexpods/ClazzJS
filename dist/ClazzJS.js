@@ -86,6 +86,11 @@
             return obj;
         };
 
+        _.clone = function(obj) {
+            if (!_.isObject(obj)) return obj;
+            return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
+        };
+
         _.last = function(arr) {
             return arr[arr.length - 1];
         };
@@ -1284,7 +1289,9 @@
 
                     for (var property in propertiesParams) {
 
-                        if ('default' in propertiesParams[property]) {
+                        var propertyValue = this.__getPropertyValue(property);
+
+                        if (_.isUndefined(propertyValue) && 'default' in propertiesParams[property]) {
                             var defaultValue = propertiesParams[property].
                             default;
 
@@ -1292,7 +1299,13 @@
                                 defaultValue = defaultValue.call(this);
                             }
 
-                            this['_' + property] = defaultValue;
+                            if (defaultValue) {
+                                if ((({}).constructor === defaultValue.constructor) || _.isArray(defaultValue)) {
+                                    defaultValue = _.clone(defaultValue)
+                                }
+                            }
+
+                            this.__setPropertyValue(property, defaultValue);
                         }
                     }
                 },

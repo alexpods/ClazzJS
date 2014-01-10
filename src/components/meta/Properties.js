@@ -48,14 +48,22 @@ meta('Properties', {
 
             for (var property in propertiesParams) {
 
-                if ('default' in propertiesParams[property]) {
+                var propertyValue = this.__getPropertyValue(property);
+
+                if (_.isUndefined(propertyValue) && 'default' in propertiesParams[property]) {
                     var defaultValue = propertiesParams[property].default;
 
                     if (_.isFunction(defaultValue)) {
                         defaultValue = defaultValue.call(this);
                     }
 
-                    this['_' + property] = defaultValue;
+                    if (defaultValue) {
+                        if ((({}).constructor === defaultValue.constructor) || _.isArray(defaultValue)) {
+                            defaultValue = _.clone(defaultValue)
+                        }
+                    }
+
+                    this.__setPropertyValue(property, defaultValue);
                 }
             }
         },
