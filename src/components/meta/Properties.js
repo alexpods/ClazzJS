@@ -519,7 +519,7 @@ meta('Properties', {
 
         __setData: function(data) {
             for (var property in data) {
-                if (!this.__hasProperty(property)) {
+                if (!this.__hasProperty(property.split('.')[0])) {
                     continue;
                 }
                 this.__setPropertyValue(property, data[property]);
