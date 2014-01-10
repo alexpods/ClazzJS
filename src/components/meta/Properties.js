@@ -530,7 +530,10 @@ meta('Properties', {
                 if (!this.__hasProperty(property.split('.')[0])) {
                     continue;
                 }
-                this.__setPropertyValue(property, data[property]);
+
+                var value = data[property];
+
+                _.isNull(value) ? this.__removePropertyValue(property) : this.__setPropertyValue(property, value);
             }
             return this;
         },
