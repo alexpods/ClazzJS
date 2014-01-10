@@ -1460,7 +1460,7 @@
                         container = this.__getPropertyValue([property].concat(fields).slice(0, -1));
 
                         if (!(field in container)) {
-                            throw new Error('Property "' + [property].concat(fields).join('.') + '" does not exists!');
+                            return this;
                         }
                     } else {
                         field = '_' + property;
