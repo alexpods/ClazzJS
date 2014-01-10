@@ -537,14 +537,14 @@ meta('Properties', {
 
                 if (_.isArray(value)) {
                     for (var i = 0, ii = value.length; i < ii; ++i) {
-                        if (_.isFunction(value[i].__getData)) {
+                        if (value[i] && _.isFunction(value[i].__getData)) {
                             value[i] = value[i].__getData();
                         }
                     }
                 }
                 else if (value && value.constructor === {}.constructor) {
                     for (var key in value) {
-                        if (_.isFunction(value[key].__getData)) {
+                        if (value[key] && _.isFunction(value[key].__getData)) {
                             value[key] = value[key].__getData();
                         }
                     }
