@@ -50,7 +50,7 @@
         };
 
         _.isSimpleObject = function(obj) {
-            return toString.call(obj) === '[object Object]';
+            return obj && ({}).constructor === obj.constructor;
         };
 
         _.isNull = function(obj) {
@@ -1053,7 +1053,7 @@
                             continue;
                         }
 
-                        if (level > 1 && Object.prototype.toString.call(container[name]) === '[object Object]') {
+                        if (level > 1 && _.isSimpleObject(container[name])) {
                             if (!(name in collector)) {
                                 collector[name] = {};
                             }

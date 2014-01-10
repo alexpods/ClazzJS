@@ -13,7 +13,7 @@ var _ = (function() {
     };
 
     _.isSimpleObject = function(obj) {
-        return toString.call(obj) === '[object Object]';
+        return obj && ({}).constructor === obj.constructor;
     };
 
     _.isNull = function(obj) {
