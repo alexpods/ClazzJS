@@ -901,10 +901,6 @@
                 for (var name in processors) {
                     processors[name].process(clazz, metaData);
                 }
-
-                if (_.isFunction(this.__setDefaults)) {
-                    this.__setDefaults();
-                }
             },
 
             getProcessors: function() {
