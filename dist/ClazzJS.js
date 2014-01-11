@@ -1458,10 +1458,12 @@
 
                     var oldValue = container[field];
 
-                    container[field] = (_.isSimpleObject(oldValue) && {}) || (_.isArray && []) || undefined;
+                    var newValue = (_.isSimpleObject(oldValue) && {}) || (_.isArray(oldValue) && []) || undefined;
+
+                    container[field] = newValue;
 
                     if (this.__checkEmitEvent()) {
-                        this.__emitPropertyClear([property].concat(fields), oldValue);
+                        this.__emitPropertyClear([property].concat(fields), oldValue, newValue);
                     }
 
                     return this;
