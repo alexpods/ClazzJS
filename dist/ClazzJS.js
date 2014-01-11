@@ -901,6 +901,10 @@
                 for (var name in processors) {
                     processors[name].process(clazz, metaData);
                 }
+
+                if (_.isFunction(clazz.__setDefaults)) {
+                    clazz.__setDefaults();
+                }
             },
 
             getProcessors: function() {
