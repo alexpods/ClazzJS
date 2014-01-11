@@ -225,7 +225,7 @@ meta('Properties', {
             container[field] = (_.isSimpleObject(oldValue) && {}) || (_.isArray && []) ||  undefined;
 
             if (this.__checkEmitEvent()) {
-                this.__emitPropertyCleared([property].concat(fields), oldValue);
+                this.__emitPropertyClear([property].concat(fields), oldValue);
             }
 
             return this;
@@ -267,7 +267,7 @@ meta('Properties', {
             }
 
             if (this.__checkEmitEvent()) {
-                this.__emitPropertyRemoved([property].concat(fields), oldValue);
+                this.__emitPropertyRemove([property].concat(fields), oldValue);
             }
             return this;
         },
@@ -301,13 +301,13 @@ meta('Properties', {
             container[field] = newValue;
 
             if (this.__checkEmitEvent()) {
-                this.__emitPropertySetted([property].concat(fields), newValue, oldValue, wasExisted);
+                this.__emitPropertySet([property].concat(fields), newValue, oldValue, wasExisted);
             }
 
             return this;
         },
 
-        __emitPropertyRemoved: function(fields, oldValue) {
+        __emitPropertyRemove: function(fields, oldValue) {
             var prop, key;
 
             this.__checkEmitEvent(true);
@@ -332,7 +332,7 @@ meta('Properties', {
             return this;
         },
 
-        __emitPropertyCleared: function(fields, oldValue) {
+        __emitPropertyClear: function(fields, oldValue) {
             var prop, key, i, ii;
 
             this.__checkEmitEvent(true);
@@ -360,7 +360,7 @@ meta('Properties', {
             return this;
         },
 
-        __emitPropertySetted: function(fields, newValue, oldValue, wasExists) {
+        __emitPropertySet: function(fields, newValue, oldValue, wasExists) {
             var prop, event, key, i, ii;
 
             this.__checkEmitEvent(true);
