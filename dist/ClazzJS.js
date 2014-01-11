@@ -1848,7 +1848,7 @@
 
                             var params = methods[method];
 
-                            if (_.isEmpty(params)) {
+                            if (_.isNull(params) || _.isUndefined(params)) {
                                 params = [];
                             }
                             if (!_.isArray(params)) {
