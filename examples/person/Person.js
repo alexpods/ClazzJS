@@ -16,6 +16,7 @@ clazz('Person', {
             },
             methods: ['get', 'is' ]
         },
+        isIntelligent: ['boolean', true],
         birthday: ['datetime'],
         phone:    ['string', { pattern: /\d{1,2}-\d{3}-\d{5,7}/ }],
         sex: {

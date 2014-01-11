@@ -7,7 +7,7 @@ clazz('Person', {
     },
     clazz_methods: {
         cryToAll: function(crying) {
-            document.write('Crying to all: "' + crying + '"!<br>');
+            document.write('Crying to all: "' + crying + '"!');
             this.emit('crying', crying);
         }
     },
@@ -38,37 +38,27 @@ clazz('Person', {
         }
     },
     events: {
-        "property.setted": {
-            birthdaySetted: function(property, value) {
+        "property.set": {
+            birthdayChanged: function(property, newValue, oldValue) {
                 if ('birthday' === property) {
                     document.write(
                         'Person "' + this.getUID() + '" ' +
-                            'set his birthday to "' + value + '"!<br>'
+                            'change his birthday form "' + oldValue + '" ' +
+                            'to "' + newValue + '"!<br>'
                     )
                 }
-            }
-        },
-        "property.changed": {
+            },
             addressChanged: function(property, newValue, oldValue) {
                 if ('address' === property) {
                     document.write(
                         'Person "' + this.getUID() + '" ' +
-                        'change his address from " ' + oldValue + '" '+
-                        'to "' + newValue + '"!<br>'
+                            'change his address from " ' + oldValue + '" '+
+                            'to "' + newValue + '"!<br>'
                     )
                 }
             },
-            birthdayChanged: function(property, newValue, oldValue) {
-                if ('birthday' === property) {
-                    document.write(
-                        'Person "'+this.getUID()+'" '+
-                            'change his birthday from" '+oldValue+'" '+
-                            'to "' + newValue + '"!<br>'
-                    );
-                }
-            }
         },
-        "property.address.removed": {
+        "property.address.remove": {
             addressRemoved: function(oldAddress) {
                 document.write(
                     'Person "' + this.getUID() + '" ' +

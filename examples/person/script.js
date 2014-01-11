@@ -16,8 +16,9 @@ var person = new Person({
 });
 
 document.write('<b>Person instance "George":</b><br>' +
-    'name: '       + person.getName() + '<br>' +
-    'birth year: ' + person.getBirthday().getFullYear() + '<br>' +
-    'address: '    + person.getAddress() + '<br>' +
-    'sex: '        + person.getSex() + '<br>'
+    'name: '          + person.getName() + '<br>' +
+    'birth year: '    + person.getBirthday().getFullYear() + '<br>' +
+    'address: '       + person.getAddress() + '<br>' +
+    'sex: '           + person.getSex() + '<br>' +
+    'isIntelligent: ' + person.isIntelligent() + '<br>'
 );
