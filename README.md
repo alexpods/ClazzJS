@@ -1,7 +1,7 @@
 ClazzJS
 =======
 
-ClazzJS is portable JavaScript library for class-style OOP programming. Its main goal to provide expressive DSL to
+ClazzJS is portable JavaScript library for class-style OOP programming. Its main goal is to provide expressive DSL to
 write your JavaScript programs in easy-to-understand, well-known, convenient and flexible class base manner. It's works
 well both on client and server sides.
 
@@ -12,13 +12,14 @@ Features include:
 * Events emitting
 * Object properties changes observing
 * Namespaces
+and more...
 
 You'll find the example bellow to have a common idea what I'm talking about.
 
 Documentation
 -------------
 
-> This docs doesn't describe most features of the library, but not all. Use source to learn ClazzJS better. In every doc chapter there are links on respective source files.
+> This docs describe many features of the library, but not all. Use source to learn ClazzJS better. In every doc chapter there are links on respective source files.
 
 1. [Installation](https://github.com/alexpods/ClazzJS/blob/master/docs/1.installation.md)
 2. [Clazz declaration](https://github.com/alexpods/ClazzJS/blob/master/docs/2.clazz_declaration.md)
