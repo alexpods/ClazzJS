@@ -132,6 +132,14 @@ meta('Properties', {
                 value = this.__applyGetters(property, value[field], fields.slice(0, i+1));
             }
 
+
+            if (this.__checkEmitEvent()) {
+                var prop = [property].concat(fields).join('.');
+
+                this.__emitEvent('property.' + prop + '.get',  value);
+                this.__emitEvent('property.get', prop, value);
+            }
+
             return value;
         },
 
@@ -160,13 +168,30 @@ meta('Properties', {
                 value = this.__applyGetters(property, value[field], fields.slice(0, i+1));
             }
 
-            return !_.isUndefined(value) && !_.isNull(value);
+            var result = !_.isUndefined(value) && !_.isNull(value);
+
+            if (this.__checkEmitEvent()) {
+                var prop = [property].concat(fields).join('.');
+
+                this.__emitEvent('property.' + prop + '.has',  result);
+                this.__emitEvent('property.has', prop, result);
+            }
+
+            return result;
         },
 
 
         __isPropertyValue: function(fields, compareValue) {
-            var value = this.__getPropertyValue(fields);
-            return !_.isUndefined(compareValue) ? value === compareValue : !!value;
+
+            var value  = this.__getPropertyValue(fields);
+            var result = !_.isUndefined(compareValue) ? value === compareValue : !!value;
+
+            if (this.__checkEmitEvent()) {
+                this.__emitEvent('property.' + fields + '.is',  result);
+                this.__emitEvent('property.is', fields, result);
+            }
+
+            return result;
         },
 
         __clearPropertyValue: function(fields) {
@@ -301,8 +326,8 @@ meta('Properties', {
 
             prop = fields.join('.');
 
-            this.__emitEvent('property.' + prop + '.removed',  oldValue);
-            this.__emitEvent('property.removed', prop, oldValue);
+            this.__emitEvent('property.' + prop + '.remove',  oldValue);
+            this.__emitEvent('property.remove', prop, oldValue);
 
             return this;
         },
@@ -329,8 +354,8 @@ meta('Properties', {
 
             prop = fields.join('.');
 
-            this.__emitEvent('property.' + prop + '.cleared', oldValue);
-            this.__emitEvent('property.cleared', prop, oldValue);
+            this.__emitEvent('property.' + prop + '.clear', oldValue);
+            this.__emitEvent('property.clear', prop, oldValue);
 
             return this;
         },
@@ -368,10 +393,9 @@ meta('Properties', {
 
             if (!isEqual) {
                 prop  = fields.join('.');
-                event = _.isUndefined(oldValue) || _.isNull(oldValue) ? 'setted' : 'changed';
 
-                this.__emitEvent('property.' + prop + '.' + event, newValue, oldValue);
-                this.__emitEvent('property.' + event, prop, newValue, oldValue);
+                this.__emitEvent('property.' + prop + '.' + 'set', newValue, oldValue);
+                this.__emitEvent('property.set', prop, newValue, oldValue);
 
                 if (fields.length && !wasExists) {
                     prop  = fields.slice(0,-1).join('.');
