@@ -1576,11 +1576,11 @@
 
                     if (_.isSimpleObject(oldValue)) {
                         for (key in oldValue) {
-                            this.__emitPropertyRemoved(fields.concat(key), oldValue[key]);
+                            this.__emitPropertyRemove(fields.concat(key), oldValue[key]);
                         }
                     } else if (_.isArray(oldValue)) {
                         for (i = 0, ii = oldValue.length; i < ii; ++i) {
-                            this.__emitPropertyRemoved(fields.concat(i), oldValue[i]);
+                            this.__emitPropertyRemove(fields.concat(i), oldValue[i]);
                         }
                     }
 
