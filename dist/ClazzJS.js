@@ -1392,6 +1392,7 @@
                         throw new Error('Property "' + property + '" does not exists!');
                     }
 
+                    var result = null;
                     var value = this.__applyGetters(property, this['_' + property]);
 
                     for (var i = 0, ii = fields.length; i < ii; ++i) {
@@ -1399,13 +1400,16 @@
                         var field = fields[i];
 
                         if (!(field in value)) {
-                            return false;
+                            result = false;
+                            break;
                         }
 
                         value = this.__applyGetters(property, value[field], fields.slice(0, i + 1));
                     }
 
-                    var result = !_.isUndefined(value) && !_.isNull(value);
+                    if (_.isNull(result)) {
+                        var result = !_.isUndefined(value) && !_.isNull(value);
+                    }
 
                     if (this.__checkEmitEvent()) {
                         var prop = [property].concat(fields).join('.');
