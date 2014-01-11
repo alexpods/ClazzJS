@@ -1802,24 +1802,61 @@
                     var properties = this.__getPropertiesParam();
 
                     for (var property in properties) {
-                        var value = this.__getPropertyValue(property);
+                        data[property] = this.__processData(this.__getPropertyValue(property));
+                    }
 
-                        if (_.isArray(value)) {
-                            for (var i = 0, ii = value.length; i < ii; ++i) {
-                                if (value[i] && _.isFunction(value[i].__getData)) {
-                                    value[i] = value[i].__getData();
-                                }
+                    return data;
+                },
+
+                __processData: function self_method(data, methods) {
+                    if (!data) {
+                        return data;
+                    }
+
+                    var i, ii, prop;
+
+                    if (data.constructor === ({}).constructor) {
+                        for (prop in data) {
+                            if (_.isUndefined(data[prop])) {
+                                delete data[prop];
+                                continue;
                             }
-                        } else if (value && value.constructor === {}.constructor) {
-                            for (var key in value) {
-                                if (value[key] && _.isFunction(value[key].__getData)) {
-                                    value[key] = value[key].__getData();
-                                }
-                            }
-                        } else if (value && _.isFunction(value.__getData)) {
-                            value = value.__getData();
+
+                            data[prop] = self_method(data[prop], methods);
                         }
-                        data[property] = value;
+                    } else if (_.isArray(data)) {
+                        for (i = 0, ii = data.length; i < ii; ++i) {
+                            if (_.isUndefined(data[i])) {
+                                --i;
+                                --ii;
+                                continue;
+                            }
+
+                            data[i] = self_method(data[i], methods);
+                        }
+                    } else {
+
+                        methods = _.extend({}, methods, {
+                            __getData: null
+                        });
+
+                        for (var method in methods) {
+
+                            if (!_.isFunction(data[method])) {
+                                continue;
+                            }
+
+                            var params = methods[method];
+
+                            if (_.isEmpty(params)) {
+                                params = [];
+                            }
+                            if (!_.isArray(params)) {
+                                params = [params];
+                            }
+
+                            data = data[method].apply(data, params);
+                        }
                     }
 
                     return data;
