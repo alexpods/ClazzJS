@@ -1160,7 +1160,7 @@
                     eventListeners = this.__getEventListeners('event.emit');
 
                     for (name in eventListeners) {
-                        eventListeners[name](event, params);
+                        eventListeners[name].call(this, event, params);
                     }
 
                     return this;
