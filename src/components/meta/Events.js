@@ -26,11 +26,22 @@ meta('Events', {
         },
 
         __emitEvent: function(event) {
-            var eventListeners = this.__getEventListeners(event);
+            var eventListeners, name;
 
-            for (var name in eventListeners) {
-                eventListeners[name].apply(this, _.toArray(arguments).slice(1));
+            var params = _.toArray(arguments).slice(1);
+
+            eventListeners = this.__getEventListeners(event);
+
+            for (name in eventListeners) {
+                eventListeners[name].apply(this, params);
             }
+
+            eventListeners = this.__getEventListeners('event.emit');
+
+            for (name in eventListeners) {
+                eventListeners[name](event, params);
+            }
+
             return this;
         },
 
