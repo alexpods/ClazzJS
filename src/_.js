@@ -65,6 +65,27 @@ var _ = (function() {
         return true;
     };
 
+    _.each = function(obj, iterator, context) {
+        if (obj == null) return;
+
+        var native = Array.prototype.forEach;
+
+        if (native && obj.forEach === native) {
+            obj.forEach(iterator, context);
+        }
+        else if (obj.length === +obj.length) {
+            for (var i = 0, ii = obj.length; i < ii; ++i) {
+                if (iterator.call(context, obj[i], i, obj) === {}) return;
+            }
+        } else {
+            for (var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    if (iterator.call(context, obj[key], key, obj) === {}) return;
+                }
+            }
+        }
+    };
+
     _.construct = function (klass, params) {
         var K = function() {
             return klass.apply(this, params);
