@@ -58,6 +58,13 @@ var _ = (function() {
         return arr[arr.length - 1];
     };
 
+    _.isEmpty = function(obj) {
+        if (obj == null) return true;
+        if (_.isArray(obj) || _.isString(obj)) return obj.length === 0;
+        for (var key in obj) if (obj.hasOwnProperty(key)) return false;
+        return true;
+    };
+
     _.construct = function (klass, params) {
         var K = function() {
             return klass.apply(this, params);

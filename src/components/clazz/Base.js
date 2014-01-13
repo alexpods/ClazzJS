@@ -42,7 +42,7 @@ clazz('Base', function() {
 
             init: function(data) {
                 this.__uid = ++uid;
-                return this.__setData(data);
+                return this.__setData(data, false);
             },
             emit: function() {
                 return this.__emitEvent.apply(this, _.toArray(arguments));

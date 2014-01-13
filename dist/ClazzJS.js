@@ -95,6 +95,14 @@
             return arr[arr.length - 1];
         };
 
+        _.isEmpty = function(obj) {
+            if (obj == null) return true;
+            if (_.isArray(obj) || _.isString(obj)) return obj.length === 0;
+            for (var key in obj)
+                if (obj.hasOwnProperty(key)) return false;
+            return true;
+        };
+
         _.construct = function(klass, params) {
             var K = function() {
                 return klass.apply(this, params);
@@ -1316,7 +1324,7 @@
                                 }
                             }
 
-                            this.__setPropertyValue(property, defaultValue);
+                            this.__setPropertyValue(property, defaultValue, false);
                         }
                     }
                 },
@@ -1359,16 +1367,16 @@
                     return ('_' + property) in this;
                 },
 
-                __getPropertyValue: function(fields) {
-
-                    if (_.isString(fields)) {
-                        fields = fields.split('.');
-                    }
+                __getPropertyValue: function(fields, options) {
+                    fields = this.__resolveFields(fields);
+                    options = this.__resolveOptions(options);
 
                     var property = fields.shift();
 
-                    if (!this.__hasProperty(property)) {
-                        throw new Error('Property "' + property + '" does not exists!');
+                    if (options.check) {
+                        this.__checkProperty(property, {
+                            readable: true
+                        });
                     }
 
                     var value = this.__applyGetters(property, this['_' + property]);
@@ -1384,8 +1392,7 @@
                         value = this.__applyGetters(property, value[field], fields.slice(0, i + 1));
                     }
 
-
-                    if (this.__checkEmitEvent()) {
+                    if (options.emit && this.__checkEmitEvent()) {
                         var prop = [property].concat(fields).join('.');
 
                         this.__emitEvent('property.' + prop + '.get', value);
@@ -1395,16 +1402,16 @@
                     return value;
                 },
 
-                __hasPropertyValue: function(fields) {
-
-                    if (_.isString(fields)) {
-                        fields = fields.split('.');
-                    }
+                __hasPropertyValue: function(fields, options) {
+                    fields = this.__resolveFields(fields);
+                    options = this.__resolveOptions(options);
 
                     var property = fields.shift();
 
-                    if (!this.__hasProperty(property)) {
-                        throw new Error('Property "' + property + '" does not exists!');
+                    if (options.check) {
+                        this.__checkProperty(property, {
+                            readable: true
+                        });
                     }
 
                     var result = null;
@@ -1426,7 +1433,7 @@
                         var result = !_.isUndefined(value) && !_.isNull(value);
                     }
 
-                    if (this.__checkEmitEvent()) {
+                    if (options.emit && this.__checkEmitEvent()) {
                         var prop = [property].concat(fields).join('.');
 
                         this.__emitEvent('property.' + prop + '.has', result);
@@ -1437,12 +1444,22 @@
                 },
 
 
-                __isPropertyValue: function(fields, compareValue) {
+                __isPropertyValue: function(fields, compareValue, options) {
+                    fields = this.__resolveFields(fields);
+                    options = this.__resolveOptions(options);
 
-                    var value = this.__getPropertyValue(fields);
+                    var property = fields[0];
+
+                    if (options.check) {
+                        this.__checkProperty(property, {
+                            readable: true
+                        });
+                    }
+
+                    var value = this.__getPropertyValue(fields, false);
                     var result = !_.isUndefined(compareValue) ? value === compareValue : !! value;
 
-                    if (this.__checkEmitEvent()) {
+                    if (options.emit && this.__checkEmitEvent()) {
                         this.__emitEvent('property.' + fields + '.is', result);
                         this.__emitEvent('property.is', fields, result);
                     }
@@ -1450,22 +1467,23 @@
                     return result;
                 },
 
-                __clearPropertyValue: function(fields) {
-                    if (_.isString(fields)) {
-                        fields = fields.split('.');
-                    }
+                __clearPropertyValue: function(fields, options) {
+                    fields = this.__resolveFields(fields);
+                    options = this.__resolveOptions(options);
 
                     var property = fields.shift();
 
-                    if (!this.__hasProperty(property)) {
-                        throw new Error('Property "' + property + '" does not exists!');
+                    if (options.check) {
+                        this.__checkProperty(property, {
+                            writable: true
+                        });
                     }
 
                     var field, container;
 
                     if (fields.length) {
                         field = _.last(fields);
-                        container = this.__getPropertyValue([property].concat(fields).slice(0, -1));
+                        container = this.__getPropertyValue([property].concat(fields).slice(0, -1), false);
 
                         if (!(field in container)) {
                             throw new Error('Property "' + [property].concat(fields).join('.') + '" does not exists!');
@@ -1476,27 +1494,27 @@
                     }
 
                     var oldValue = container[field];
-
                     var newValue = (_.isSimpleObject(oldValue) && {}) || (_.isArray(oldValue) && []) || undefined;
 
                     container[field] = newValue;
 
-                    if (this.__checkEmitEvent()) {
+                    if (options.emit && this.__checkEmitEvent()) {
                         this.__emitPropertyClear([property].concat(fields), oldValue, newValue);
                     }
 
                     return this;
                 },
 
-                __removePropertyValue: function(fields) {
-                    if (_.isString(fields)) {
-                        fields = fields.split('.');
-                    }
+                __removePropertyValue: function(fields, options) {
+                    fields = this.__resolveFields(fields);
+                    options = this.__resolveOptions(options);
 
                     var property = fields.shift();
 
-                    if (!this.__hasProperty(property)) {
-                        throw new Error('Property "' + property + '" does not exists!');
+                    if (options.check) {
+                        this.__checkProperty(property, {
+                            writable: true
+                        });
                     }
 
                     var field, container;
@@ -1521,28 +1539,29 @@
                         container[field] = undefined;
                     }
 
-                    if (this.__checkEmitEvent()) {
+                    if (options.emit && this.__checkEmitEvent()) {
                         this.__emitPropertyRemove([property].concat(fields), oldValue);
                     }
                     return this;
                 },
 
-                __setPropertyValue: function(fields, value) {
-                    if (_.isString(fields)) {
-                        fields = fields.split('.');
-                    }
+                __setPropertyValue: function(fields, value, options) {
+                    fields = this.__resolveFields(fields);
+                    options = this.__resolveOptions(options);
 
                     var property = fields.shift();
 
-                    if (!this.__hasProperty(property)) {
-                        throw new Error('Property "' + property + '" does not exists!');
+                    if (options.check) {
+                        this.__checkProperty(property, {
+                            writable: true
+                        });
                     }
 
                     var field, container;
 
                     if (fields.length) {
                         field = _.last(fields);
-                        container = this.__getPropertyValue([property].concat(fields).slice(0, -1));
+                        container = this.__getPropertyValue([property].concat(fields).slice(0, -1), false);
                     } else {
                         field = '_' + property;
                         container = this;
@@ -1554,21 +1573,92 @@
 
                     container[field] = newValue;
 
-                    if (this.__checkEmitEvent()) {
+                    if (options.emit && this.__checkEmitEvent()) {
                         this.__emitPropertySet([property].concat(fields), newValue, oldValue, wasExisted);
                     }
 
                     return this;
                 },
 
-                __emitPropertyRemove: function(fields, oldValue) {
-                    var prop, key;
-
-                    this.__checkEmitEvent(true);
+                __resolveFields: function(fields) {
 
                     if (_.isString(fields)) {
                         fields = fields.split('.');
                     }
+
+                    return fields;
+                },
+
+                __resolveOptions: function(options) {
+                    if (_.isUndefined(options)) {
+                        options = {};
+                    }
+                    if (!_.isObject(options)) {
+                        options = {
+                            emit: options,
+                            check: options
+                        };
+                    }
+                    return _.extend({
+                        emit: true,
+                        check: true
+                    }, options);
+                },
+
+                __isProperty: function(property, options) {
+                    return this.__checkProperty(property, options, false);
+                },
+
+                __checkProperty: function(property, options, throwError) {
+                    throwError = !_.isUndefined(throwError) ? throwError : true;
+
+                    var that = this;
+
+                    try {
+                        if (!this.__hasProperty(property)) {
+                            throw 'Property "' + property + '" does not exists!';
+                        }
+
+                        if ('readable' in options || 'writable' in options) {
+
+                            var params = this.__getPropertyParam(property);
+                            var rights = ['readable', 'writable'];
+
+                            for (var i = 0, ii = rights.length; i < ii; ++i) {
+                                if (!checkRight(rights[i], options, params)) {
+                                    throw '"' + rights[i] + '" check was failed for property "' + property + '"!';
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        if (!_.isString(error)) {
+                            throw error;
+                        }
+                        if (throwError) {
+                            throw new Error(error);
+                        }
+                        return false;
+                    }
+                    return true;
+
+
+                    function checkRight(right, options, params) {
+                        if (!(right in options)) {
+                            return true;
+                        }
+
+                        var value = right in params ? (_.isFunction(params[right]) ? params[right].call(that) : params[right]) : true;
+
+                        return options[right] == !! value;
+                    }
+                },
+
+                __emitPropertyRemove: function(fields, oldValue) {
+                    fields = this.__resolveFields(fields);
+
+                    var prop, key;
+
+                    this.__checkEmitEvent(true);
 
                     if (fields.length) {
                         prop = fields.slice(0, -1).join('.');
@@ -1587,13 +1677,11 @@
                 },
 
                 __emitPropertyClear: function(fields, oldValue) {
+                    fields = this.__resolveFields(fields);
+
                     var prop, key, i, ii;
 
                     this.__checkEmitEvent(true);
-
-                    if (_.isString(fields)) {
-                        fields = fields.split('.');
-                    }
 
                     if (_.isSimpleObject(oldValue)) {
                         for (key in oldValue) {
@@ -1614,13 +1702,11 @@
                 },
 
                 __emitPropertySet: function(fields, newValue, oldValue, wasExists) {
+                    fields = this.__resolveFields(fields);
+
                     var prop, event, key, i, ii;
 
                     this.__checkEmitEvent(true);
-
-                    if (_.isString(fields)) {
-                        fields = fields.split('.');
-                    }
 
                     var isEqual = true;
 
@@ -1661,8 +1747,6 @@
                 },
 
                 __checkEmitEvent: function(throwError) {
-                    throwError = !_.isUndefined(throwError) ? throwError : false;
-
                     var check = _.isFunction(this.__emitEvent)
 
                     if (throwError && !check) {
@@ -1802,7 +1886,7 @@
                     return value;
                 },
 
-                __setData: function(data) {
+                __setData: function(data, options) {
                     for (var property in data) {
                         if (!this.__hasProperty(property.split('.')[0])) {
                             continue;
@@ -1810,7 +1894,13 @@
 
                         var value = data[property];
 
-                        _.isNull(value) ? this.__removePropertyValue(property) : this.__setPropertyValue(property, value);
+                        if (_.isUndefined(value) || _.isNull(value)) {
+                            this.__removePropertyValue(property, options);
+                        } else if (_.isObject(value) && _.isEmpty(value)) {
+                            this.__clearPropertyValue(property, options)
+                        } else {
+                            this.__setPropertyValue(property, value, options);
+                        }
                     }
                     return this;
                 },
@@ -1946,7 +2036,9 @@
                 constraints: 'Property/Constraints',
                 converters: 'Property/Converters',
                 getters: 'Property/Getters',
-                setters: 'Property/Setters'
+                setters: 'Property/Setters',
+                readable: 'Property/Readable',
+                writable: 'Property/Writable'
             }
         });
         namespace('Property', 'meta', function(meta) {
@@ -2121,6 +2213,11 @@
             });
 
 
+            meta('Readable', {
+                process: function(object, readable, property) {
+                    object.__setPropertyParam(property, 'readable', readable);
+                }
+            });
             meta('Setters', {
 
                 process: function(object, setters, property) {
@@ -2320,6 +2417,11 @@
                     }
                 }
             });
+            meta('Writable', {
+                process: function(object, writable, property) {
+                    object.__setPropertyParam(property, 'writable', writable);
+                }
+            });
         });
         clazz('Base', function() {
 
@@ -2365,7 +2467,7 @@
 
                     init: function(data) {
                         this.__uid = ++uid;
-                        return this.__setData(data);
+                        return this.__setData(data, false);
                     },
                     emit: function() {
                         return this.__emitEvent.apply(this, _.toArray(arguments));

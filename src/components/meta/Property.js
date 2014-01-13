@@ -57,6 +57,8 @@ meta('Property', {
         constraints: 'Property/Constraints',
         converters:  'Property/Converters',
         getters:     'Property/Getters',
-        setters:     'Property/Setters'
+        setters:     'Property/Setters',
+        readable:    'Property/Readable',
+        writable:    'Property/Writable'
     }
 });
