@@ -33,7 +33,7 @@ _.extend(Clazz.prototype, {
     },
 
     has: function(name) {
-        return !!this.resolveName(name);
+        return !!this.resolvePath(name);
     },
 
     get: function(originalName, parent, dependencies) {
