@@ -1452,7 +1452,7 @@
                     fields = this.__resolveFields(fields);
                     options = this.__resolveOptions(options);
 
-                    var property = fields[0];
+                    var property = fields.shift();
 
                     if (options.check) {
                         this.__checkProperty(property, {
@@ -1462,12 +1462,14 @@
                         });
                     }
 
-                    var value = this.__getPropertyValue(fields, false);
+                    var value = this.__getPropertyValue([property].concat(fields), false);
                     var result = !_.isUndefined(compareValue) ? value === compareValue : !! value;
 
                     if (options.emit && this.__checkEmitEvent()) {
-                        this.__emitEvent('property.' + fields + '.is', result);
-                        this.__emitEvent('property.is', fields, result);
+                        var prop = [property].concat(fields).join('.');
+
+                        this.__emitEvent('property.' + prop + '.is', result);
+                        this.__emitEvent('property.is', prop, result);
                     }
 
                     return result;
