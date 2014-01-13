@@ -114,7 +114,11 @@ meta('Properties', {
             var property = fields.shift();
 
             if (options.check) {
-                this.__checkProperty(property, { readable: true });
+                this.__checkProperty(property, {
+                    readable: true,
+                    method:  'get',
+                    params:   _.toArray(arguments)
+                });
             }
 
             var value = this.__applyGetters(property, this['_' + property]);
@@ -147,7 +151,11 @@ meta('Properties', {
             var property = fields.shift();
 
             if (options.check) {
-                this.__checkProperty(property, { readable: true });
+                this.__checkProperty(property, {
+                    readable: true,
+                    method:   'has',
+                    params:  _.toArray(arguments)
+                });
             }
 
             var result = null;
@@ -187,7 +195,11 @@ meta('Properties', {
             var property = fields[0];
 
             if (options.check) {
-                this.__checkProperty(property, { readable: true });
+                this.__checkProperty(property, {
+                    readable: true,
+                    method:   'is',
+                    params:   _.toArray(arguments)
+                });
             }
 
             var value  = this.__getPropertyValue(fields, false);
@@ -208,7 +220,11 @@ meta('Properties', {
             var property = fields.shift();
 
             if (options.check) {
-                this.__checkProperty(property, { writable: true });
+                this.__checkProperty(property, {
+                    writable: true,
+                    method:   'clear',
+                    params:   _.toArray(arguments)
+                });
             }
 
             var field, container;
@@ -245,7 +261,11 @@ meta('Properties', {
             var property = fields.shift();
 
             if (options.check) {
-                this.__checkProperty(property, { writable: true });
+                this.__checkProperty(property, {
+                    writable: true,
+                    method:   'remove',
+                    params:  _.toArray(arguments)
+                });
             }
 
             var field, container;
@@ -285,7 +305,11 @@ meta('Properties', {
             var property = fields.shift();
 
             if (options.check) {
-                this.__checkProperty(property, { writable: true });
+                this.__checkProperty(property, {
+                    writable: true,
+                    method:   'set',
+                    params:   _.toArray(arguments)
+                });
             }
 
             var field, container;
@@ -335,7 +359,7 @@ meta('Properties', {
             return this.__checkProperty(property, options, false);
         },
 
-        __checkProperty: function(property, options, throwError) {
+        __checkProperty: function(property, options, methodName, methodParams, throwError) {
             throwError = !_.isUndefined(throwError) ? throwError : true;
 
             var that = this;
@@ -375,7 +399,7 @@ meta('Properties', {
                 }
 
                 var value = right in params
-                    ? (_.isFunction(params[right]) ? params[right].call(that) : params[right])
+                    ? (_.isFunction(params[right]) ? params[right].call(that, options.method, options.params) : params[right])
                     : true;
 
                 return options[right] == !!value;
