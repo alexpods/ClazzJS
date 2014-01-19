@@ -32,7 +32,7 @@ meta('Events', {
 
         object.__initEvents();
 
-        __.each(events, function(eventListeners, eventName) {
+        _.each(events, function(eventListeners, eventName) {
             _.each(eventListeners, function(listener, listenerName) {
                 object.__addEventListener(eventName, listenerName, listener);
             });
@@ -199,7 +199,7 @@ meta('Events', {
                 })
             });
 
-            return event ? eventListeners[event] || {} : eventListeners;
+            return event ? events[event] || {} : events;
         }
     }
 });

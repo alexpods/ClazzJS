@@ -98,11 +98,12 @@ meta('Base', {
      * @this {metaProcessor}
      */
     set: function(processors) {
+        var that = this;
         _.each(processors, function(processor, name) {
-            if (name in this._processors) {
+            if (name in that._processors) {
                 throw new Error('Processor "' + name + '" already exists!');
             }
-            this._processors[name] = processor;
+            that._processors[name] = processor;
         });
 
         return this;

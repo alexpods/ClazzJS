@@ -52,7 +52,7 @@ meta('Property', {
         object.__setPropertyParam(property, {});
 
         // Process property meta data by options processors
-        _.each(propertyMeta, function(option) {
+        _.each(propertyMeta, function(data, option) {
             if (!(option in that._options)) {
                 return;
             }
@@ -63,7 +63,7 @@ meta('Property', {
                 processor = meta(processor);
             }
 
-            processor.process(object, propertyMeta[option], property);
+            processor.process(object, data, property);
         });
     },
 

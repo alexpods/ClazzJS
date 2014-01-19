@@ -123,7 +123,8 @@ _.extend(Clazz.prototype, {
 
             manager.set(name, factory.create({
                 name:         clazzData.name,
-                parent:       parent || clazzData.parent || null,
+                parent:       parent,
+                metaParent:   clazzData.parent,
                 meta:         clazzData.meta,
                 dependencies: dependencies,
                 clazz:        clazzData.clazz

@@ -33,7 +33,7 @@ _.extend(Manager.prototype, {
      * @this {Manager}
      */
     hasData: function(name) {
-        return name in this._clazzData;
+        return name in this._data;
     },
 
     /**
@@ -47,10 +47,10 @@ _.extend(Manager.prototype, {
      * @this {Manager}
      */
     getData: function(name) {
-        if (!this.hasClazzData(name)) {
+        if (!this.hasData(name)) {
             throw new Error('Data does not exist for clazz "' + name + '"!');
         }
-        return this._clazzData[name];
+        return this._data[name];
     },
 
     /**

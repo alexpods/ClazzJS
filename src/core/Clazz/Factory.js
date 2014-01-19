@@ -79,9 +79,10 @@ _.extend(Factory.prototype, {
     /**
      * Creates new clazz based on clazz data
      *
-     * @param   {string}   [data.name]    Clazz name. If it does not specified name will be generated automatically
-     * @param   {function} [data.parent]  Parent clazz. If it does not specified, base clazz become a parent
-     * @param   {object}   [data.meta]    Meta data for clazz creation (It'll be processed by meta processor)
+     * @param   {string}   [data.name]          Clazz name. If it does not specified name will be generated automatically
+     * @param   {clazz}    [data.parent]        Parent clazz. If it does not specified, base clazz become a parent
+     * @param   {clazz}    [data.metaParent]    Parent clazz from meta data
+     * @param   {object}   [data.meta]          Meta data for clazz creation (It'll be processed by meta processor)
      * @param   {Array}    [data.dependencies] Clazz dependencies
      * @param   {Clazz}    [data.clazz]   Clazz constructor
      *
@@ -93,6 +94,7 @@ _.extend(Factory.prototype, {
 
         var name         = data.name || this.generateName();
         var parent       = data.parent;
+        var metaParent   = data.metaParent;
         var meta         = data.meta         || {};
         var dependencies = data.dependencies || [];
         var clazz        = data.clazz;
@@ -104,6 +106,11 @@ _.extend(Factory.prototype, {
 
         if (_.isFunction(meta)) {
             meta = meta.apply(newClazz, [newClazz].concat(dependencies)) || {};
+        }
+
+
+        if (!meta.parent && metaParent) {
+            meta.parent = metaParent;
         }
 
         parent = parent || meta.parent;
@@ -159,21 +166,24 @@ _.extend(Factory.prototype, {
      * @this {Factory}
      */
     applyParent: function(clazz, parent) {
-
         parent = parent || this.getBaseClazz();
 
         if (parent) {
-            _.each(parent, function(method, name) {
-                if (name in clazz) {
-                    return;
+            for (var property in parent) {
+                if (!parent.hasOwnProperty(property) || (property in clazz)) {
+                    continue;
                 }
-                if (_.isFunction(method)) {
-                    clazz[name] = method;
+
+                else if (_.isFunction(parent[property])) {
+                    clazz[property] = parent[property];
                 }
-            });
+                else if (property[0] === '_') {
+                    clazz[property] = undefined;
+                }
+            }
         }
 
-        clazz.prototype = _.extend(this.objectCreate(parent ? parent.prototype : {}), clazz.prototype);
+        clazz.prototype = _.extend(Object.create(parent ? parent.prototype : {}), clazz.prototype);
 
         clazz.__parent = parent || null;
         clazz.prototype.constructor = clazz;

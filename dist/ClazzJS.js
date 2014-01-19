@@ -1013,7 +1013,8 @@
 
                     manager.set(name, factory.create({
                         name: clazzData.name,
-                        parent: parent || clazzData.parent || null,
+                        parent: parent,
+                        metaParent: clazzData.parent,
                         meta: clazzData.meta,
                         dependencies: dependencies,
                         clazz: clazzData.clazz
@@ -1165,9 +1166,10 @@
             /**
              * Creates new clazz based on clazz data
              *
-             * @param   {string}   [data.name]    Clazz name. If it does not specified name will be generated automatically
-             * @param   {function} [data.parent]  Parent clazz. If it does not specified, base clazz become a parent
-             * @param   {object}   [data.meta]    Meta data for clazz creation (It'll be processed by meta processor)
+             * @param   {string}   [data.name]          Clazz name. If it does not specified name will be generated automatically
+             * @param   {clazz}    [data.parent]        Parent clazz. If it does not specified, base clazz become a parent
+             * @param   {clazz}    [data.metaParent]    Parent clazz from meta data
+             * @param   {object}   [data.meta]          Meta data for clazz creation (It'll be processed by meta processor)
              * @param   {Array}    [data.dependencies] Clazz dependencies
              * @param   {Clazz}    [data.clazz]   Clazz constructor
              *
@@ -1179,6 +1181,7 @@
 
                 var name = data.name || this.generateName();
                 var parent = data.parent;
+                var metaParent = data.metaParent;
                 var meta = data.meta || {};
                 var dependencies = data.dependencies || [];
                 var clazz = data.clazz;
@@ -1190,6 +1193,11 @@
 
                 if (_.isFunction(meta)) {
                     meta = meta.apply(newClazz, [newClazz].concat(dependencies)) || {};
+                }
+
+
+                if (!meta.parent && metaParent) {
+                    meta.parent = metaParent;
                 }
 
                 parent = parent || meta.parent;
@@ -1245,21 +1253,21 @@
              * @this {Factory}
              */
             applyParent: function(clazz, parent) {
-
                 parent = parent || this.getBaseClazz();
 
                 if (parent) {
-                    _.each(parent, function(method, name) {
-                        if (name in clazz) {
-                            return;
+                    for (var property in parent) {
+                        if (!parent.hasOwnProperty(property) || (property in clazz)) {
+                            continue;
+                        } else if (_.isFunction(parent[property])) {
+                            clazz[property] = parent[property];
+                        } else if (property[0] === '_') {
+                            clazz[property] = undefined;
                         }
-                        if (_.isFunction(method)) {
-                            clazz[name] = method;
-                        }
-                    });
+                    }
                 }
 
-                clazz.prototype = _.extend(this.objectCreate(parent ? parent.prototype : {}), clazz.prototype);
+                clazz.prototype = _.extend(Object.create(parent ? parent.prototype : {}), clazz.prototype);
 
                 clazz.__parent = parent || null;
                 clazz.prototype.constructor = clazz;
@@ -1347,7 +1355,7 @@
              * @this {Manager}
              */
             hasData: function(name) {
-                return name in this._clazzData;
+                return name in this._data;
             },
 
             /**
@@ -1361,10 +1369,10 @@
              * @this {Manager}
              */
             getData: function(name) {
-                if (!this.hasClazzData(name)) {
+                if (!this.hasData(name)) {
                     throw new Error('Data does not exist for clazz "' + name + '"!');
                 }
-                return this._clazzData[name];
+                return this._data[name];
             },
 
             /**
@@ -1612,11 +1620,12 @@
              * @this {metaProcessor}
              */
             set: function(processors) {
+                var that = this;
                 _.each(processors, function(processor, name) {
-                    if (name in this._processors) {
+                    if (name in that._processors) {
                         throw new Error('Processor "' + name + '" already exists!');
                     }
-                    this._processors[name] = processor;
+                    that._processors[name] = processor;
                 });
 
                 return this;
@@ -1979,7 +1988,7 @@
 
                 object.__initEvents();
 
-                __.each(events, function(eventListeners, eventName) {
+                _.each(events, function(eventListeners, eventName) {
                     _.each(eventListeners, function(listener, listenerName) {
                         object.__addEventListener(eventName, listenerName, listener);
                     });
@@ -2145,7 +2154,7 @@
                         })
                     });
 
-                    return event ? eventListeners[event] || {} : eventListeners;
+                    return event ? events[event] || {} : events;
                 }
             }
         });
@@ -2228,10 +2237,10 @@
 
                 object.__initProperties();
 
-                var propertyMetaProcessor = this.getPropertyMetaProcessor();
+                var processor = this.get();
 
                 _.each(properties, function(data, property) {
-                    propertyMetaProcessor.process(object, data, property);
+                    processor.process(object, data, property);
                 });
             },
 
@@ -2242,7 +2251,7 @@
              *
              * @this {metaProcessor}
              */
-            get function() {
+            get: function() {
                 var processor = this._processor;
 
                 if (_.isString(processor)) {
@@ -2293,7 +2302,7 @@
 
                     _.each(propertiesParams, function(params, property) {
 
-                        var value = this.__getPropertyValue(property);
+                        var value = that.__getPropertyValue(property);
 
                         if (_.isUndefined(value) && 'default' in params) {
 
@@ -2301,7 +2310,7 @@
                             default;
 
                             if (_.isFunction(defaultValue)) {
-                                defaultValue = defaultValue.call(this);
+                                defaultValue = defaultValue.call(that);
                             }
 
                             if (defaultValue) {
@@ -3298,7 +3307,7 @@
                 object.__setPropertyParam(property, {});
 
                 // Process property meta data by options processors
-                _.each(propertyMeta, function(option) {
+                _.each(propertyMeta, function(data, option) {
                     if (!(option in that._options)) {
                         return;
                     }
@@ -3309,7 +3318,7 @@
                         processor = meta(processor);
                     }
 
-                    processor.process(object, propertyMeta[option], property);
+                    processor.process(object, data, property);
                 });
             },
 

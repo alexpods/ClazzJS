@@ -38,10 +38,10 @@ meta('Properties', {
 
         object.__initProperties();
 
-        var propertyMetaProcessor = this.getPropertyMetaProcessor();
+        var processor = this.get();
 
         _.each(properties, function(data, property) {
-            propertyMetaProcessor.process(object, data, property);
+             processor.process(object, data, property);
         });
     },
 
@@ -52,7 +52,7 @@ meta('Properties', {
      *
      * @this {metaProcessor}
      */
-    get function() {
+    get: function() {
         var processor = this._processor;
 
         if (_.isString(processor)) {
@@ -103,14 +103,14 @@ meta('Properties', {
 
             _.each(propertiesParams, function(params, property) {
 
-                var value = this.__getPropertyValue(property);
+                var value = that.__getPropertyValue(property);
 
                 if (_.isUndefined(value) && 'default' in params) {
 
                     var defaultValue = params.default;
 
                     if (_.isFunction(defaultValue)) {
-                        defaultValue = defaultValue.call(this);
+                        defaultValue = defaultValue.call(that);
                     }
 
                     if (defaultValue) {
