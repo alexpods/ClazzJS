@@ -1,5 +1,27 @@
+/**
+ * Clazz constructor
+ *
+ * @param {Manager}   manager   Clazz manager
+ * @param {Factory}   factory   Clazz factory
+ * @param {Namespace} namespace Namespace
+ * @returns {Clazz} Clazz class
+ *
+ * @constructor
+ */
 var Clazz = function(manager, factory, namespace) {
 
+    /**
+     * Clazz
+     * Create new clazz or gets specified clazz
+     *
+     * @typedef {function} Clazz
+     *
+     * @param {string}       name                   Clazz name
+     * @param {clazz}        parent                 Parent clazz
+     * @param {object|array} metaOrDependencies     Meta data for clazz creation or clazz dependencies
+     *
+     * @returns {clazz|undefined} New clazz or undefined if clazz was created
+     */
     var self = function(name, parent, metaOrDependencies) {
         var last = _.last(arguments);
 
@@ -20,22 +42,63 @@ var Clazz = function(manager, factory, namespace) {
 
 _.extend(Clazz.prototype, {
 
+    /**
+     * Gets clazz manager
+     *
+     * @returns {Manager} Clazz manager
+     *
+     * @this {Clazz}
+     */
     getManager: function() {
         return this._manager;
     },
 
+    /**
+     * Gets clazz factory
+     *
+     * @returns {Factory} Clazz factory
+     *
+     * @this {Clazz}
+     */
     getFactory: function() {
         return this._factory;
     },
 
+    /**
+     * Gets namespace
+     *
+     * @returns {Namespace} Namespace
+     *
+     * @this {Clazz}
+     */
     getNamespace: function() {
         return this._namespace;
     },
 
+    /**
+     * Checks whether clazz exists
+     *
+     * @param {string} name Clazz name
+     * @returns {boolean} true if clazz exist
+     *
+     * @this {Clazz}
+     */
     has: function(name) {
-        return !!this.resolvePath(name);
+        return !!this.resolveName(name);
     },
 
+    /**
+     * Gets clazz
+     *
+     * @param {string} originalName  Clazz name
+     * @param {clazz}  parent        Parent clazz
+     * @param {array}  dependencies  Clazz dependencies
+     * @returns {clazz} Clazz
+     *
+     * @throw {Error} if clazz does not exist
+     *
+     * @this {Clazz}
+     */
     get: function(originalName, parent, dependencies) {
 
         if (_.isUndefined(dependencies) && _.isArray(parent)) {
@@ -43,33 +106,43 @@ _.extend(Clazz.prototype, {
             parent       = undefined;
         }
 
-        var name = this.resolvePath(originalName);
+        var name = this.resolveName(originalName);
 
         if (!name) {
-            throw new Error('Clazz "' + originalName + '" does not exists!');
+            throw new Error('Clazz "' + originalName + '" does not exist!');
         }
 
         dependencies = dependencies || [];
 
         var manager  = this.getManager();
 
-        if (!manager.hasClazz(name, parent, dependencies)) {
+        if (!manager.has(name, parent, dependencies)) {
 
             var factory   = this.getFactory();
-            var clazzData = manager.getClazzData(name);
+            var clazzData = manager.getData(name);
 
-            manager.setClazz(name, factory.create({
+            manager.set(name, factory.create({
                 name:         clazzData.name,
-                parent:       parent,
-                metaParent:   clazzData.parent,
+                parent:       parent || clazzData.parent || null,
                 meta:         clazzData.meta,
                 dependencies: dependencies,
                 clazz:        clazzData.clazz
             }), parent, dependencies);
         }
-        return manager.getClazz(name, parent, dependencies);
+
+        return manager.get(name, parent, dependencies);
     },
 
+    /**
+     * Sets clazz
+     *
+     * @param {string} name    Clazz name
+     * @param {clazz}  parent  Parent clazz
+     * @param {array}  meta    Meta data
+     * @returns {Clazz} this
+     *
+     * @this {Clazz}
+     */
     set: function(name, parent, meta) {
 
         if (_.isUndefined(meta)) {
@@ -91,7 +164,7 @@ _.extend(Clazz.prototype, {
             parent = namespace.adjustPath(parent);
         }
 
-        manager.setClazzData(name, {
+        manager.setData(name, {
             name:       name,
             parent:     parent,
             meta:       meta,
@@ -101,14 +174,22 @@ _.extend(Clazz.prototype, {
         return this;
     },
 
-    resolvePath: function(path) {
+    /**
+     * Resolves clazz name
+     *
+     * @param   {string} name Clazz name
+     * @returns {string|undefined} Resolved clazz name or undefined if name could not be resolved
+     *
+     * @this {Clazz}
+     */
+    resolveName: function(name) {
 
         var namespace = this.getNamespace();
         var manager   = this.getManager();
 
-        return namespace.getScope().search(namespace.adjustPath(path), function(path) {
-            if (manager.hasClazzData(path)) {
-                return path;
+        return namespace.getScope().search(namespace.adjustPath(name), function(name) {
+            if (manager.hasData(name)) {
+                return name;
             }
         })
     }

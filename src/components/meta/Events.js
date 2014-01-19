@@ -1,53 +1,102 @@
+/**
+ * Events meta processor
+ * Applies events to clazz and its prototype
+ */
 meta('Events', {
 
+    /**
+     * Applies events to clazz and its prototype
+     *
+     * @param {clazz}  clazz    Clazz
+     * @param {object} metaData Meta data with 'clazz_event' and 'event' properties
+     *
+     * @this {metaProcessor}
+     */
     process: function(clazz, metaData) {
         this.applyEvents(clazz, metaData.clazz_events || {});
         this.applyEvents(clazz.prototype, metaData.events || {});
     },
 
+    /**
+     * Implements events prototype and applies events to object
+     *
+     * @param {clazz|object} object Clazz of its prototype
+     * @param {object}       events Events
+     *
+     * @this {metaProcessor}
+     */
     applyEvents: function(object, events) {
         if (!object.__isInterfaceImplemented('events')) {
             object.__implementInterface('events', this.interface);
         }
 
-        object.__initEventsCallbacks();
+        object.__initEvents();
 
-        for (var event in events) {
-            for (var name in events[event]) {
-                object.__addEventListener(event, name, events[event][name]);
-            }
-        }
+        __.each(events, function(eventListeners, eventName) {
+            _.each(eventListeners, function(listener, listenerName) {
+                object.__addEventListener(eventName, listenerName, listener);
+            });
+        });
     },
 
+    /**
+     * Events interface
+     */
     interface: {
 
-        __initEventsCallbacks: function() {
+        /**
+         * Events initialization
+         *
+         * @this {clazz|object}
+         */
+        __initEvents: function() {
             this.__events = {};
         },
 
-        __emitEvent: function(event) {
-            var eventListeners, name;
+        /**
+         * Emits specified event
+         *
+         * @param   {string} event Event name
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
+        __emitEvent: function(event /* params */) {
 
+            var listeners;
+            var that = this;
             var params = _.toArray(arguments).slice(1);
 
-            eventListeners = this.__getEventListeners(event);
+            listeners = this.__getEventListeners(event);
 
-            for (name in eventListeners) {
-                eventListeners[name].apply(this, params);
-            }
+            _.each(listeners, function(listener) {
+                listener.apply(that, params);
+            });
 
-            eventListeners = this.__getEventListeners('event.emit');
+            listeners = this.__getEventListeners('event.emit');
 
-            for (name in eventListeners) {
-                eventListeners[name].call(this, event, params);
-            }
+            _.each(listeners, function(listener) {
+                listener.call(that, event, params);
+            });
 
             return this;
         },
 
+        /**
+         * Adds event listener for specified event
+         *
+         * @param {string}   event    Event name
+         * @param {string}   name     Listener name
+         * @param {function} callback Listener handler
+         * @returns {clazz|object} this
+         *
+         * @throws {Error} if event listener for specified event already exist
+         *
+         * @this {clazz|object}
+         */
         __addEventListener: function(event, name, callback) {
             if (this.__hasEventListener(event, name)) {
-                throw new Error('Event listener for event "' + event + '" with name "' + name + '" is already exists!');
+                throw new Error('Event listener for event "' + event + '" with name "' + name + '" already exist!');
             }
 
             if (!(event in this.__events)) {
@@ -59,55 +108,96 @@ meta('Events', {
             return this;
         },
 
+        /**
+         * Removes event listener for specified event
+         *
+         * @param {string} event Event name
+         * @param {string} name  Listener name
+         * @returns {clazz|object} this
+         *
+         * @throws {Error} if event listener for specified event does not exists
+         *
+         * @this {clazz|object}
+         */
         __removeEventListener: function(event, name) {
+            var that = this;
 
-            if (!(event in this.__events)) {
-                this.__events[event] = {};
+            if (!(event in that.__events)) {
+                that.__events[event] = {};
             }
 
             if (!_.isUndefined(name)) {
-                if (!this.__hasEventListener(event, name)) {
+                if (!that.__hasEventListener(event, name)) {
                     throw new Error('There is no "' + event +  (name ? '"::"' + name : '') + '" event callback!');
                 }
 
-                this.__events[event][name] = undefined;
+                that.__events[event][name] = undefined;
             }
             else {
-                var eventListeners = this.__getEventListeners(event);
 
-                for (var name in eventListeners) {
-                    this.__events[event][name] = undefined;
-                }
+                _.each(that.__getEventListeners(event), function(listener, name) {
+                    that.__events[event][name] = undefined;
+                });
             }
 
-            return this;
+            return that;
         },
 
+        /**
+         * Checks whether specified event listener exist
+         *
+         * @param {string} event Event name
+         * @param {string} name  Listener name
+         * @returns {boolean} true if specified event listener exist
+         *
+         * @this {clazz|object}
+         */
         __hasEventListener: function(event, name) {
             return name in this.__getEventListeners(event)
         },
 
+        /**
+         * Gets event listener
+         *
+         * @param   {string} event Event name
+         * @param   {string} name  Listener name
+         * @returns {function} Event listener handler
+         *
+         * @throws {Error} if event listener does not exist
+         *
+         * @this {clazz|object}
+         */
         __getEventListener: function(event, name) {
 
             var eventListeners = this.__getEventListeners(event);
 
             if (!(name in eventListeners)) {
-                throw new Error('Event listener for event "' + event + '" with name "' + name + '" does not exists!');
+                throw new Error('Event listener for event "' + event + '" with name "' + name + '" does not exist!');
             }
 
             return eventListeners[event][name];
         },
 
-        __getEventListeners: function(event) {
-            var eventListeners = this.__collectAllPropertyValues.apply(this, ['__events', 2].concat(event || []));
 
-            for (var e in eventListeners) {
-                for (var n in eventListeners[e]) {
-                    if (_.isUndefined(eventListeners[e][n])) {
-                        delete eventListeners[e][n];
+        /**
+         * Gets all event listeners for specified event
+         *
+         * @param   {string} event Event name
+         *
+         * @returns {object} Hash of event listener
+         *
+         * @this {clazz|object}
+         */
+        __getEventListeners: function(event) {
+            var events = this.__collectAllPropertyValues.apply(this, ['__events', 2].concat(event || []));
+
+            _.each(events, function(eventsListeners) {
+                _.each(eventsListeners, function(listener, listenerName) {
+                    if (_.isUndefined(listener)) {
+                        delete eventsListeners[listenerName];
                     }
-                }
-            }
+                })
+            });
 
             return event ? eventListeners[event] || {} : eventListeners;
         }

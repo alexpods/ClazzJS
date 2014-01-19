@@ -1,3 +1,11 @@
+/**
+ * Clazz factory
+ *
+ * @param {metaProcessor} [options.metaProcessor] Meta processor
+ * @param {clazz}         [options.baseClazz]     Base clazz
+ *
+ * @constructor
+ */
 var Factory = function(options) {
     options = options || {};
 
@@ -8,12 +16,32 @@ var Factory = function(options) {
 
 _.extend(Factory.prototype, {
 
+    /**
+     * clazz
+     * @typedef {function} clazz
+     */
+
     CLAZZ_NAME: 'Clazz{uid}',
 
+    /**
+     * Gets base clazz
+     *
+     * @returns {clazz} Base clazz
+     *
+     * @this {Factory}
+     */
     getBaseClazz: function() {
         return this._baseClazz;
     },
 
+    /**
+     * Sets base clazz
+     *
+     * @param   {clazz} baseClazz Base clazz
+     * @returns {Factory} this
+     *
+     * @this {Factory}
+     */
     setBaseClazz: function(baseClazz) {
         if (!_.isFunction(baseClazz)) {
             throw new Error('Base clazz must be a function!');
@@ -22,10 +50,24 @@ _.extend(Factory.prototype, {
         return this;
     },
 
+    /**
+     * Gets factory meta processor
+     *
+     * @returns {metaProcessor} Meta processor
+     *
+     * @this {Factory}
+     */
     getMetaProcessor: function() {
         return this._metaProcessor;
     },
 
+    /**
+     * Sets meta processor
+     * @param   {metaProcessor} metaProcessor Meta processor
+     * @returns {Factory} this
+     *
+     * @this {Factory}
+     */
     setMetaProcessor: function(metaProcessor) {
         if (!_.isFunction(metaProcessor.process)) {
             throw new Error('Meta processor must have "process" method!');
@@ -34,26 +76,34 @@ _.extend(Factory.prototype, {
         return this;
     },
 
+    /**
+     * Creates new clazz based on clazz data
+     *
+     * @param   {string}   [data.name]    Clazz name. If it does not specified name will be generated automatically
+     * @param   {function} [data.parent]  Parent clazz. If it does not specified, base clazz become a parent
+     * @param   {object}   [data.meta]    Meta data for clazz creation (It'll be processed by meta processor)
+     * @param   {Array}    [data.dependencies] Clazz dependencies
+     * @param   {Clazz}    [data.clazz]   Clazz constructor
+     *
+     * @returns {clazz} New clazz
+     *
+     * @this {Factory}
+     */
     create: function(data) {
 
         var name         = data.name || this.generateName();
         var parent       = data.parent;
-        var metaParent   = data.metaParent;
         var meta         = data.meta         || {};
         var dependencies = data.dependencies || [];
         var clazz        = data.clazz;
 
-        var newClazz = this.createClazz();
+        var newClazz = this.createConstructor();
 
         newClazz.__name  = name;
         newClazz.__clazz = clazz;
 
         if (_.isFunction(meta)) {
             meta = meta.apply(newClazz, [newClazz].concat(dependencies)) || {};
-        }
-
-        if (!meta.parent && metaParent) {
-            meta.parent = metaParent;
         }
 
         parent = parent || meta.parent;
@@ -76,43 +126,54 @@ _.extend(Factory.prototype, {
         return newClazz;
     },
 
-    createClazz: function() {
+    /**
+     * Creates clazz constructor
+     *
+     * @returns {Function} New clazz constructor
+     *
+     * @this {Factory}
+     */
+    createConstructor: function() {
         return function self() {
-            var result;
-
             if (!(this instanceof self)) {
                 return _.construct(self, _.toArray(arguments));
             }
 
             if (_.isFunction(self.__construct)) {
-                result = self.__construct.apply(this, _.toArray(arguments));
-            }
+                var result = self.__construct.apply(this, _.toArray(arguments));
 
-            if (!_.isUndefined(result)) {
-                return result;
+                if (!_.isUndefined(result)) {
+                    return result;
+                }
             }
         };
     },
 
+    /**
+     * Applies parent clazz
+     *
+     * @param   {clazz} clazz   Clazz to which parent must be applied
+     * @param   {clazz} parent  Parent clazz
+     * @returns {clazz} New clazz
+     *
+     * @this {Factory}
+     */
     applyParent: function(clazz, parent) {
 
         parent = parent || this.getBaseClazz();
 
         if (parent) {
-            for (var property in parent) {
-                if (property in clazz) {
-                    continue;
+            _.each(parent, function(method, name) {
+                if (name in clazz) {
+                    return;
                 }
-                else if (_.isFunction(parent[property])) {
-                    clazz[property] = parent[property];
+                if (_.isFunction(method)) {
+                    clazz[name] = method;
                 }
-                else if (property[0] === '_') {
-                    clazz[property] = undefined;
-                }
-            }
+            });
         }
 
-        clazz.prototype = _.extend(Object.create(parent ? parent.prototype : {}), clazz.prototype);
+        clazz.prototype = _.extend(this.objectCreate(parent ? parent.prototype : {}), clazz.prototype);
 
         clazz.__parent = parent || null;
         clazz.prototype.constructor = clazz;
@@ -121,12 +182,47 @@ _.extend(Factory.prototype, {
         return clazz;
     },
 
+    /**
+     * Processes and applies meta data to clazz
+     *
+     * @param   {clazz}   clazz   Clazz to which meta data must be applied
+     * @param   {object}  meta    Meta data
+     * @returns {clazz} New clazz
+     *
+     * @this {Factory}
+     */
     applyMeta: function(clazz, meta) {
         this.getMetaProcessor().process(clazz, meta);
         return clazz;
     },
 
+    /**
+     * Generates unique clazz name
+     *
+     * @returns {string} Clazz name
+     *
+     * @this {Factory}
+     */
     generateName: function() {
         return this.CLAZZ_NAME.replace('{uid}', ++this._clazzUID);
+    },
+
+    /**
+     * Cross browser realization of Object.create
+     *
+     * @param   {object} prototype Prototype
+     * @returns {object} Object this specified prototype
+     *
+     * @this {Factory}
+     */
+    objectCreate: function(prototype) {
+        if (Object.create) {
+            return Object.create(prototype)
+        }
+
+        var K = function() {};
+        K.prototype = prototype;
+
+        return new K();
     }
 });

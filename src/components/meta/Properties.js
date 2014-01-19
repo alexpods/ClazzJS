@@ -1,12 +1,36 @@
+/**
+ * Properties meta processor
+ * Process properties data for clazz, implements properties interface
+ */
 meta('Properties', {
 
-    _propertyMetaProcessor: 'Property',
+    /**
+     * Property meta processor
+     */
+    _processor: 'Property',
 
+    /**
+     * Applies properties to clazz and its prototype
+     *
+     * @param {clazz}  clazz    Clazz
+     * @param {object} metaData Meta data with properties 'methods' and 'clazz_methods'
+     *
+     * @this {metaProcessor}
+     */
     process: function(clazz, metaData) {
         this.applyProperties(clazz, metaData.clazz_properties || {});
         this.applyProperties(clazz.prototype, metaData.properties || {});
     },
 
+    /**
+     * Apply properties to object
+     * Implements properties interface, call property meta processor for each property
+     *
+     * @param {clazz|object} object     Clazz of its prototype
+     * @param {object}       properties Properties
+     *
+     * @this {metaProcessor}
+     */
     applyProperties: function(object, properties) {
         if (!object.__isInterfaceImplemented('properties')) {
             object.__implementInterface('properties', this.interface);
@@ -16,69 +40,128 @@ meta('Properties', {
 
         var propertyMetaProcessor = this.getPropertyMetaProcessor();
 
-        for (var property in properties) {
-            propertyMetaProcessor.process(object, properties[property], property);
-        }
+        _.each(properties, function(data, property) {
+            propertyMetaProcessor.process(object, data, property);
+        });
     },
 
-    getPropertyMetaProcessor: function() {
-        var processor = this._propertyMetaProcessor;
+    /**
+     * Gets property meta processor
+     *
+     * @returns {metaProcessor} Property meta processor
+     *
+     * @this {metaProcessor}
+     */
+    get function() {
+        var processor = this._processor;
 
         if (_.isString(processor)) {
-            this._propertyMetaProcessor = meta(processor);
+            this._processor = meta(processor);
         }
+
         return processor;
     },
 
-    setPropertyMetaProcessor: function(metaProcessor) {
-        this._propertyMetaProcessor = metaProcessor;
+    /**
+     * Sets property meta processor
+     *
+     * @param   {metaProcessor|string} processor Meta processor or its name
+     * @returns {metaProcessor} this
+     *
+     * @this {metaProcessor}
+     */
+    set: function(processor) {
+        this._processor = processor;
         return this;
     },
 
+    /**
+     * Properties interface
+     */
     interface: {
 
+        /**
+         * Initialization of properties
+         *
+         * @this {clazz|object}
+         */
         __initProperties: function() {
             this.__properties     = {};
             this.__setters        = {};
             this.__getters        = {};
         },
 
+        /**
+         * Sets properties defaults values
+         *
+         * @this {clazz|object}
+         */
         __setDefaults: function() {
-            var propertiesParams = this.__getPropertiesParam();
 
-            for (var property in propertiesParams) {
+            var that = this;
+            var propertiesParams = that.__getPropertiesParam();
 
-                var propertyValue = this.__getPropertyValue(property);
+            _.each(propertiesParams, function(params, property) {
 
-                if (_.isUndefined(propertyValue) && 'default' in propertiesParams[property]) {
-                    var defaultValue = propertiesParams[property].default;
+                var value = this.__getPropertyValue(property);
+
+                if (_.isUndefined(value) && 'default' in params) {
+
+                    var defaultValue = params.default;
 
                     if (_.isFunction(defaultValue)) {
                         defaultValue = defaultValue.call(this);
                     }
 
                     if (defaultValue) {
-                        if ((({}).constructor === defaultValue.constructor) || _.isArray(defaultValue)) {
+                        if ((_.isSimpleObject(defaultValue)) || _.isArray(defaultValue)) {
                             defaultValue = _.clone(defaultValue)
                         }
                     }
 
-                    this.__setPropertyValue(property, defaultValue, false);
+                    that.__setPropertyValue(property, defaultValue, false);
                 }
-            }
+            });
         },
 
+        /**
+         * Sets properties parameters
+         *
+         * @param   {object} parameters Properties parameters
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __setPropertiesParam: function(parameters) {
-            for (var property in parameters) {
-                this.__setPropertyParam(property, parameters[property]);
-            }
-            return this;
+            var that = this;
+            _.each(parameters, function(params, property) {
+                that.__setPropertyParam(property, params);
+            });
+            return that;
         },
 
+        /**
+         * Gets properties parameters
+         *
+         * @returns {object} Properties parameters
+         *
+         * @this {clazz|object}
+         */
         __getPropertiesParam: function() {
             return this.__collectAllPropertyValues('__properties', 2);
         },
 
+        /**
+         * Sets property parameter
+         *
+         * @param {string} property Property name
+         * @param {string} param    Parameter name
+         * @param {*}      value    Parameter value
+         *
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __setPropertyParam: function(property, param, value) {
             var params = {};
 
@@ -98,15 +181,43 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Gets single property parameter or all property parameters
+         *
+         * @param {string}           property Property name
+         * @param {string|undefined} param    Parameter name.
+         *                                    If it does not specified - all property parameters are returned.
+         *
+         * @returns {*} Single property parameter or all property parameters
+         *
+         * @this {clazz|object}
+         */
         __getPropertyParam: function(property, param) {
             var params = this.__collectAllPropertyValues.apply(this, ['__properties', 2, property].concat(param || []))[property];
             return param ? params[param] : params;
         },
 
+        /**
+         * Checks whether specified property exists
+         *
+         * @param   {string} property Property name
+         * @returns {boolean} true if property exists
+         *
+         * @this {clazz|object}
+         */
         __hasProperty: function(property) {
             return ('_' + property) in this;
         },
 
+        /**
+         * Gets property value
+         *
+         * @param {string|array} fields   Property fields
+         * @param {object}       options  Options (emit, check)
+         * @returns {*} Property value
+         *
+         * @this {clazz|object}
+         */
         __getPropertyValue: function(fields, options) {
             fields  = this.__resolveFields(fields);
             options = this.__resolveOptions(options);
@@ -144,6 +255,16 @@ meta('Properties', {
             return value;
         },
 
+        /**
+         * Checks whether specified property exist whether
+         *
+         * @param {string|array} fields   Property fields
+         * @param {object}       options  Options (emit, check)
+         *
+         * @returns {booelan} true if property exists
+         *
+         * @this {clazz|object}
+         */
         __hasPropertyValue: function(fields, options) {
             fields  = this.__resolveFields(fields);
             options = this.__resolveOptions(options);
@@ -174,7 +295,7 @@ meta('Properties', {
             }
 
             if (_.isNull(result)) {
-                var result = !_.isUndefined(value) && !_.isNull(value);
+                result = !_.isUndefined(value) && !_.isNull(value);
             }
 
             if (options.emit && this.__checkEmitEvent()) {
@@ -187,7 +308,18 @@ meta('Properties', {
             return result;
         },
 
-
+        /**
+         * Checker whether property value is equals specified one.
+         * If value does not specified - checks whether property value is not false
+         *
+         * @param {string|array} fields         Property fields
+         * @param {*}            compareValue   Value for comparison
+         * @param {object}       options        Options (emit, check)
+         *
+         * @returns {booelan} true if property value is equals to specified or or is not false
+         *
+         * @this {clazz|object}
+         */
         __isPropertyValue: function(fields, compareValue, options) {
             fields  = this.__resolveFields(fields);
             options = this.__resolveOptions(options);
@@ -215,6 +347,16 @@ meta('Properties', {
             return result;
         },
 
+        /**
+         * Clears property value
+         * Array and hash properties sets to [] and {} respectively. Others set to `undefined`
+         *
+         * @param {string|array} fields   Property fields
+         * @param {object}       options  Options (emit, check)
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __clearPropertyValue: function(fields, options) {
             fields  = this.__resolveFields(fields);
             options = this.__resolveOptions(options);
@@ -256,6 +398,16 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Removes property value.
+         * Really remove property in contrast to `clear` method
+         *
+         * @param {string|array} fields   Property fields
+         * @param {object}       options  Options (emit, check)
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __removePropertyValue: function(fields, options) {
             fields  = this.__resolveFields(fields);
             options = this.__resolveOptions(options);
@@ -300,6 +452,16 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Sets property value
+         *
+         * @param {string|array} fields   Property fields
+         * @param {*}            value    Property value
+         * @param {object}       options  Options (emit, check)
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __setPropertyValue: function(fields, value, options) {
             fields  = this.__resolveFields(fields);
             options = this.__resolveOptions(options);
@@ -338,6 +500,15 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Resolves property fields
+         * If fields is string - converts it to array
+         *
+         * @param {string|array} fields Fields
+         * @returns {array} Resolved fields
+         *
+         * @this {clazz|object}
+         */
         __resolveFields: function(fields) {
 
             if (_.isString(fields)) {
@@ -347,6 +518,15 @@ meta('Properties', {
             return fields;
         },
 
+        /**
+         * Resolves property method options
+         * Add absent 'emit' and 'check' options
+         *
+         * @param   {object} options Property method options
+         * @returns {object} Resolved property options
+         *
+         * @this {clazz|object}
+         */
         __resolveOptions: function(options) {
             if (_.isUndefined(options)) {
                 options = {};
@@ -357,11 +537,30 @@ meta('Properties', {
             return _.extend({ emit:  true, check: true }, options);
         },
 
+        /**
+         * Checks property on existence and several options
+         *
+         * @param {string} property Property name
+         * @param {object} options  Checking options (writable, readable, method, params)
+         * @returns {boolean} true if property is OK
+         *
+         * @this {clazz|object}
+         */
         __isProperty: function(property, options) {
             return this.__checkProperty(property, options, false);
         },
 
-        __checkProperty: function(property, options, methodName, methodParams, throwError) {
+        /**
+         * Checks property on existence and several options
+         *
+         * @param {string}  property   Property name
+         * @param {object}  options    Checking options (writable, readable, method, params)
+         * @param {boolean} throwError if true throws errors, if false return result of check
+         * @returns {boolean} Check result
+         *
+         * @this {clazz|object}
+         */
+        __checkProperty: function(property, options, throwError) {
             throwError = !_.isUndefined(throwError) ? throwError : true;
 
             var that = this;
@@ -408,6 +607,15 @@ meta('Properties', {
             }
         },
 
+        /**
+         * Emits property remove events
+         *
+         * @param {string|array} fields   Property fields
+         * @param {*}            oldValue Property value before removing
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __emitPropertyRemove: function(fields, oldValue) {
             fields = this.__resolveFields(fields);
 
@@ -431,6 +639,15 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Emits property clear events
+         *
+         * @param {string|array} fields   Property fields
+         * @param {*}            oldValue Property value before clearing
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __emitPropertyClear: function(fields, oldValue) {
             fields = this.__resolveFields(fields);
 
@@ -457,6 +674,17 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Emits property set events
+         *
+         * @param {string|array} fields    Property fields
+         * @param {*}            newValue  New property value
+         * @param {*}            oldValue  Old property value
+         * @param {boolean}      wasExists true if property was exist before setting
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __emitPropertySet: function(fields, newValue, oldValue, wasExists) {
             fields = this.__resolveFields(fields);
 
@@ -504,8 +732,18 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Checks whether __emitEvent method exists
+         *
+         * @param  {boolean} throwError if true - throw error if method does not exist
+         * @returns {boolean} true im method exist
+         *
+         * @throws {Error} if method does not exist
+         *
+         * @this {clazz|object}
+         */
         __checkEmitEvent: function(throwError) {
-            var check = _.isFunction(this.__emitEvent)
+            var check = _.isFunction(this.__emitEvent);
 
             if (throwError && !check) {
                 throw new Error('__emitEvent method does not realized!');
@@ -514,6 +752,17 @@ meta('Properties', {
             return check;
         },
 
+        /**
+         * Adds property setter
+         *
+         * @param {string}   property Property name
+         * @param {string}   name     Setter name
+         * @param {number}   weight   Setter weight
+         * @param {function} callback Setter handler
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __addSetter: function(property, name, weight, callback) {
             if (_.isUndefined(callback)) {
                 callback = weight;
@@ -534,6 +783,15 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Gets property setters
+         *
+         * @param {string}   property Property name
+         * @param {boolean}  sorted   If true returns setters in sorted order
+         * @returns {array}  Property setters;
+         *
+         * @this {clazz|object}
+         */
         __getSetters: function(property, sorted) {
             var setters = this.__collectAllPropertyValues.apply(this, ['__setters', 1].concat(property || []));
 
@@ -562,6 +820,17 @@ meta('Properties', {
             return sortedSetters;
         },
 
+        /**
+         * Applies setters to value
+         *
+         * @param {string}       property Property name
+         * @param {*}            value    Property value
+         * @param {string|array} fields   Property fields
+         *
+         * @returns {*} Processed value
+         *
+         * @this {clazz|object}
+         */
         __applySetters: function(property, value, fields) {
             fields = fields || [];
 
@@ -579,6 +848,17 @@ meta('Properties', {
             return value;
         },
 
+        /**
+         * Adds property getter
+         *
+         * @param {string}   property Property name
+         * @param {string}   name     Getter name
+         * @param {number}   weight   Getter weight
+         * @param {function} callback Getter handler
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __addGetter: function(property, name, weight, callback) {
             if (_.isUndefined(callback)) {
                 callback = weight;
@@ -599,6 +879,15 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Gets property getters
+         *
+         * @param {string}   property Property name
+         * @param {boolean}  sorted   If true returns getters in sorted order
+         * @returns {array}  Property getters;
+         *
+         * @this {clazz|object}
+         */
         __getGetters: function(property, sorted) {
             var getters = this.__collectAllPropertyValues.apply(this, ['__getters', 1].concat(property || []));
 
@@ -627,6 +916,17 @@ meta('Properties', {
             return sortedGetters;
         },
 
+        /**
+         * Applies getters to value
+         *
+         * @param {string}       property Property name
+         * @param {*}            value    Property value
+         * @param {string|array} fields   Property fields
+         *
+         * @returns {*} Processed value
+         *
+         * @this {clazz|object}
+         */
         __applyGetters: function(property, value, fields) {
             fields = fields || [];
             var getters = this.__getGetters(property, true);
@@ -642,6 +942,15 @@ meta('Properties', {
             return value;
         },
 
+        /**
+         * Sets object data
+         *
+         * @param {object} data    Property data ({ property1: value1, property2: value2, .. })
+         * @param {object} options Property options ({ emit: emitValue, check: checkValue })
+         * @returns {clazz|object} this
+         *
+         * @this {clazz|object}
+         */
         __setData: function(data, options) {
             for (var property in data) {
                 if (!this.__hasProperty(property.split('.')[0])) {
@@ -663,6 +972,13 @@ meta('Properties', {
             return this;
         },
 
+        /**
+         * Gets object data
+         *
+         * @returns {object} Object dat
+         *
+         * @this {clazz|object}
+         */
         __getData: function() {
 
             var data = {};
@@ -675,6 +991,15 @@ meta('Properties', {
             return data;
         },
 
+        /**
+         * Process object data
+         *
+         * @param {object} data    Object data
+         * @param {object} methods Getter methods
+         * @returns {object} Processed data
+         *
+         * @this {clazz|object}
+         */
         __processData: function self_method(data, methods) {
             if (!data) {
                 return data;
@@ -706,13 +1031,11 @@ meta('Properties', {
 
                 methods = _.extend({}, methods, { __getData: null });
 
-                for (var method in methods) {
+                _.each(methods, function(params, method) {
 
                     if (!_.isFunction(data[method])) {
-                        continue;
+                        return;
                     }
-
-                    var params = methods[method];
 
                     if (_.isNull(params) || _.isUndefined(params)) {
                         params = [];
@@ -722,7 +1045,7 @@ meta('Properties', {
                     }
 
                     data = data[method].apply(data, params);
-                }
+                });
             }
 
             return data;
