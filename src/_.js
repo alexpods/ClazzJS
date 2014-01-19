@@ -1,3 +1,7 @@
+/**
+ * Mini underscore
+ * Add one non underscore method: isSimpleObject.
+ */
 var _ = (function() {
     var _ = {};
 
