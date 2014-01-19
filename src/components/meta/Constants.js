@@ -62,7 +62,7 @@ meta('Constants', {
         },
 
         /**
-         * Get specified clazz
+         * Get specified constant
          *
          * @returns {*} Constant value
          *
