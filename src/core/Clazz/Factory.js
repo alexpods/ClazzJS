@@ -183,7 +183,7 @@ _.extend(Factory.prototype, {
             }
         }
 
-        clazz.prototype = _.extend(Object.create(parent ? parent.prototype : {}), clazz.prototype);
+        clazz.prototype = _.extend(this.objectCreate(parent ? parent.prototype : {}), clazz.prototype);
 
         clazz.__parent = parent || null;
         clazz.prototype.constructor = clazz;
