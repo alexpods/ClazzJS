@@ -45,7 +45,10 @@ module.exports = function(grunt) {
                     "src/components/.suffix",
 
                     "src/.suffix"
-                ]
+                ],
+                options: {
+                    separator: '\n\n'
+                }
             }
         },
         uglify: {

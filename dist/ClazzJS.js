@@ -35,6 +35,7 @@
         global[name] = factory.apply(global, dependencies);
     }
 }((new Function('return this'))(), 'ClazzJS', [], function(undefined) {
+
     /**
      * Mini underscore
      * Add two non underscore method: isSimpleObject() and construct()
@@ -208,7 +209,9 @@
         return _;
     })();
 
+
     var Namespace = (function() {
+
         /**
          * Namespace constructor
          *
@@ -357,6 +360,7 @@
             }
 
         });
+
         /**
          * Scope
          * (Namespace collection)
@@ -716,13 +720,16 @@
             }
 
         });
+
         return {
             Namespace: Namespace,
             Scope: Scope
         };
 
     })();
+
     var Meta = (function() {
+
         /**
          * Meta manager
          *
@@ -832,6 +839,7 @@
             }
 
         });
+
         /**
          * Meta constructor
          *
@@ -950,13 +958,16 @@
                 });
             }
         });
+
         return {
             Meta: Meta,
             Manager: Manager
         };
 
     })();
+
     var Clazz = (function() {
+
         /**
          * Clazz constructor
          *
@@ -1154,6 +1165,7 @@
                 })
             }
         });
+
         /**
          * Clazz factory
          *
@@ -1389,6 +1401,7 @@
                 return new K();
             }
         });
+
         /**
          * Clazz manager
          *
@@ -1556,6 +1569,7 @@
                 return this;
             }
         });
+
         return {
             Clazz: Clazz,
             Factory: Factory,
@@ -1563,6 +1577,7 @@
         };
 
     })();
+
 
     var namespaceScope = new Namespace.Scope({
         defaultInjects: ['clazz', 'namespace']
@@ -1588,7 +1603,9 @@
         return new Clazz.Clazz(clazzManager, clazzFactory, this);
     });
 
+
     namespace('ClazzJS', 'clazz', 'meta', 'namespace', function(clazz, meta, namespace) {
+
         /**
          * Base meta processor for clazz creation
          * Applies base interfaces to clazz, call sub processors and sets clazz defaults
@@ -1935,6 +1952,7 @@
                 }
             }
         });
+
         /**
          * Constants meta processor
          * Applies constants and implement constants interface if object is clazz
@@ -2023,6 +2041,7 @@
                 }
             }
         });
+
         /**
          * Events meta processor
          * Applies events to clazz and its prototype
@@ -2227,6 +2246,7 @@
                 }
             }
         });
+
         /**
          * Methods meta processor
          * Applies methods to clazz and its prototype
@@ -2266,6 +2286,7 @@
             }
 
         });
+
         /**
          * Properties meta processor
          * Process properties data for clazz, implements properties interface
@@ -3318,6 +3339,7 @@
             }
 
         });
+
         /**
          * Property meta processor
          * Process single property for clazz
@@ -3440,7 +3462,9 @@
                 return this;
             }
         });
+
         namespace('Property', 'meta', function(meta) {
+
             /**
              * Property constraints meta processor
              * Applies property constraints setter to object
@@ -3494,6 +3518,7 @@
                 }
 
             });
+
             /**
              * Property converters meta processor
              * Applies property converters setter to object
@@ -3543,6 +3568,7 @@
                     return value;
                 }
             });
+
             /**
              * Property default value meta processor
              * Set default value for object property
@@ -3565,6 +3591,7 @@
                 }
 
             });
+
             /**
              * Property getters meta processor
              * Add property getters to object
@@ -3588,6 +3615,7 @@
                 }
 
             });
+
             /**
              * Property methods meta processor
              * Add common methods for property
@@ -3825,6 +3853,7 @@
             });
 
 
+
             /**
              * Property readable flag meta processor
              * Set 'readable' flag for property
@@ -3844,6 +3873,7 @@
                     object.__setPropertyParam(property, 'readable', readable);
                 }
             });
+
             /**
              * Property setters meta processor
              * Add property setters to object
@@ -3867,6 +3897,7 @@
                 }
 
             });
+
             /**
              * Property type meta processor
              * Add property setter which checks and converts property value according to its type
@@ -4267,6 +4298,7 @@
                     }
                 }
             });
+
             /**
              * Property writable flag meta processor
              * Set 'writable' flag for property
@@ -4286,7 +4318,9 @@
                     object.__setPropertyParam(property, 'writable', writable);
                 }
             });
+
         });
+
         /**
          * Base class for all clazzes
          */
@@ -4446,7 +4480,9 @@
                 }
             }
         });
+
     });
+
 
     clazz.getFactory()
         .setMetaProcessor(meta('/ClazzJS/Base'))
