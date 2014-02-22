@@ -2,7 +2,7 @@ ClazzJS
 =======
 
 ClazzJS is portable JavaScript library for class-style OOP programming. Its main goal is to provide expressive DSL to
-write your JavaScript programs in easy-to-understand, well-known, convenient and flexible class base manner. It's works
+write your JavaScript programs in easy-to-understand, well-known, convenient and flexible class base manner. It works
 well both on client and server sides.
 
 Features include:
