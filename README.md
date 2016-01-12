@@ -1,3 +1,5 @@
+##DEPRECATED: USE ES6/2015 CLASSES. THEY ARE COOL.
+
 ClazzJS
 =======
 
